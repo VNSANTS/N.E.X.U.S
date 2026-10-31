@@ -54,3 +54,15 @@ O desenvolvimento considera um computador modesto. Portanto, a arquitetura não 
 ---
 
 **N.E.X.U.S. — um assistente pessoal útil, capaz e confiável, sempre sob controle do usuário.**
+
+
+## Primeiro módulo executável — motor de aprendizado
+
+Foi iniciado `nexus_learning/`, um núcleo Python baseado apenas na biblioteca padrão:
+- SQLite para memórias episódicas, semânticas e procedurais;
+- cadastro de fontes e afirmações candidatas ligadas às fontes;
+- estados de conhecimento e revisão explícita;
+- fila de tarefas com prioridade heurística transparente;
+- testes automatizados iniciais em `tests/test_learning_engine.py`.
+
+Este módulo é uma primeira base local. Ainda não inclui API, interface, pesquisa automática na web, integração com modelos de IA, sincronização cloud/PC ou execução contínua. Consulte [a arquitetura de aprendizado](docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md).
