@@ -273,3 +273,35 @@ Meta de R$ 0 de custo obrigatório para o MVP, sem cartão ou cobrança automát
 2. **PC worker:** conexão segura de saída, ingestão de documentos, armazenamento ampliado, pipeline de aprendizado em lotes e sincronização de conhecimento aprovado.
 
 Nenhum desses componentes está implementado ainda; esta é a arquitetura-alvo.
+
+
+## Revisão v3 — modelo local auxiliar no PC
+
+Esta decisão complementa a divisão cloud/PC acima: o PC poderá executar um **modelo de linguagem local pequeno e substituível**, como auxiliar do motor de aprendizado, sem se tornar dependência do assistente principal.
+
+### Funções do modelo local
+- resumir documentos já extraídos;
+- classificar e etiquetar conteúdos;
+- extrair entidades, tópicos e afirmações candidatas;
+- agrupar documentos relacionados e apontar duplicatas;
+- preparar comparações e relatórios para revisão;
+- identificar possíveis contradições para investigação posterior.
+
+### Limites
+- O modelo local não é fonte de verdade e não valida sozinho o próprio resultado.
+- Toda afirmação relevante mantém referência à fonte original.
+- Conhecimento só muda para `validated` após regras de verificação e revisão definidas pelo sistema; quando necessário, revisão do usuário.
+- Tarefas complexas podem ser encaminhadas à IA na nuvem, respeitando privacidade, cotas e orçamento.
+- O modelo local é um adaptador substituível: trocar por outro modelo não deve exigir reconstruir o N.E.X.U.S.
+- No PC atual (i5 de 1ª geração, 8 GB RAM e HDD), testar modelos pequenos e quantizados, contexto curto e processamento em lotes. Medir RAM, velocidade e estabilidade antes de escolher; aceitar que alguns modelos podem ser lentos ou inviáveis.
+- O worker deve conseguir operar sem modelo local instalado, usando processamento determinístico e deixando tarefas de IA local em espera ou encaminhando-as quando permitido.
+
+### Fluxo combinado
+1. Worker local recebe fontes e extrai texto.
+2. Modelo local pequeno organiza, resume e extrai candidatos.
+3. Pipeline determinístico deduplica, guarda proveniência e compara metadados.
+4. Casos incertos ou complexos são encaminhados à nuvem quando permitido.
+5. O sistema produz uma proposta com fontes, incertezas e conflitos.
+6. Somente conteúdo validado é sincronizado no cache compacto da nuvem.
+
+O modelo local é uma ferramenta de apoio ao aprendizado, não um mecanismo de retreinamento dos pesos da IA principal.
