@@ -50,3 +50,16 @@ No PC worker, adicionar um adaptador opcional para modelo local pequeno/quantiza
 
 ## Nova frente — motor de aprendizado inspirado na neurociência
 Consultar `docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md`. A implementação deve começar por proveniência, estados de conhecimento, memórias episódica/semântica/procedural, avaliação e testes — antes de adicionar LLM local. O documento é uma proposta fundamentada em literatura, não implementação. Prioridade: Fase 0 (fundamentos) e Fase 1 (memória funcional), mantendo o PC fraco e o custo obrigatório zero como restrições.
+
+
+## Marco de implementação — núcleo local inicial
+
+Criado o pacote `nexus_learning` com SQLite, memórias por categoria, fontes, afirmações com estado de validação e fila priorizada. Testes iniciais foram adicionados em `tests/test_learning_engine.py`.
+
+Próximas tarefas técnicas:
+1. Executar os testes no ambiente real e corrigir incompatibilidades.
+2. Completar CRUD, expiração, exportação e exclusão de memória.
+3. Implementar ingestão segura de texto/documentos com limites.
+4. Adicionar comparação de afirmações e detecção determinística de duplicatas.
+5. Criar consolidação em lote com relatório de alterações, sem promoção automática.
+6. Integrar adaptadores de modelos apenas após o núcleo ser testado.
