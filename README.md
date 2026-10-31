@@ -118,3 +118,18 @@ python -m nexus_learning document-search "memória e aprendizado"
 ```
 
 A busca atual é lexical (termos coincidentes), não semântica. O conteúdo fica no banco SQLite local; não envie o banco ao repositório.
+
+
+## Runtime controlado (protótipo offline)
+
+O repositório agora inclui:
+- `PolicyEngine`: política fail-closed com allowlist; ações READ, WRITE_REVERSIBLE e SENSITIVE;
+- contrato `ModelProvider` e `MockProvider` offline, sem credenciais e sem rede;
+- `TaskRuntime`: registra entrada, execução, conclusão/falha e eventos no SQLite;
+- comando de demonstração offline.
+
+```bash
+python -m nexus_learning runtime-once "Olá, N.E.X.U.S."
+```
+
+O comando usa o provedor simulado, não uma IA real. O runtime ainda não possui API HTTP, autenticação, ferramentas reais, agendador distribuído ou worker remoto. Nenhuma saída de modelo executa comandos ou ferramentas.
