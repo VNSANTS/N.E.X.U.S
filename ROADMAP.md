@@ -3,7 +3,7 @@
 Phases are review gates, not date promises. Complete and review each phase before expanding scope.
 
 ## 0 — Audit and foundation
-Audit the intended base code/OpenJarvis, license, dependencies, working modules and tests. Establish repository hygiene, audit Agent Skills and define a realistic architecture. **Exit:** reviewed code audit, skills audit and architecture baseline.
+Audit the intended base code/OpenJarvis, license, dependencies, working modules and tests. Establish repository hygiene, audit Agent Skills and define a realistic architecture. **Exit:** reviewed code audit, skills audit and architecture baseline. (Remote static OpenJarvis audit completed; local validation remains.)
 
 ## 1 — Minimal reliable assistant
 Create a clean app entry point, configuration, one text conversation path, provider abstraction, one working model provider, bounded orchestrator, allowlisted tools, structured safe logs and tests. **Exit:** a simple approved tool task works reliably.
