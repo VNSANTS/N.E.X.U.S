@@ -42,3 +42,7 @@ Esta divisão atualiza a ordem de implementação acima:
 4. **Sincronização:** somente conhecimento revisado/validado e resumos necessários são sincronizados para o cache da nuvem. Conflitos devem ser versionados; nunca sobrescrever silenciosamente.
 
 Se o PC estiver desligado, tarefas locais ficam aguardando. Não expor shell remoto, não abrir portas públicas e não exigir modelos grandes no PC atual. A meta é custo obrigatório zero, sem cartão/cobrança automática; validar cotas, privacidade e disponibilidade dos serviços gratuitos antes de escolhê-los.
+
+
+## Revisão — modelo local como auxiliar de aprendizado
+No PC worker, adicionar um adaptador opcional para modelo local pequeno/quantizado. Começar com testes de viabilidade (RAM, velocidade, estabilidade e qualidade) antes de escolher modelo. Usá-lo para resumo, classificação, extração de candidatos e organização de documentos; nunca para validar sozinho conhecimento. Preservar fontes e incertezas, aplicar verificações e encaminhar casos complexos à nuvem quando permitido. O worker deve continuar funcionando sem modelo local. Trocar o modelo deve ser possível sem alterar o restante da arquitetura.
