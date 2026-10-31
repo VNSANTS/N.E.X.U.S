@@ -45,7 +45,7 @@ Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesq
 
 ## Próximo passo
 
-Revisar a arquitetura v1 e definir o MVP executável. Antes da implementação, auditar o código-base/OpenJarvis que se pretende reaproveitar, confirmar stack, dependências e licença, e então detalhar contratos e testes de aceitação.
+Validar no PC a cópia local do OpenJarvis comparando-a com o commit auditado, executar um subconjunto pequeno de testes offline e medir recursos. Depois, fechar provedor, autenticação e hospedagem antes de implementar o MVP.
 
 ## Ambiente de desenvolvimento
 
