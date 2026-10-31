@@ -1,6 +1,6 @@
 # N.E.X.U.S. — Catálogo de Agent Skills
 
-> **Status:** catálogo de pesquisa; nenhuma skill desta lista foi instalada ou aprovada automaticamente.  
+> **Status:** catálogo consolidado; consulte [FINAL_AUDIT.md](FINAL_AUDIT.md) para o inventário instalado, as decisões e os itens pendentes. O catálogo mistura skills individuais, coleções, ferramentas, MCPs e propostas internas; não representa 70 Agent Skills instaláveis.  
 > **Objetivo:** permitir que Codex consulte as descobertas, compare opções e proponha uma seleção segura antes de qualquer instalação.  
 > **Origem:** consolidação dos relatórios de pesquisa compartilhados na conversa em 31/10/2026. Os dados abaixo refletem os relatórios recebidos e **não equivalem a uma auditoria independente**.
 
