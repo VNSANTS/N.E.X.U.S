@@ -68,3 +68,17 @@ Próximas tarefas técnicas:
 ## Próximo marco — validação e consolidação assistida
 
 O núcleo agora tem pesquisa/arquivamento de memórias, consulta e revisão de afirmações, fontes/excertos, relatório de possíveis duplicatas e itens sem evidência, auditoria, CLI e testes em CI. Antes de conectar modelos ou ativar tarefas autônomas, confirmar o workflow do GitHub Actions e executar o pacote no PC. Depois: ingestão de documentos segura, deduplicação melhor, revisão de conflitos e consolidação com diff/exportação.
+
+
+## Runtime e integração — próxima etapa
+
+- [x] Contrato de provedor de IA independente.
+- [x] Provedor mock offline para desenvolvimento/testes.
+- [x] Política fail-closed e allowlist de ferramentas.
+- [x] Runtime inicial com estados, persistência e trilha de eventos.
+- [x] Handoff detalhado para o Codex CLI.
+- [ ] Confirmar CI de todos os testes após o runtime.
+- [ ] Adaptador real de modelo após escolha/credenciais.
+- [ ] API HTTPS e autenticação.
+- [ ] Worker de PC com conexão de saída, leases, cancelamento e sincronização.
+- [ ] Interface web e implantação gratuita dentro das cotas disponíveis.
