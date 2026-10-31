@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 from nexus_learning import LearningEngine
+from nexus_learning.ingestion import DocumentIngestor
 
 
 class LearningEngineTests(unittest.TestCase):
@@ -56,6 +57,38 @@ class LearningEngineTests(unittest.TestCase):
     def test_stats(self):
         self.engine.add_memory("procedural", "Test", "Procedure")
         self.assertEqual(self.engine.stats()["memories"], 1)
+
+
+    def test_text_ingestion_preserves_source_and_chunks(self):
+        ingestor = DocumentIngestor(self.engine)
+        text = ("Primeiro parágrafo sobre memória.\\n" * 30) + ("Segundo parágrafo sobre aprendizado.\\n" * 30)
+        result = ingestor.ingest_text(text, "local://sample.txt", "Sample")
+        self.assertFalse(result["duplicate"])
+        self.assertGreater(result["chunks"], 1)
+        hits = ingestor.search("aprendizado")
+        self.assertTrue(hits)
+        self.assertEqual(hits[0]["uri"], "local://sample.txt")
+
+    def test_duplicate_document_is_not_stored_twice(self):
+        ingestor = DocumentIngestor(self.engine)
+        first = ingestor.ingest_text("Conteúdo idêntico", "local://one.txt")
+        second = ingestor.ingest_text("Conteúdo idêntico", "local://two.txt")
+        self.assertFalse(first["duplicate"])
+        self.assertTrue(second["duplicate"])
+        self.assertEqual(first["document_id"], second["document_id"])
+        self.assertEqual(self.engine.stats()["sources"], 1)
+
+    def test_ingestion_rejects_empty_and_oversized_text(self):
+        ingestor = DocumentIngestor(self.engine, max_bytes=20)
+        with self.assertRaises(ValueError):
+            ingestor.ingest_text("   ", "local://empty.txt")
+        with self.assertRaises(ValueError):
+            ingestor.ingest_text("x" * 30, "local://large.txt")
+
+    def test_ingestion_rejects_invalid_chunk_settings(self):
+        ingestor = DocumentIngestor(self.engine)
+        with self.assertRaises(ValueError):
+            ingestor.ingest_text("Texto válido", "local://x.txt", chunk_size=50)
 
     def test_invalid_memory_type_rejected(self):
         with self.assertRaises(ValueError):
