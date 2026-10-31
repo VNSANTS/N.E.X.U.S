@@ -83,3 +83,24 @@ python -m unittest discover -s tests -v
 ```
 
 O banco padrão é `nexus_learning.db` no diretório atual. Não coloque dados sensíveis no banco de teste nem envie o arquivo do banco ao GitHub.
+
+
+### Comandos adicionais do núcleo
+
+```bash
+# Registrar uma fonte e uma afirmação associada
+python -m nexus_learning source-add "https://example.org" --title "Fonte de exemplo"
+python -m nexus_learning claim-add "Afirmação a investigar" --source ID_DA_FONTE
+
+# Revisar uma afirmação (validação exige justificativa e confiança explícitas)
+python -m nexus_learning claim-review ID_DA_AFIRMACAO under_review "Precisa de mais evidências"
+python -m nexus_learning claim-list --state proposed
+
+# Gerar relatório de consolidação sem alterar automaticamente os registros
+python -m nexus_learning consolidate
+
+# Arquivar uma memória
+python -m nexus_learning memory-archive ID_DA_MEMORIA
+```
+
+O relatório de consolidação aponta afirmações sem fontes, possíveis duplicatas, itens em disputa e itens ainda não revisados. Ele não decide se uma afirmação é verdadeira e não modifica o banco.
