@@ -104,3 +104,17 @@ python -m nexus_learning memory-archive ID_DA_MEMORIA
 ```
 
 O relatório de consolidação aponta afirmações sem fontes, possíveis duplicatas, itens em disputa e itens ainda não revisados. Ele não decide se uma afirmação é verdadeira e não modifica o banco.
+
+
+### Ingestão local de documentos (protótipo)
+
+O módulo `nexus_learning.ingestion` agora aceita arquivos de texto e Markdown, registra a origem, calcula SHA-256, divide o conteúdo em trechos com posições e permite busca lexical simples. Arquivos repetidos pelo mesmo conteúdo são reconhecidos pelo hash. Limite padrão: 1 MB por documento.
+
+Formatos aceitos: `.txt`, `.md` e `.markdown`. PDF, DOCX, páginas web e extração por IA ainda não estão incluídos.
+
+```bash
+python -m nexus_learning ingest-file ./anotacoes.md
+python -m nexus_learning document-search "memória e aprendizado"
+```
+
+A busca atual é lexical (termos coincidentes), não semântica. O conteúdo fica no banco SQLite local; não envie o banco ao repositório.
