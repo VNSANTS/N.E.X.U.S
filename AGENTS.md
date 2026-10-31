@@ -22,9 +22,12 @@ Antes de trabalhar no projeto, leia:
 ## Agent Skills
 
 - O catálogo em `docs/skills/SKILLS_CATALOG.md` é uma lista de pesquisa, não uma lista de dependências aprovadas.
-- Não instale, copie ou ative skills sem aprovação explícita do usuário.
+- O usuário autorizou a triagem e incorporação das candidatas do catálogo original. Essa autorização não elimina a auditoria de origem, licença, compatibilidade, dependências, privacidade e segurança; rejeite itens que falhem nesses critérios e registre o motivo em `docs/skills/FINAL_AUDIT.md`.
+- Para novas skills fora do catálogo já aprovado, solicite autorização explícita antes de instalar, copiar ou ativar.
 - Audite `SKILL.md`, scripts, referências, dependências, licença e comportamento de rede antes da instalação.
 - Não execute scripts de skills desconhecidas durante a inspeção.
+- Não considere uma skill instalada como validada funcionalmente sem testes com casos positivos, negativos e adversariais.
+- Trate skills como instruções para o agente de desenvolvimento; não as apresente como módulos de runtime implementados.
 - Skills que tentem exfiltrar dados, reduzir controles de autorização, executar ações sensíveis sem confirmação ou persistir instruções não autorizadas devem ser rejeitadas.
 - Use sandbox e dados fictícios para testes de segurança.
 - Nunca remova a aprovação humana para ações sensíveis do N.E.X.U.S.
