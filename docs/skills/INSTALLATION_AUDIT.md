@@ -2,9 +2,16 @@
 
 **Data:** 2026-10-31  
 **Repositório:** VNSANTS/N.E.X.U.S  
-**Resultado verificado:** 45 diretórios de skills em `.agents/skills/`.
+**Resultado verificado na revisão consolidada:** 46 diretórios de skills em `.agents/skills/`. O relatório original registrava 45; a skill Cloudflare `security-audit` foi adicionada posteriormente.
 
-## Instaladas nesta rodada
+## Instalada após o relatório original
+
+### Cloudflare
+- security-audit
+
+Licença MIT incluída em `.agents/skills/CLOUDFLARE_SECURITY_AUDIT_LICENSE.txt`. A skill upstream não traz scripts auxiliares no inventário consultado; ver auditoria consolidada para ressalvas.
+
+## Instaladas na rodada anterior
 
 ### Superpowers (obra/superpowers)
 - brainstorming
@@ -98,3 +105,7 @@ As 18 skills que já estavam no repositório permanecem:
 2. Testar skills em tarefas de amostra, sem credenciais e em branch isolada.
 3. Completar dependências/referências das skills que foram instaladas somente com `SKILL.md`, quando necessário.
 4. Integrar os conceitos internos ao runtime por módulos testáveis, começando por orquestração, memória e trilha de auditoria.
+
+
+## Estado atual
+Consulte `FINAL_AUDIT.md` para a auditoria consolidada, decisões sobre Tapestry, Trail of Bits static-analysis, AI-Research-SKILLs, Private Journal MCP, provedores de voz e ferramentas como Snyk Agent Scan. O número 46 representa diretórios com `SKILL.md`, não 46 módulos funcionais do runtime.
