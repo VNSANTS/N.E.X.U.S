@@ -133,3 +133,16 @@ python -m nexus_learning runtime-once "Olá, N.E.X.U.S."
 ```
 
 O comando usa o provedor simulado, não uma IA real. O runtime ainda não possui API HTTP, autenticação, ferramentas reais, agendador distribuído ou worker remoto. Nenhuma saída de modelo executa comandos ou ferramentas.
+
+
+### Pesquisa científica pela Crossref API
+
+O módulo `nexus_learning.crossref` consulta metadados bibliográficos públicos da Crossref, sem dependências externas e sem chave de API. A busca retorna título, autores, ano, DOI, periódico/editora e URL. Não baixa o texto integral dos artigos, não cria afirmações automaticamente e não valida os resultados.
+
+```bash
+python -m nexus_learning research-search "memory consolidation learning" --limit 5
+# Opcional: informar um e-mail válido para usar o polite pool
+python -m nexus_learning research-search "neuroscience of memory" --limit 5 --mailto "seu-email@example.com"
+```
+
+O limite local é de 20 resultados por consulta, com timeout de 12 segundos. A integração usa a biblioteca padrão do Python, identifica o cliente por User-Agent e permite o parâmetro `mailto` recomendado pela Crossref. Respeite os limites do serviço e evite consultas paralelas desnecessárias. Os metadados retornados são pistas para pesquisa, não evidência suficiente para validar uma afirmação.
