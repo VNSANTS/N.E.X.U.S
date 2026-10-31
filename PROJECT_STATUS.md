@@ -121,4 +121,4 @@ Adicionado `nexus_learning/ingestion.py`:
 - `tests/test_runtime.py`: testes para política e runtime.
 - `CODEX_HANDOFF.md`: instruções e critérios para concluir integração local via Codex CLI.
 
-**Ainda não implementado:** adaptador real de IA, API HTTP, autenticação, execução de ferramentas, worker cloud/PC, sincronização, agendamento, notificações e implantação. O MockProvider não é um modelo de IA. Testes do runtime precisam de confirmação pelo CI após a última alteração.
+**Ainda não implementado:** adaptador real de IA, API HTTP, autenticação, execução de ferramentas, worker cloud/PC, sincronização, agendamento, notificações e implantação. O MockProvider não é um modelo de IA. **CI confirmado:** o workflow executou com sucesso os testes em Python 3.11 e 3.12 após a inclusão do runtime e do comando `runtime-once` (execução associada ao commit `ec1b6fd`). As atualizações posteriores foram apenas de documentação.
