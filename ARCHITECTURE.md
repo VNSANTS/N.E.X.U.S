@@ -305,3 +305,7 @@ Esta decisão complementa a divisão cloud/PC acima: o PC poderá executar um **
 6. Somente conteúdo validado é sincronizado no cache compacto da nuvem.
 
 O modelo local é uma ferramenta de apoio ao aprendizado, não um mecanismo de retreinamento dos pesos da IA principal.
+
+
+## Referência para o motor de aprendizado
+A proposta detalhada de memória, atenção, avaliação, consolidação e validação inspiradas na neurociência está em [`docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md`](docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md). Ela complementa esta arquitetura híbrida e não altera o status de implementação: os módulos continuam sendo propostas até serem codificados e testados.
