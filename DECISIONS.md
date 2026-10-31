@@ -40,3 +40,7 @@ Record decisions and status. Proposed options are not final until explicitly acc
 
 ## D-013 — MVP scope
 **Status: proposed.** Authenticated text API/web UI, one cloud model provider, bounded orchestration, one READ-only tool, SQLite, policy enforcement, budgets/timeouts, logs and offline safety tests. Defer voice, scheduler, parallel agents, shell/code execution, remote MCP, vector database and sensitive actions. See `docs/MVP_SPEC.md`.
+
+
+## D-014 — Arquitetura pessoal híbrida cloud + PC
+**Status: accepted direction.** N.E.X.U.S. terá um usuário principal e custo obrigatório zero como meta do MVP. O núcleo leve ficará na nuvem e deverá continuar acessível pelo celular/computador mesmo quando o PC estiver desligado. O PC será um worker opcional para armazenamento ampliado e processamento pesado do aprendizado: ingestão de fontes, extração, limpeza, deduplicação, indexação, comparação de evidências e artefatos. Quando o PC estiver offline, essas tarefas aguardam em fila; a nuvem mantém memória essencial e cache compacto de conhecimento validado. O worker inicia conexão autenticada de saída e não expõe shell ou porta pública. Processamento local em lotes pequenos devido ao i5 de primeira geração e 8 GB de RAM. Planos gratuitos, cotas e termos de privacidade devem ser verificados; não prometer gratuidade ilimitada. Ver ARCHITECTURE.md, revisão v2.
