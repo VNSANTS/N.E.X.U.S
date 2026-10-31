@@ -1,6 +1,6 @@
 # Arquitetura N.E.X.U.S. — Proposta v1
 
-**Status:** arquitetura lógica proposta para revisão; não representa runtime implementado.  
+**Status:** arquitetura híbrida v2 proposta; ainda não representa runtime implementado.  
 **Objetivo desta etapa:** definir como o "cérebro" do N.E.X.U.S. pensa, decide, usa ferramentas, aprende e permanece sob controle do usuário.
 
 ## 1. Decisão central
@@ -227,3 +227,49 @@ Ficam fora do MVP: voz, wake word, execução contínua, tarefas agendadas, agen
 ---
 
 Esta arquitetura é uma proposta de projeto. Nenhum dos componentes descritos deve ser considerado implementado até existir código e testes verificáveis.
+
+
+---
+
+# Revisão v2 — Divisão entre nuvem e PC (decisão mais recente)
+
+Esta seção **prevalece sobre qualquer descrição anterior conflitante** neste documento.
+
+## Objetivo
+O N.E.X.U.S. é um assistente pessoal de um usuário principal. O núcleo deve continuar acessível pela internet mesmo com o PC desligado. O PC será um nó opcional de processamento e armazenamento ampliado para as partes mais pesadas do aprendizado.
+
+## O que fica na nuvem
+- Interface web responsiva, API HTTPS e autenticação de usuário único.
+- Conversas recentes e contexto mínimo necessário para continuidade.
+- Memória pessoal essencial, com minimização e proteção.
+- Orquestrador leve, política de permissões, aprovações, fila e estado das tarefas.
+- Gateway para provedor de IA remoto, escolhido entre opções gratuitas após verificar cotas e termos.
+- Cache compacto de conhecimento já validado, para respostas básicas quando o PC estiver desligado.
+
+## O que fica no PC
+- Arquivo ampliado de fontes e documentos.
+- Ingestão, extração e limpeza de documentos.
+- Deduplicação, organização e indexação completa.
+- Comparação de fontes, extração de afirmações e preparação de evidências.
+- Embeddings opcionais, somente se o ganho justificar RAM e armazenamento.
+- Histórico detalhado de processamento e propostas de atualização da base de conhecimento.
+
+O PC informado tem i5 de primeira geração, 8 GB de RAM e HDD. O processamento local será em lotes pequenos, com limites de memória/CPU e possibilidade de pausar. Não exigir modelos locais grandes, Docker ou dependências pesadas no primeiro worker.
+
+## Comunicação segura
+O worker instalado no PC inicia uma conexão autenticada de saída com a nuvem e consulta tarefas permitidas. Não abrir porta pública, shell remoto ou administração genérica. O worker aceita somente tipos de tarefa allowlisted, cada uma com prazo, tamanho máximo, limites de recursos e cancelamento.
+
+## Quando o PC estiver desligado
+Tarefas que exigem armazenamento ou processamento local permanecem em fila, com estado explícito de aguardando PC. O núcleo na nuvem continua respondendo usando memória essencial e o cache compacto de conhecimento validado. O sistema nunca deve alegar que uma tarefa local foi executada quando ela apenas está aguardando.
+
+## Sincronização
+A base completa e os artefatos pesados permanecem no PC. Após revisão/validação, somente os metadados e resumos necessários são sincronizados para o cache da nuvem. Usar versões e identificadores para detectar conflitos; não sobrescrever silenciosamente. Planejar backup local e recuperação antes de confiar no PC como único arquivo.
+
+## Custo e disponibilidade
+Meta de R$ 0 de custo obrigatório para o MVP, sem cartão ou cobrança automática. Usar planos gratuitos, respeitando cotas, suspensão por inatividade, limites de armazenamento e termos de privacidade. Não prometer serviço ilimitado nem disponibilidade garantida 24/7. O PC desligado não pode ser requisito para o funcionamento básico.
+
+## Entrega em duas partes
+1. **Cloud core:** interface, autenticação, conversa, IA remota gratuita dentro das cotas, memória essencial, fila e cache compacto.
+2. **PC worker:** conexão segura de saída, ingestão de documentos, armazenamento ampliado, pipeline de aprendizado em lotes e sincronização de conhecimento aprovado.
+
+Nenhum desses componentes está implementado ainda; esta é a arquitetura-alvo.
