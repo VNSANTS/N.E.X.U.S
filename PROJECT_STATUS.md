@@ -1,7 +1,11 @@
 # Project Status
 
-**Stage:** planning baseline; technical audit pending.  
-**Implementation:** no runtime implementation has been verified in this repository.
+**Stage:** architecture v1 drafted; awaiting user review.  
+**Implementation:** no N.E.X.U.S. runtime implementation has been verified in this repository.
+
+## Completed
+- Skills inventory and documentary triage: 46 directories with `SKILL.md` confirmed; see [docs/skills/FINAL_AUDIT.md](docs/skills/FINAL_AUDIT.md).
+- Logical runtime architecture v1 drafted in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Confirmed direction
 - Personal AI assistant beyond a conventional chatbot.
@@ -15,27 +19,23 @@
 - Learning through research, validation, user clarification and evaluated workflows.
 - Explicit approval for sensitive actions; sandboxed self-improvement.
 
-## Environment constraints
-Development PC reported: Intel i5 first generation, 8 GB DDR3 RAM, HDD. Ollama, VS Code and Codex CLI are available. Avoid requiring large local models. Cloud hosting and model costs are not selected.
+## Architecture baseline proposed
+- Modular monolith before microservices.
+- Model proposes; runtime enforces permissions, budgets and execution.
+- Bounded orchestrator and agents with explicit contracts.
+- Tool allowlist, least privilege and action-specific approvals.
+- Separate sessions, personal memory, knowledge, tasks and audit records.
+- First MVP: text conversation, one model provider, one safe READ tool, policy checks, logs and tests.
+- Voice, scheduled jobs, multi-agent parallelism, vector database and self-modifying code are later phases.
 
-## Next milestone: OpenJarvis audit
-1. Inspect source tree, docs, dependencies and license.
-2. Identify working features, partial features, placeholders and broken paths.
-3. Run existing tests/startup checks where practical.
-4. Map reusable components to N.E.X.U.S. requirements.
-5. Produce AUDIT_REPORT.md and a minimal phased implementation proposal.
-6. Make no broad code changes until the user reviews and approves the audit.
+## Environment constraints
+Development PC reported: Intel i5 first generation, 8 GB DDR3 RAM, HDD. Avoid requiring large local models. Cloud hosting and model costs are not selected.
+
+## Next milestone
+Define and approve the smallest executable MVP. Before implementation, audit the actual codebase/OpenJarvis intended for reuse, confirm stack and dependencies, then write task contracts and acceptance tests.
 
 ## Open risks
-- OpenJarvis version, capabilities and license are not yet verified.
+- OpenJarvis version, capabilities and license still need verification before reuse.
 - Cloud model usage can create recurring costs; background jobs need budgets.
 - Learning must not be misrepresented as permanent model-weight training.
 - Public repository: never commit secrets, private conversation exports, credentials or personal records.
-
-## Audit checklist
-- [ ] Stack and repository structure documented.
-- [ ] License and attribution checked.
-- [ ] Functional code separated from placeholders.
-- [ ] Tests and run instructions verified.
-- [ ] Reuse/gap analysis completed.
-- [ ] Architecture and first sprint proposed.
