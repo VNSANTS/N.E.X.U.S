@@ -45,7 +45,7 @@ Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesq
 
 ## Próximo passo
 
-Auditar a versão local do OpenJarvis antes de decidir o que pode ser reaproveitado. A auditoria deve verificar código real, dependências, licença, testes e compatibilidade; nenhuma migração ou alteração ampla deve ocorrer antes da revisão do resultado.
+Revisar a arquitetura v1 e definir o MVP executável. Antes da implementação, auditar o código-base/OpenJarvis que se pretende reaproveitar, confirmar stack, dependências e licença, e então detalhar contratos e testes de aceitação.
 
 ## Ambiente de desenvolvimento
 
