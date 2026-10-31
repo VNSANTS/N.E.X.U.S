@@ -58,3 +58,7 @@ A decisão mais recente é uma arquitetura híbrida para um único usuário:
 - **Limite local:** i5 de primeira geração, 8 GB RAM e HDD; processamento em lotes pequenos, sem modelos locais grandes como requisito.
 
 Esta é uma decisão de arquitetura/documentação, não uma implementação. Ver a revisão v2 em ARCHITECTURE.md e D-014 em DECISIONS.md.
+
+
+## Atualização — modelo local auxiliar
+Foi aceita a direção de usar, no PC, um modelo local pequeno e substituível como auxiliar do aprendizado: resumir, classificar, extrair candidatos e organizar documentos. Ele não será considerado fonte de verdade nem poderá validar sozinho suas próprias conclusões. O pipeline preservará fontes, evidências, incertezas e revisão. Tarefas difíceis poderão usar a IA na nuvem dentro das regras de privacidade e cotas. A viabilidade de modelos no i5 de primeira geração/8 GB RAM ainda precisa ser medida no PC; não há modelo escolhido ou instalado. Ver D-015 e a revisão v3 de ARCHITECTURE.md.
