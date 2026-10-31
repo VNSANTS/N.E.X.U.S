@@ -28,3 +28,9 @@ Record decisions and status. Proposed options are not final until explicitly acc
 
 ## D-009 — Public repository
 **Status: accepted temporarily.** Repository is public for now. Do not commit secrets or private user data. Revisit visibility before adding sensitive project artifacts.
+
+## D-010 — Runtime architecture v1
+**Status: proposed baseline for user review.** Start with a cloud-first modular monolith. The model interprets and proposes; deterministic runtime components enforce task states, budgets, permissions, tool allowlists and approvals. Keep agents as bounded internal roles initially, not independent privileged processes. Separate sessions, personal memory, sourced knowledge, tasks/approvals and operational audit data. Do not add vector search, always-on standby, voice, autonomous jobs or microservices to the first MVP without evidence that they are needed. See [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## D-011 — Initial execution scope
+**Status: proposed baseline for user review.** First vertical slice: text interface, one approved model provider, bounded orchestrator, one safe READ tool, policy checks, structured logs and automated safety tests. No sensitive external actions. Confirm the actual stack and reuse candidates after the codebase audit.
