@@ -5,6 +5,7 @@ from .engine import LearningEngine
 from .ingestion import DocumentIngestor
 from .providers.mock import MockProvider
 from .runtime import TaskRuntime
+from .crossref import CrossrefClient
 
 
 def main():
@@ -48,6 +49,10 @@ def main():
     p = sub.add_parser("document-search")
     p.add_argument("query")
     p.add_argument("--limit", type=int, default=10)
+    p = sub.add_parser("research-search", help="Search scholarly metadata through Crossref")
+    p.add_argument("query")
+    p.add_argument("--limit", type=int, default=10)
+    p.add_argument("--mailto", default=None, help="Optional contact email for Crossref polite pool")
     args = parser.parse_args()
     engine = LearningEngine(args.db)
     ingestor = DocumentIngestor(engine) if args.command in {"ingest-file", "document-search"} else None
@@ -80,6 +85,8 @@ def main():
         result = ingestor.ingest_file(args.path)
     elif args.command == "document-search":
         result = ingestor.search(args.query, args.limit)
+    elif args.command == "research-search":
+        result = CrossrefClient(mailto=args.mailto).search(args.query, args.limit)
     elif args.command == "runtime-once":
         runtime = TaskRuntime(engine, MockProvider())
         result = runtime.run(runtime.submit(args.message))
