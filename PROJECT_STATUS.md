@@ -97,3 +97,16 @@ Adicionados ao pacote local:
 - `.gitignore` para bancos locais e artefatos Python.
 
 **Verificação:** o workflow foi configurado, mas o resultado de execução do GitHub Actions ainda precisa ser conferido. Não afirmar que os testes passaram até haver resultado verde. O código também ainda precisa ser executado no PC local.
+
+
+## Ingestão de documentos — protótipo inicial
+
+Adicionado `nexus_learning/ingestion.py`:
+- ingestão de texto/Markdown por API Python e CLI;
+- limite padrão de 1 MB e lista explícita de extensões;
+- normalização básica, hash SHA-256 e detecção de conteúdo duplicado;
+- divisão em trechos com índices e posições no texto;
+- busca lexical simples com referência à fonte original;
+- testes para proveniência, duplicatas, limites e configuração de trechos.
+
+**Limites:** não lê PDF/DOCX, não navega na web, não faz OCR, não extrai afirmações automaticamente e não usa embeddings/LLM. A busca é lexical. Os testes foram escritos, mas ainda precisam de execução confirmada no GitHub Actions e no PC local.
