@@ -66,3 +66,18 @@ Foi aceita a direção de usar, no PC, um modelo local pequeno e substituível c
 
 ## Pesquisa aplicada à arquitetura de aprendizado
 Criado `docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md`, com síntese de literatura, distinção entre consenso/debate/proposta de engenharia, arquitetura em camadas, estados de conhecimento, proteções contra aprendizagem incorreta, métricas e fases compatíveis com hardware limitado. O documento é especificação/proposta; não significa que o motor de aprendizado já foi implementado.
+
+
+## Primeiro código do motor de aprendizado
+
+**Implementado no repositório (núcleo inicial):**
+- pacote Python `nexus_learning` com persistência SQLite;
+- três categorias de memória;
+- registro de fontes e afirmações candidatas vinculadas a fontes;
+- estados de validação com justificativa obrigatória e confiança explícita para validação;
+- fila de tarefas com prioridade heurística explicável;
+- testes `unittest` cobrindo separação de memória, validação explícita e ordenação de tarefas.
+
+**Ainda não verificado neste ambiente:** execução dos testes, compatibilidade com a versão Python instalada no PC e comportamento sob uso prolongado. O código foi enviado ao GitHub, mas não foi executado no computador do usuário.
+
+**Ainda não implementado:** ingestão automática de arquivos/web, comparação semântica avançada, consolidação em background, LLM local/nuvem, API, interface, autenticação, worker, sincronização e deploy. Não chamar o sistema de assistente funcional completo nesta etapa.
