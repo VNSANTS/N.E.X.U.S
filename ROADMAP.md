@@ -28,3 +28,17 @@ Evaluate changes against fixed tests, use isolated branches/sandboxes, present d
 
 ## Delivery rules
 Prefer a small working vertical slice. Avoid premature microservices. Test and document every change. State expected costs before adding paid services. Never change production behavior or permissions without approval.
+
+
+---
+
+## Revisão de implantação — prioridade cloud core e PC worker
+
+Esta divisão atualiza a ordem de implementação acima:
+
+1. **Cloud core primeiro:** aplicação leve, autenticação de usuário único, conversa textual, provedor de IA com camada substituível, memória essencial, fila, permissões e cache compacto. O assistente básico deve continuar acessível com o PC desligado.
+2. **PC worker depois:** processo local leve que inicia conexão autenticada de saída, recebe somente tarefas permitidas e envia heartbeat. Primeiro teste: receber um documento de exemplo, extrair texto, salvar localmente e devolver metadados/resumo.
+3. **Aprendizado pesado no PC:** arquivo de fontes, ingestão, limpeza, deduplicação, indexação e comparação de evidências em lotes pequenos. Embeddings ficam opcionais.
+4. **Sincronização:** somente conhecimento revisado/validado e resumos necessários são sincronizados para o cache da nuvem. Conflitos devem ser versionados; nunca sobrescrever silenciosamente.
+
+Se o PC estiver desligado, tarefas locais ficam aguardando. Não expor shell remoto, não abrir portas públicas e não exigir modelos grandes no PC atual. A meta é custo obrigatório zero, sem cartão/cobrança automática; validar cotas, privacidade e disponibilidade dos serviços gratuitos antes de escolhê-los.
