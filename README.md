@@ -66,3 +66,20 @@ Foi iniciado `nexus_learning/`, um núcleo Python baseado apenas na biblioteca p
 - testes automatizados iniciais em `tests/test_learning_engine.py`.
 
 Este módulo é uma primeira base local. Ainda não inclui API, interface, pesquisa automática na web, integração com modelos de IA, sincronização cloud/PC ou execução contínua. Consulte [a arquitetura de aprendizado](docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md).
+
+
+### Uso local do protótipo
+
+Com Python 3 instalado, na raiz do repositório:
+
+```bash
+python -m nexus_learning init
+python -m nexus_learning stats
+python -m nexus_learning memory-add episodic "Primeiro teste" "Descrição do evento"
+python -m nexus_learning memory-list
+python -m nexus_learning task-add "Estudar memória" --relevance 0.9 --uncertainty 0.8
+python -m nexus_learning task-list
+python -m unittest discover -s tests -v
+```
+
+O banco padrão é `nexus_learning.db` no diretório atual. Não coloque dados sensíveis no banco de teste nem envie o arquivo do banco ao GitHub.
