@@ -2,6 +2,7 @@
 import argparse
 import json
 from .engine import LearningEngine
+from .ingestion import DocumentIngestor
 
 
 def main():
@@ -38,8 +39,14 @@ def main():
         p.add_argument("--" + field, type=float, default=0)
     sub.add_parser("task-list")
     sub.add_parser("consolidate")
+    p = sub.add_parser("ingest-file")
+    p.add_argument("path")
+    p = sub.add_parser("document-search")
+    p.add_argument("query")
+    p.add_argument("--limit", type=int, default=10)
     args = parser.parse_args()
     engine = LearningEngine(args.db)
+    ingestor = DocumentIngestor(engine) if args.command in {"ingest-file", "document-search"} else None
 
     if args.command == "init":
         result = {"initialized": True, "database": args.db}
@@ -65,6 +72,10 @@ def main():
         result = {"id": engine.add_task(args.title, **{k: getattr(args, k) for k in fields})}
     elif args.command == "task-list":
         result = engine.prioritized_tasks()
+    elif args.command == "ingest-file":
+        result = ingestor.ingest_file(args.path)
+    elif args.command == "document-search":
+        result = ingestor.search(args.query, args.limit)
     else:
         result = engine.consolidation_report()
     print(json.dumps(result, ensure_ascii=False, indent=2))
