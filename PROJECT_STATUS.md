@@ -62,3 +62,7 @@ Esta é uma decisão de arquitetura/documentação, não uma implementação. Ve
 
 ## Atualização — modelo local auxiliar
 Foi aceita a direção de usar, no PC, um modelo local pequeno e substituível como auxiliar do aprendizado: resumir, classificar, extrair candidatos e organizar documentos. Ele não será considerado fonte de verdade nem poderá validar sozinho suas próprias conclusões. O pipeline preservará fontes, evidências, incertezas e revisão. Tarefas difíceis poderão usar a IA na nuvem dentro das regras de privacidade e cotas. A viabilidade de modelos no i5 de primeira geração/8 GB RAM ainda precisa ser medida no PC; não há modelo escolhido ou instalado. Ver D-015 e a revisão v3 de ARCHITECTURE.md.
+
+
+## Pesquisa aplicada à arquitetura de aprendizado
+Criado `docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md`, com síntese de literatura, distinção entre consenso/debate/proposta de engenharia, arquitetura em camadas, estados de conhecimento, proteções contra aprendizagem incorreta, métricas e fases compatíveis com hardware limitado. O documento é especificação/proposta; não significa que o motor de aprendizado já foi implementado.
