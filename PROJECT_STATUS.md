@@ -110,3 +110,15 @@ Adicionado `nexus_learning/ingestion.py`:
 - testes para proveniência, duplicatas, limites e configuração de trechos.
 
 **Limites:** não lê PDF/DOCX, não navega na web, não faz OCR, não extrai afirmações automaticamente e não usa embeddings/LLM. A busca é lexical. Os testes foram escritos, mas ainda precisam de execução confirmada no GitHub Actions e no PC local.
+
+
+## Runtime controlado — protótipo adicionado
+
+- `nexus_learning/policy.py`: autorização fail-closed e allowlist para classes READ, WRITE_REVERSIBLE e SENSITIVE.
+- `nexus_learning/providers/`: contrato independente de provedor e MockProvider offline.
+- `nexus_learning/runtime.py`: ciclo de tarefa conversacional persistido em SQLite, com eventos e registro de falha.
+- `runtime-once`: smoke test manual usando o provedor simulado.
+- `tests/test_runtime.py`: testes para política e runtime.
+- `CODEX_HANDOFF.md`: instruções e critérios para concluir integração local via Codex CLI.
+
+**Ainda não implementado:** adaptador real de IA, API HTTP, autenticação, execução de ferramentas, worker cloud/PC, sincronização, agendamento, notificações e implantação. O MockProvider não é um modelo de IA. Testes do runtime precisam de confirmação pelo CI após a última alteração.
