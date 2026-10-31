@@ -46,3 +46,7 @@ Se o PC estiver desligado, tarefas locais ficam aguardando. Não expor shell rem
 
 ## Revisão — modelo local como auxiliar de aprendizado
 No PC worker, adicionar um adaptador opcional para modelo local pequeno/quantizado. Começar com testes de viabilidade (RAM, velocidade, estabilidade e qualidade) antes de escolher modelo. Usá-lo para resumo, classificação, extração de candidatos e organização de documentos; nunca para validar sozinho conhecimento. Preservar fontes e incertezas, aplicar verificações e encaminhar casos complexos à nuvem quando permitido. O worker deve continuar funcionando sem modelo local. Trocar o modelo deve ser possível sem alterar o restante da arquitetura.
+
+
+## Nova frente — motor de aprendizado inspirado na neurociência
+Consultar `docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md`. A implementação deve começar por proveniência, estados de conhecimento, memórias episódica/semântica/procedural, avaliação e testes — antes de adicionar LLM local. O documento é uma proposta fundamentada em literatura, não implementação. Prioridade: Fase 0 (fundamentos) e Fase 1 (memória funcional), mantendo o PC fraco e o custo obrigatório zero como restrições.
