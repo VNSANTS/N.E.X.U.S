@@ -63,3 +63,8 @@ Próximas tarefas técnicas:
 4. Adicionar comparação de afirmações e detecção determinística de duplicatas.
 5. Criar consolidação em lote com relatório de alterações, sem promoção automática.
 6. Integrar adaptadores de modelos apenas após o núcleo ser testado.
+
+
+## Próximo marco — validação e consolidação assistida
+
+O núcleo agora tem pesquisa/arquivamento de memórias, consulta e revisão de afirmações, fontes/excertos, relatório de possíveis duplicatas e itens sem evidência, auditoria, CLI e testes em CI. Antes de conectar modelos ou ativar tarefas autônomas, confirmar o workflow do GitHub Actions e executar o pacote no PC. Depois: ingestão de documentos segura, deduplicação melhor, revisão de conflitos e consolidação com diff/exportação.
