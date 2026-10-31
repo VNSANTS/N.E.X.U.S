@@ -81,3 +81,19 @@ Criado `docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md`, com síntese de literatura,
 **Ainda não verificado neste ambiente:** execução dos testes, compatibilidade com a versão Python instalada no PC e comportamento sob uso prolongado. O código foi enviado ao GitHub, mas não foi executado no computador do usuário.
 
 **Ainda não implementado:** ingestão automática de arquivos/web, comparação semântica avançada, consolidação em background, LLM local/nuvem, API, interface, autenticação, worker, sincronização e deploy. Não chamar o sistema de assistente funcional completo nesta etapa.
+
+
+## Expansão do núcleo executável — 2026-10-31
+
+Adicionados ao pacote local:
+- pesquisa e arquivamento de memórias;
+- consulta de afirmações e suas fontes/excertos;
+- revisão de estado com justificativa obrigatória;
+- relatório de consolidação que detecta candidatos a duplicata e afirmações sem fonte, sem alterar registros;
+- estados de tarefas e log de auditoria;
+- interface CLI ampliada;
+- testes de regressão adicionais;
+- workflow do GitHub Actions para executar testes em Python 3.11 e 3.12;
+- `.gitignore` para bancos locais e artefatos Python.
+
+**Verificação:** o workflow foi configurado, mas o resultado de execução do GitHub Actions ainda precisa ser conferido. Não afirmar que os testes passaram até haver resultado verde. O código também ainda precisa ser executado no PC local.
