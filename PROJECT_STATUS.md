@@ -46,3 +46,15 @@ Validate the local OpenJarvis checkout against the audited upstream commit, run 
 - OpenJarvis security capabilities require deliberate profile/configuration; do not rely on permissive defaults.
 - Cloud inference and hosting can create recurring costs.
 - Public repository: never commit secrets, private conversation exports, credentials or personal records.
+
+
+## Atualização de arquitetura — cloud core + PC worker
+A decisão mais recente é uma arquitetura híbrida para um único usuário:
+- **Nuvem:** núcleo leve, interface, API, autenticação, conversas, memória essencial, orquestração, fila e cache compacto de conhecimento validado. Deve continuar acessível com o PC desligado.
+- **PC:** armazenamento ampliado e pipeline pesado de aprendizado/pesquisa (ingestão, extração, limpeza, deduplicação, indexação e comparação de evidências).
+- **PC offline:** tarefas locais aguardam em fila; a nuvem continua disponível com contexto mínimo e conhecimento validado sincronizado.
+- **Segurança:** worker inicia conexão autenticada de saída; sem shell remoto ou porta pública.
+- **Custo:** meta de R$ 0 obrigatório, usando planos gratuitos e sem cobrança automática, sujeito a cotas e termos.
+- **Limite local:** i5 de primeira geração, 8 GB RAM e HDD; processamento em lotes pequenos, sem modelos locais grandes como requisito.
+
+Esta é uma decisão de arquitetura/documentação, não uma implementação. Ver a revisão v2 em ARCHITECTURE.md e D-014 em DECISIONS.md.
