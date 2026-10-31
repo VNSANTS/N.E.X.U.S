@@ -2,6 +2,7 @@
 import json
 import sqlite3
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -57,11 +58,19 @@ class LearningEngine:
             CREATE INDEX IF NOT EXISTS idx_claim_state ON claims(state);
             CREATE INDEX IF NOT EXISTS idx_task_status ON tasks(status);
             """)
+    @contextmanager
     def db(self):
         c = sqlite3.connect(self.path)
         c.row_factory = sqlite3.Row
         c.execute("PRAGMA foreign_keys=ON")
-        return c
+        try:
+            yield c
+            c.commit()
+        except Exception:
+            c.rollback()
+            raise
+        finally:
+            c.close()
 
     @staticmethod
     def _metadata(value):
