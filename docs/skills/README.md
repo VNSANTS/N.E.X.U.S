@@ -1,17 +1,23 @@
 # Skills — N.E.X.U.S.
 
-Este diretório contém o catálogo de pesquisa e as regras de seleção de Agent Skills para o desenvolvimento do N.E.X.U.S.
+Este diretório contém o catálogo de pesquisa, o inventário instalado e as decisões de auditoria de Agent Skills para o desenvolvimento do N.E.X.U.S.
+
+## Documentos
+
+- [Catálogo de candidatos](SKILLS_CATALOG.md)
+- [Relatório de instalação anterior](INSTALLATION_AUDIT.md)
+- [Auditoria consolidada e decisões](FINAL_AUDIT.md)
 
 ## Para o Codex
 
-Antes de escolher ou instalar uma skill:
-
-1. Leia [SKILLS_CATALOG.md](SKILLS_CATALOG.md).
-2. Trate todas as entradas como candidatas não aprovadas.
-3. Verifique repositório, caminho, licença, conteúdo e dependências diretamente na origem.
-4. Faça uma auditoria de segurança sem executar scripts na primeira etapa.
-5. Apresente ao usuário uma lista curta com evidências, riscos e justificativa.
-6. Aguarde autorização explícita antes de instalar, copiar ou ativar qualquer skill.
+1. Consulte o catálogo e a auditoria consolidada antes de adicionar novas skills.
+2. As 46 skills atualmente instaladas estão em `.agents/skills/`; a auditoria registra a origem e as ressalvas conhecidas.
+3. Não execute scripts de skills desconhecidas durante a inspeção.
+4. Antes de incorporar novos pacotes, confira caminho, licença, conteúdo integral, scripts, dependências, permissões e comportamento de rede.
+5. Skills que exigem scripts, referências, CLIs ou servidores devem ser instaladas com todos os arquivos necessários; não copie somente o `SKILL.md` se isso deixar o pacote incompleto.
+6. Não envie dados privados, áudio, credenciais ou arquivos do usuário a serviços externos sem autorização específica.
+7. Não execute servidores MCP desconhecidos durante scanners.
+8. Preserve aprovação humana específica para ações sensíveis.
 
 ## Distinção importante
 
@@ -21,4 +27,6 @@ Antes de escolher ou instalar uma skill:
 
 Uma skill de desenvolvimento não implementa automaticamente uma capacidade no produto.
 
-Nenhuma skill listada no catálogo foi instalada por este documento.
+## Aprovação
+
+O usuário autorizou a implementação das candidatas restantes do catálogo original. Essa autorização cobre a triagem e incorporação dos itens adequados, não elimina as verificações de segurança, licença, compatibilidade, privacidade ou os gates específicos de ações sensíveis. Novas candidatas fora do escopo catalogado devem ser avaliadas antes de serem adicionadas.
