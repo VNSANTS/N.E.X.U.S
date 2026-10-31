@@ -3,6 +3,8 @@ import argparse
 import json
 from .engine import LearningEngine
 from .ingestion import DocumentIngestor
+from .providers.mock import MockProvider
+from .runtime import TaskRuntime
 
 
 def main():
@@ -39,6 +41,8 @@ def main():
         p.add_argument("--" + field, type=float, default=0)
     sub.add_parser("task-list")
     sub.add_parser("consolidate")
+    p = sub.add_parser("runtime-once", help="Run one offline test conversation")
+    p.add_argument("message")
     p = sub.add_parser("ingest-file")
     p.add_argument("path")
     p = sub.add_parser("document-search")
@@ -76,6 +80,9 @@ def main():
         result = ingestor.ingest_file(args.path)
     elif args.command == "document-search":
         result = ingestor.search(args.query, args.limit)
+    elif args.command == "runtime-once":
+        runtime = TaskRuntime(engine, MockProvider())
+        result = runtime.run(runtime.submit(args.message))
     else:
         result = engine.consolidation_report()
     print(json.dumps(result, ensure_ascii=False, indent=2))
