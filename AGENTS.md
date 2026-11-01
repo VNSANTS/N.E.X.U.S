@@ -35,3 +35,15 @@ Antes de trabalhar no projeto, leia:
 ## Segurança e autonomia
 
 Ações como envio de mensagens em nome do usuário, compras, movimentações financeiras, exclusões, alterações de permissões e deploys de produção exigem aprovação específica do usuário. Nenhum agente deve ampliar seus próprios privilégios.
+
+
+## Coordenação multiagente do Codex
+
+- Para tarefas substanciais, o agente principal deve atuar como coordenador executivo: entender o objetivo, decompor o trabalho, delegar tarefas independentes, integrar resultados e validar o conjunto.
+- Use os agentes em `.codex/agents/`: `orchestrator`, `architect`, `developer`, `researcher`, `tester` e `reviewer`.
+- Não chame todos os agentes em tarefas pequenas. Delegue quando houver trabalho realmente independente e critério de aceite claro.
+- Não permita que agentes editem os mesmos arquivos em paralelo. O agente principal integra as alterações e executa a validação final.
+- Antes de implementar mudanças estruturais, peça análise ao `architect`; para APIs, tecnologias, licenças, custos ou compatibilidade que possam ter mudado, use `researcher`; após mudanças, use `tester` e, em alterações relevantes, `reviewer`.
+- Evite perguntas sobre decisões triviais. Adote soluções reversíveis e de baixo custo, documentando hipóteses. Provedor remoto, credenciais, hospedagem, política de retenção, gastos, deploy e ações irreversíveis permanecem sob decisão/autorização humana.
+- Se os agentes personalizados não estiverem carregados, não finja delegação: diagnostique e continue de forma sequencial quando for seguro.
+- O Codex é ferramenta de engenharia. A aplicação final, runtime e interface pertencem ao N.E.X.U.S. e devem funcionar independentemente do Codex.
