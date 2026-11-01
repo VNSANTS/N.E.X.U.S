@@ -11,6 +11,10 @@ RUNTIME_STATES = {"received", "planned", "awaiting_approval", "running",
 class TaskRuntime:
     def __init__(self, engine: LearningEngine, provider, policy=None,
                  max_input_chars=12000, max_output_chars=16000):
+        if not isinstance(max_input_chars, int) or max_input_chars < 1:
+            raise ValueError("max_input_chars must be a positive integer")
+        if not isinstance(max_output_chars, int) or max_output_chars < 1:
+            raise ValueError("max_output_chars must be a positive integer")
         self.engine = engine
         self.provider = provider
         self.policy = policy or PolicyEngine()
@@ -50,13 +54,26 @@ class TaskRuntime:
 
     def run(self, task_id):
         with self.engine.db() as c:
-            task = c.execute("SELECT * FROM runtime_tasks WHERE id=?", (task_id,)).fetchone()
-            if not task:
-                raise KeyError(task_id)
-            if task["state"] not in {"received", "planned"}:
-                raise ValueError("task is not runnable from its current state")
-            c.execute("UPDATE runtime_tasks SET state='running',updated_at=? WHERE id=?",
-                      (now(), task_id))
+            # Acquire the write lock before claiming the task. The conditional
+            # update ensures only one caller can move it into the running state.
+            c.execute("BEGIN IMMEDIATE")
+            claimed = c.execute(
+                """UPDATE runtime_tasks SET state='running',updated_at=?
+                   WHERE id=? AND state IN ('received','planned')""",
+                (now(), task_id),
+            )
+            if claimed.rowcount != 1:
+                task = c.execute(
+                    "SELECT state FROM runtime_tasks WHERE id=?", (task_id,)
+                ).fetchone()
+                if not task:
+                    raise KeyError(task_id)
+                raise ValueError(
+                    "task is not runnable from its current state: " + task["state"]
+                )
+            task = c.execute(
+                "SELECT user_input FROM runtime_tasks WHERE id=?", (task_id,)
+            ).fetchone()
             self._event(c, task_id, "task.started")
             user_input = task["user_input"]
         try:
@@ -68,6 +85,10 @@ class TaskRuntime:
                 max_tokens=800, timeout=30)
             if not isinstance(response.text, str):
                 raise TypeError("provider returned a non-text response")
+            if not isinstance(response.provider, str) or not response.provider.strip():
+                raise TypeError("provider returned an invalid provider identifier")
+            if not isinstance(response.model, str) or not response.model.strip():
+                raise TypeError("provider returned an invalid model identifier")
             output = response.text[:self.max_output_chars]
             with self.engine.db() as c:
                 c.execute("""UPDATE runtime_tasks SET state='completed',result=?,
@@ -77,9 +98,12 @@ class TaskRuntime:
                             {"provider": response.provider, "model": response.model})
             return self.get(task_id)
         except Exception as exc:
+            # Exception messages can contain request URLs, headers or credentials.
+            # Persist only a stable, non-sensitive summary; keep the type for diagnosis.
+            safe_error = f"{type(exc).__name__}: provider execution failed"
             with self.engine.db() as c:
                 c.execute("UPDATE runtime_tasks SET state='failed',error=?,updated_at=? WHERE id=?",
-                          (str(exc)[:1000], now(), task_id))
+                          (safe_error, now(), task_id))
                 self._event(c, task_id, "task.failed", {"error_type": type(exc).__name__})
             return self.get(task_id)
 
