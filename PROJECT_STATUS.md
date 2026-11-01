@@ -139,3 +139,18 @@ Correções gravadas nesta revisão:
 **CI confirmado:** a execução [41255344883](https://github.com/VNSANTS/N.E.X.U.S/actions/runs/41255344883) passou em Python 3.11 e 3.12, incluindo compileall e toda a suíte unittest, no commit de código `59356b7674ee97b9c2357871d2221e35f7e53b59`. O checkout e os testes no computador local ainda precisam ser executados.
 
 O backlog operacional foi criado em `docs/IMPLEMENTATION_BACKLOG.md`. O próximo bloqueio técnico para a primeira conversa com IA real é escolher o provedor, protocolo, armazenamento de credenciais e limites. API/autenticação e hospedagem continuam decisões posteriores, não implementações presumidas.
+
+
+## Cognitive Adaptation Engine — 2026-11-01 (branch de implementação)
+
+Implementação inicial do CAE adicionada em branch isolada:
+- módulo `nexus_learning/cognitive.py` com perfil SQLite;
+- ativação explícita, desativado por padrão;
+- preferências de interação somente quando definidas pelo usuário;
+- padrões cognitivos como propostas, exigindo confirmação/rejeição humana;
+- contexto curto e revisável integrado opcionalmente ao `TaskRuntime`;
+- comandos CLI para controlar o perfil;
+- testes unitários de consentimento, revisão e integração do contexto;
+- documentação em `docs/COGNITIVE_ADAPTATION.md`.
+
+**Limites:** não é treinamento de modelo, diagnóstico psicológico ou perfilamento automático. A integração foi feita com a interface de runtime existente, que ainda usa MockProvider. CI e testes locais desta branch ainda precisam ser executados; não considerar a implementação validada até o workflow ficar verde.
