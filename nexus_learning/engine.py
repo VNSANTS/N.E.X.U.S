@@ -27,7 +27,18 @@ class LearningEngine:
 
     def __init__(self, path="nexus_learning.db"):
         self.path = str(path)
-        if self.path != ":memory:":
+        self._sqlite_uri = self.path == ":memory:"
+        self._database = (
+            f"file:nexus_{uuid.uuid4().hex}?mode=memory&cache=shared"
+            if self._sqlite_uri else self.path
+        )
+        # Keep one anchor connection alive so shared in-memory SQLite databases
+        # survive between the short-lived connections opened by db().
+        self._keeper = (
+            sqlite3.connect(self._database, uri=True, check_same_thread=False, timeout=10)
+            if self._sqlite_uri else None
+        )
+        if not self._sqlite_uri:
             Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         with self.db() as c:
             c.executescript("""
@@ -60,7 +71,7 @@ class LearningEngine:
             """)
     @contextmanager
     def db(self):
-        c = sqlite3.connect(self.path)
+        c = sqlite3.connect(self._database, uri=self._sqlite_uri, timeout=10)
         c.row_factory = sqlite3.Row
         c.execute("PRAGMA foreign_keys=ON")
         try:
@@ -71,6 +82,12 @@ class LearningEngine:
             raise
         finally:
             c.close()
+
+    def close(self):
+        """Close the anchor connection for an in-memory database, if present."""
+        if self._keeper is not None:
+            self._keeper.close()
+            self._keeper = None
 
     @staticmethod
     def _metadata(value):
