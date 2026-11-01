@@ -1,25 +1,35 @@
 # Preparação multiagente do Codex para o N.E.X.U.S.
 
-Este diretório guarda a configuração versionada dos agentes personalizados usados no desenvolvimento do N.E.X.U.S. Ela não faz parte do runtime da aplicação final.
+Este diretório documenta a preparação do ambiente de engenharia do N.E.X.U.S. Ele não faz parte do runtime da aplicação final.
 
-## Agentes
-- `orchestrator`: coordena planejamento, delegação, integração e validação.
-- `architect`: análise de arquitetura.
+## Equipe personalizada
+
+Os agentes versionados em `.codex/agents/`:
+
+- `orchestrator`: coordenação, decomposição e integração.
+- `architect`: arquitetura e impacto.
 - `developer`: implementação delimitada.
 - `researcher`: pesquisa técnica e documentação oficial.
-- `tester`: testes e reprodução de defeitos.
-- `reviewer`: revisão independente.
+- `tester`: testes e reprodução de falhas.
+- `reviewer`: revisão independente e segurança.
 
-## Instalação
-A configuração do projeto fica em `.codex/agents/`. O Codex também permite agentes pessoais em `~/.codex/agents/`. Para instalar globalmente no Windows, copie os seis arquivos TOML para `%USERPROFILE%\.codex\agents\`.
+A configuração de projeto em `.codex/config.toml` ativa as ferramentas multiagente e define um limite de até quatro threads simultâneas. O Codex só carrega a configuração local quando o repositório é confiável. O limite não garante que todas as vagas serão usadas e agentes consomem uso adicional.
 
-Use [SETUP-PROMPT.md](./SETUP-PROMPT.md): cole o prompt no Codex CLI com o repositório aberto na raiz. Ele orienta a verificar o ambiente, fazer backup, instalar os agentes, ajustar com segurança a concorrência e validar a configuração.
+## Instalação de uma só vez
 
-## Limites e segurança
-- Subagentes herdam autenticação, provedor, permissões e ferramentas da sessão principal. Não criam cotas independentes nem usam outro provedor.
-- O número configurado é um limite máximo, não garantia de paralelismo ou capacidade disponível.
-- A instalação não ativa um orquestrador persistente automaticamente. Em cada tarefa, peça ao Codex para atuar como coordenador ou iniciar pelo agente `orchestrator`.
-- Não coloque tokens, senhas ou chaves de API neste repositório.
-- Não permita deploy, publicação, exclusões destrutivas ou gastos sem confirmação humana.
+Abra `VNSANTS/N.E.X.U.S` na raiz pelo VS Code, inicie o Codex CLI e cole o conteúdo completo de [SETUP-PROMPT.md](./SETUP-PROMPT.md).
 
-Documentação oficial: [Subagentes](https://learn.chatgpt.com/docs/agent-configuration/subagents) e [Configuração](https://learn.chatgpt.com/docs/config-file/config-reference).
+O prompt mestre prepara o ambiente, confere o checkout e as configurações, lê a documentação do N.E.X.U.S., executa testes, corrige problemas locais seguros e avança tarefas desbloqueadas do backlog. Não faz push, deploy, não instala provedores externos e não modifica o runtime sem necessidade.
+
+## Segurança e limites
+
+- Os subagentes herdam autenticação, provedor, permissões e ferramentas da sessão principal.
+- Os perfis não criam cotas independentes nem permitem contornar limites do plano ChatGPT.
+- Não coloque tokens, senhas ou chaves de API no repositório.
+- Não permita deploy, publicação, exclusões destrutivas ou gastos sem aprovação humana.
+- A preparação do Codex não significa que o N.E.X.U.S. já tenha interface, API ou runtime remoto. Essas partes precisam ser implementadas e testadas como produto independente.
+
+Documentação oficial:
+- [Subagentes](https://learn.chatgpt.com/docs/agent-configuration/subagents)
+- [AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
+- [Configuração por projeto](https://learn.chatgpt.com/docs/config-file/config-basic)
