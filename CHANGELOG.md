@@ -44,3 +44,22 @@ CI confirmado: execução [41255344883](https://github.com/VNSANTS/N.E.X.U.S/act
 - Esta é infraestrutura de desenvolvimento do Codex, não funcionalidade do runtime N.E.X.U.S.
 - Os agentes herdam autenticação, provedor e permissões da sessão principal.
 - Nenhum provedor externo, credencial, serviço pago, publicação ou deploy foi configurado.
+
+
+## 2026-11-01 — Cognitive Adaptation Engine (CAE)
+
+### Adicionado
+- Perfil cognitivo opt-in com SQLite, desativado por padrão.
+- Preferências explícitas de comprimento, estilo de explicação, nível de desafio e estilo de discordância.
+- Padrões de raciocínio propostos e só utilizados após confirmação do usuário.
+- Hook opcional no TaskRuntime para incluir contexto de adaptação no prompt.
+- Comandos CLI de ativação, consulta, definição de preferências e revisão de padrões.
+- Testes de unidade e integração e documentação específica.
+
+### Segurança e limites
+- Sem ingestão automática de transcrições ou diagnóstico de personalidade/inteligência.
+- Preferências não podem ser gravadas por inferência do modelo.
+- Padrões rejeitados ou não revisados não entram no contexto.
+- Desativar o CAE interrompe a injeção de contexto sem apagar o perfil.
+- Integração atual testável apenas com o MockProvider; provider real permanece pendente.
+- CI ainda precisa confirmar esta branch.
