@@ -157,3 +157,12 @@ Implementação inicial do CAE adicionada em branch isolada:
 
 
 **CI confirmado para o CAE:** execução `41273441641` passou em Python 3.11 e 3.12, incluindo compilação dos módulos e toda a suíte `unittest`. Testes no PC local ainda pendentes.
+
+
+## Permissões e autonomia — 2026-11-01 (branch de implementação)
+
+Adicionado protótipo `nexus_learning/permissions.py` com scopes para capacidades comuns, concessão/revogação e auditoria, além de documentação e testes. O objetivo é oferecer autorização ampla e explícita para módulos comuns do assistente pessoal, sem confundir scopes declarados com integrações reais.
+
+**Ainda incompleto e não validado:** o PermissionManager não está integrado ao dispatcher/runtime. A aprovação de alto impacto ainda é representada por um booleano de protótipo e precisa ser substituída por autorização de uso único, vinculada à ação exata, emitida por canal confiável e protegida contra replay. Até isso existir, operações de alto impacto devem permanecer bloqueadas. O Codex CLI recebeu instruções detalhadas em `CODEX_HANDOFF.md`.
+
+A branch `feat/cognitive-adaptation-engine` contém estas mudanças e o PR #1 continua separado da branch principal. Testes locais e CI do HEAD mais recente precisam ser conferidos antes de considerar o conjunto validado.
