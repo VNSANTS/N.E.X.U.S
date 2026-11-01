@@ -4,7 +4,7 @@
 
 Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesquisar, organizar conhecimento, utilizar ferramentas, coordenar agentes e executar tarefas autorizadas, mantendo o usuário no controle.
 
-> **Estado atual:** base de planejamento e documentação. O runtime ainda não foi implementado nem validado neste repositório.
+> **Estado atual:** núcleo local Python/SQLite e runtime offline com MockProvider; ainda não há provider real, API, autenticação ou deploy. O CAE foi adicionado em branch de implementação e aguarda CI.
 
 ## Visão do projeto
 
