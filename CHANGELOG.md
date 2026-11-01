@@ -30,3 +30,17 @@
 
 ### Verificação
 CI confirmado: execução [41255344883](https://github.com/VNSANTS/N.E.X.U.S/actions/runs/41255344883) passou em Python 3.11 e 3.12, incluindo compileall e unittest, no commit `59356b7674ee97b9c2357871d2221e35f7e53b59`. Testes no computador local também permanecem pendentes.
+
+
+## 2026-10-31 — ambiente Codex multiagente
+
+### Adicionado
+- Perfis de projeto `orchestrator`, `architect`, `developer`, `researcher`, `tester` e `reviewer` em `.codex/agents/`.
+- Configuração de projeto `.codex/config.toml` com multiagentes ativados e limite máximo de quatro threads simultâneas.
+- Instruções persistentes de delegação em `AGENTS.md`.
+- Prompt mestre de preparação que verifica o ambiente, protege o checkout, instala/valida a configuração, audita o N.E.X.U.S., executa testes e avança trabalho local desbloqueado.
+
+### Limites
+- Esta é infraestrutura de desenvolvimento do Codex, não funcionalidade do runtime N.E.X.U.S.
+- Os agentes herdam autenticação, provedor e permissões da sessão principal.
+- Nenhum provedor externo, credencial, serviço pago, publicação ou deploy foi configurado.
