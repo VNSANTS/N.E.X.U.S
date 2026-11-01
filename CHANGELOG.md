@@ -62,4 +62,4 @@ CI confirmado: execução [41255344883](https://github.com/VNSANTS/N.E.X.U.S/act
 - Padrões rejeitados ou não revisados não entram no contexto.
 - Desativar o CAE interrompe a injeção de contexto sem apagar o perfil.
 - Integração atual testável apenas com o MockProvider; provider real permanece pendente.
-- CI ainda precisa confirmar esta branch.
+- CI confirmado: execução `41273441641` passou em Python 3.11 e 3.12, incluindo compileall e toda a suíte unittest. Testes no PC local permanecem pendentes.
