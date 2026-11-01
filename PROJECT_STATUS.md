@@ -154,3 +154,6 @@ Implementação inicial do CAE adicionada em branch isolada:
 - documentação em `docs/COGNITIVE_ADAPTATION.md`.
 
 **Limites:** não é treinamento de modelo, diagnóstico psicológico ou perfilamento automático. A integração foi feita com a interface de runtime existente, que ainda usa MockProvider. CI e testes locais desta branch ainda precisam ser executados; não considerar a implementação validada até o workflow ficar verde.
+
+
+**CI confirmado para o CAE:** execução `41273441641` passou em Python 3.11 e 3.12, incluindo compilação dos módulos e toda a suíte `unittest`. Testes no PC local ainda pendentes.
