@@ -63,3 +63,19 @@ CI confirmado: execução [41255344883](https://github.com/VNSANTS/N.E.X.U.S/act
 - Desativar o CAE interrompe a injeção de contexto sem apagar o perfil.
 - Integração atual testável apenas com o MockProvider; provider real permanece pendente.
 - CI confirmado: execução `41273441641` passou em Python 3.11 e 3.12, incluindo compileall e toda a suíte unittest. Testes no PC local permanecem pendentes.
+
+
+## 2026-11-01 — Permissões e continuidade no Codex CLI
+
+### Adicionado
+- Protótipo de `PermissionManager` com scopes de capacidades comuns e de alto impacto.
+- Operações de concessão/revogação e trilha de auditoria SQLite.
+- Testes iniciais do gerenciador.
+- Documento de acesso/autonomia e atualização do handoff `CODEX_HANDOFF.md` para continuidade pelo Codex CLI.
+- Atualizações de checkpoint e status do projeto.
+
+### Limites pendentes
+- PermissionManager ainda não está ligado ao dispatcher/runtime.
+- Aprovação de alto impacto usa booleano prototípico; precisa virar aprovação confiável de uso único, vinculada à ação exata e protegida contra replay.
+- Testes locais e CI do HEAD atual precisam ser executados/conferidos pelo Codex antes de declarar a entrega validada.
+- Nenhum provider real, ferramenta externa, shell, API, worker ou deploy foi conectado.
