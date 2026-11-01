@@ -54,3 +54,58 @@ Antes de iniciar qualquer módulo novo:
 7. Preserve MockProvider como padrão offline e mantenha mensagens de erro sem conteúdo sensível.
 
 CI de referência para o hardening: https://github.com/VNSANTS/N.E.X.U.S/actions/runs/41255344883 (Python 3.11 e 3.12: compileall e unittest com sucesso).
+
+
+## Revisão de continuidade — CAE e permissões (2026-11-01)
+
+### Contexto do usuário e objetivo
+
+O usuário autorizou amplo acesso às capacidades comuns do N.E.X.U.S.: memória, perfil cognitivo, pesquisa, conhecimentos, criação de skills, agentes, ferramentas, arquivos autorizados, execução local e gerenciamento de projetos. A intenção é um assistente pessoal com autonomia ampla para pesquisar, aprender, organizar, planejar e executar tarefas comuns dentro das permissões concedidas.
+
+Essa autorização não cria integrações nem credenciais automaticamente. O sistema deve usar apenas adaptadores realmente implementados e permissões concedidas pelo sistema operacional/serviço. Ações de alto impacto continuam com confirmação específica, verificável e vinculada à ação.
+
+### Estado adicionado nesta branch
+
+- `nexus_learning/cognitive.py`: CAE com preferências explícitas e padrões revisados pelo usuário.
+- `nexus_learning/permissions.py`: primeira versão de `PermissionManager`, scopes comuns, scopes de confirmação, revogação e auditoria.
+- `docs/COGNITIVE_ADAPTATION.md` e `docs/ACCESS_AND_AUTONOMY.md`.
+- `tests/test_cognitive.py`, `tests/test_cognitive_runtime.py` e `tests/test_permissions.py`.
+- PR de trabalho: https://github.com/VNSANTS/N.E.X.U.S/pull/1
+- Branch de trabalho: `feat/cognitive-adaptation-engine`.
+
+### Limitação de segurança que deve ser corrigida antes de integrar
+
+A versão atual de `PermissionManager.authorize(scope, confirmed=True)` aceita um booleano como sinal de confirmação. Isso é útil apenas como protótipo de API e **não é uma fronteira de segurança suficiente**: um agente/modelo não pode ter a capacidade de passar esse sinal. Substitua por aprovação de uso único emitida por uma fronteira confiável, vinculada ao usuário, ferramenta, parâmetros/ação exata, escopo, expiração e nonce; consuma-a atomicamente e impeça replay. Se a UI confiável ainda não existir, mantenha as ações de confirmação bloqueadas. Não simule aprovação.
+
+O PermissionManager também ainda não está integrado ao runtime ou ao despacho de ferramentas. Não afirme que os scopes liberaram recursos reais. Integre a política central antes de adicionar ferramentas executáveis.
+
+### Missão imediata para o Codex CLI
+
+1. Preserve o estado local: `git status --short --branch`; não descarte alterações.
+2. Sincronize a branch sem operações destrutivas:
+   ```bash
+   git fetch origin
+   git switch feat/cognitive-adaptation-engine
+   git pull --ff-only
+   ```
+3. Leia `AGENTS.md`, `README.md`, `PROJECT_STATUS.md`, `ROADMAP.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `CHECKPOINT.md`, `docs/IMPLEMENTATION_BACKLOG.md`, `docs/ACCESS_AND_AUTONOMY.md` e `docs/COGNITIVE_ADAPTATION.md`.
+4. Inspecione diff e código real. Execute:
+   ```bash
+   python --version
+   python -m compileall -q nexus_learning tests
+   python -m unittest discover -s tests -v
+   python -m nexus_learning --help
+   ```
+5. Verifique o CI do HEAD atual; a execução anterior citada em documentos pode não incluir os commits mais recentes.
+6. Faça auditoria independente do CAE e PermissionManager, incluindo migração, SQLite, concorrência, revogação, auditoria, autorização de scopes e abuso de aprovação.
+7. Implemente aprovação de uso único, confiável, vinculada à ação exata e com proteção contra replay. Integre o gerenciador ao dispatcher central de ferramentas. Continue fail-closed.
+8. Adicione testes positivos, negativos, adversariais e de regressão. Não use dados pessoais reais.
+9. Atualize status, checkpoint, changelog e backlog somente com fatos comprovados.
+
+### Próxima entrega vertical sugerida
+
+Após estabilizar as permissões, preparar o primeiro provider real atrás de `ModelProvider`, mas só depois de pesquisar opções atuais de preço, cotas, privacidade, termos e compatibilidade. MockProvider deve continuar padrão de testes e modo offline. Segredos devem ser configurados localmente pelo usuário; nunca pedir para colar chave no chat nem gravar no Git. Não implementar API/cloud/worker antes das decisões de autenticação e hospedagem.
+
+### Prompt de início para o Codex CLI
+
+> Continue o N.E.X.U.S. a partir do estado real do repositório. Leia integralmente AGENTS.md e os documentos de continuidade. Preserve alterações locais. Audite a branch atual, o CAE e o PermissionManager; execute compileall, a suíte unittest e verifique CI. A prioridade é corrigir a aprovação sensível: o booleano confirmed=True atual não é seguro. Projete e implemente aprovação verificável, de uso único, emitida por uma fronteira confiável, vinculada à ação exata, com expiração, nonce e prevenção de replay. Integre a autorização ao dispatcher central antes de criar ferramentas reais. Não deixe o modelo conceder privilégios a si próprio. Não invente integrações, credenciais ou testes. Mantenha o padrão fail-closed, adicione testes positivos/negativos/adversariais, atualize documentação e entregue relatório final com funcionalidades comprovadas, limitações, testes executados e próximos passos. Não faça merge, deploy ou ações externas irreversíveis sem aprovação explícita.
