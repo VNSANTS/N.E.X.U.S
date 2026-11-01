@@ -136,6 +136,6 @@ Correções gravadas nesta revisão:
 - Testes de regressão específicos adicionados.
 - Workflow corrigido para observar seu próprio caminho, com permissões mínimas, timeout e compileall.
 
-**Validação pendente desta revisão:** conferir a nova execução do GitHub Actions. O checkout local não pôde ser executado neste ambiente; portanto, não afirmar que os novos testes passaram até a CI retornar sucesso.
+**CI confirmado:** a execução [41255344883](https://github.com/VNSANTS/N.E.X.U.S/actions/runs/41255344883) passou em Python 3.11 e 3.12, incluindo compileall e toda a suíte unittest, no commit de código `59356b7674ee97b9c2357871d2221e35f7e53b59`. O checkout e os testes no computador local ainda precisam ser executados.
 
 O backlog operacional foi criado em `docs/IMPLEMENTATION_BACKLOG.md`. O próximo bloqueio técnico para a primeira conversa com IA real é escolher o provedor, protocolo, armazenamento de credenciais e limites. API/autenticação e hospedagem continuam decisões posteriores, não implementações presumidas.
