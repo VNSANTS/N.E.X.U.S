@@ -40,3 +40,17 @@ Este arquivo é o handoff operacional. O trabalho já implementado no repositór
 - Política nega por padrão ferramentas não cadastradas e ações sensíveis sem aprovação.
 - Nenhuma ferramenta real é executada pelo modelo.
 - Documentação separa claramente implementado, protótipo e pendente.
+
+
+## Revisão de continuidade — 2026-10-31
+
+Antes de iniciar qualquer módulo novo:
+1. Leia `docs/IMPLEMENTATION_BACKLOG.md`; ele é a ordem operacional atual.
+2. Leia `CHECKPOINT.md` e confirme a branch/commit local.
+3. Execute `python -m compileall -q nexus_learning tests`.
+4. Execute `python -m unittest discover -s tests -v`.
+5. Confirme que o teste `tests/test_runtime_hardening.py` cobre SQLite `:memory:`, erro sensível de provider e reivindicação duplicada de tarefa.
+6. Não implemente API, provider remoto ou worker antes de registrar as decisões de provedor, credenciais, autenticação e hospedagem.
+7. Preserve MockProvider como padrão offline e mantenha mensagens de erro sem conteúdo sensível.
+
+CI de referência para o hardening: https://github.com/VNSANTS/N.E.X.U.S/actions/runs/41255344883 (Python 3.11 e 3.12: compileall e unittest com sucesso).
