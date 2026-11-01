@@ -61,7 +61,7 @@ class RuntimeTests(unittest.TestCase):
         task_id = runtime.submit("Teste")
         task = runtime.run(task_id)
         self.assertEqual(task["state"], "failed")
-        self.assertEqual(task["error"], "provider timeout")
+        self.assertEqual(task["error"], "TimeoutError: provider execution failed")
 
     def test_task_cannot_be_run_twice(self):
         runtime = TaskRuntime(self.engine, MockProvider())
