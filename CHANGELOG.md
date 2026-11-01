@@ -29,4 +29,4 @@
 - Voz, scheduler contínuo, embeddings e execução autônoma.
 
 ### Verificação
-O CI anterior passou em Python 3.11 e 3.12. As alterações de endurecimento desta revisão precisam de uma nova execução verde antes de serem consideradas verificadas. Testes no computador local também permanecem pendentes.
+CI confirmado: execução [41255344883](https://github.com/VNSANTS/N.E.X.U.S/actions/runs/41255344883) passou em Python 3.11 e 3.12, incluindo compileall e unittest, no commit `59356b7674ee97b9c2357871d2221e35f7e53b59`. Testes no computador local também permanecem pendentes.
