@@ -4,7 +4,6 @@ Stores explicit interaction preferences and user-reviewed reasoning patterns.
 It does not diagnose personality, infer sensitive traits, or learn from raw
 conversation transcripts automatically.
 """
-import json
 import re
 
 from .engine import now, uid
@@ -70,7 +69,7 @@ class CognitiveAdaptation:
     def set_preference(self, key, value, source="user"):
         if key not in PREFERENCE_VALUES:
             raise ValueError("unsupported preference")
-        if value not in PREFERENCE_VALUES[key]:
+        if not isinstance(value, str) or value not in PREFERENCE_VALUES[key]:
             raise ValueError("unsupported value for preference")
         if source != "user":
             raise ValueError("preferences must be explicitly supplied by the user")
@@ -97,7 +96,7 @@ class CognitiveAdaptation:
             raise ValueError("pattern cannot be empty")
         if not isinstance(rationale, str) or not rationale.strip():
             raise ValueError("rationale cannot be empty")
-        if not isinstance(confidence, (int, float)) or not 0 <= confidence <= 1:
+        if not isinstance(confidence, (int, float)) or isinstance(confidence, bool) or not 0 <= confidence <= 1:
             raise ValueError("confidence must be between 0 and 1")
         clean_pattern = re.sub(r"\s+", " ", pattern).strip()
         stamp, pattern_id = now(), uid("cog")
