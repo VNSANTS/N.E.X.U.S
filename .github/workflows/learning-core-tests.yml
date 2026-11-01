@@ -10,7 +10,7 @@ on:
     paths:
       - "nexus_learning/**"
       - "tests/**"
-      - ".github/workflows/tests.yml"
+      - ".github/workflows/learning-core-tests.yml"
 
 permissions:
   contents: read
