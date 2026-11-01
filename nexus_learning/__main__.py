@@ -6,6 +6,7 @@ from .ingestion import DocumentIngestor
 from .providers.mock import MockProvider
 from .runtime import TaskRuntime
 from .crossref import CrossrefClient
+from .cognitive import CognitiveAdaptation
 
 
 def main():
@@ -53,8 +54,25 @@ def main():
     p.add_argument("query")
     p.add_argument("--limit", type=int, default=10)
     p.add_argument("--mailto", default=None, help="Optional contact email for Crossref polite pool")
+
+    sub.add_parser("cognitive-enable")
+    sub.add_parser("cognitive-disable")
+    sub.add_parser("cognitive-status")
+    p = sub.add_parser("cognitive-preference-set")
+    p.add_argument("key", choices=["response_length", "explanation_style", "challenge_level", "disagreement_style"])
+    p.add_argument("value")
+    p = sub.add_parser("cognitive-pattern-propose")
+    p.add_argument("pattern")
+    p.add_argument("rationale")
+    p.add_argument("--confidence", type=float, default=0.5)
+    p = sub.add_parser("cognitive-pattern-review")
+    p.add_argument("pattern_id")
+    p.add_argument("status", choices=["confirmed", "rejected"])
+    p.add_argument("rationale")
+
     args = parser.parse_args()
     engine = LearningEngine(args.db)
+    cognitive = CognitiveAdaptation(engine)
     ingestor = DocumentIngestor(engine) if args.command in {"ingest-file", "document-search"} else None
 
     if args.command == "init":
@@ -88,8 +106,22 @@ def main():
     elif args.command == "research-search":
         result = CrossrefClient(mailto=args.mailto).search(args.query, args.limit)
     elif args.command == "runtime-once":
-        runtime = TaskRuntime(engine, MockProvider())
+        runtime = TaskRuntime(engine, MockProvider(), cognitive_engine=cognitive)
         result = runtime.run(runtime.submit(args.message))
+    elif args.command == "cognitive-enable":
+        result = {"enabled": cognitive.set_enabled(True)}
+    elif args.command == "cognitive-disable":
+        result = {"enabled": cognitive.set_enabled(False)}
+    elif args.command == "cognitive-status":
+        result = {"enabled": cognitive.enabled(),
+                  "preferences": cognitive.list_preferences(),
+                  "patterns": cognitive.list_patterns()}
+    elif args.command == "cognitive-preference-set":
+        result = cognitive.set_preference(args.key, args.value)
+    elif args.command == "cognitive-pattern-propose":
+        result = {"id": cognitive.propose_pattern(args.pattern, args.rationale, args.confidence)}
+    elif args.command == "cognitive-pattern-review":
+        result = cognitive.review_pattern(args.pattern_id, args.status, args.rationale)
     else:
         result = engine.consolidation_report()
     print(json.dumps(result, ensure_ascii=False, indent=2))

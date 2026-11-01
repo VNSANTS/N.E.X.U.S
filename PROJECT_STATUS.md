@@ -139,3 +139,30 @@ Correções gravadas nesta revisão:
 **CI confirmado:** a execução [41255344883](https://github.com/VNSANTS/N.E.X.U.S/actions/runs/41255344883) passou em Python 3.11 e 3.12, incluindo compileall e toda a suíte unittest, no commit de código `59356b7674ee97b9c2357871d2221e35f7e53b59`. O checkout e os testes no computador local ainda precisam ser executados.
 
 O backlog operacional foi criado em `docs/IMPLEMENTATION_BACKLOG.md`. O próximo bloqueio técnico para a primeira conversa com IA real é escolher o provedor, protocolo, armazenamento de credenciais e limites. API/autenticação e hospedagem continuam decisões posteriores, não implementações presumidas.
+
+
+## Cognitive Adaptation Engine — 2026-11-01 (branch de implementação)
+
+Implementação inicial do CAE adicionada em branch isolada:
+- módulo `nexus_learning/cognitive.py` com perfil SQLite;
+- ativação explícita, desativado por padrão;
+- preferências de interação somente quando definidas pelo usuário;
+- padrões cognitivos como propostas, exigindo confirmação/rejeição humana;
+- contexto curto e revisável integrado opcionalmente ao `TaskRuntime`;
+- comandos CLI para controlar o perfil;
+- testes unitários de consentimento, revisão e integração do contexto;
+- documentação em `docs/COGNITIVE_ADAPTATION.md`.
+
+**Limites:** não é treinamento de modelo, diagnóstico psicológico ou perfilamento automático. A integração foi feita com a interface de runtime existente, que ainda usa MockProvider. CI e testes locais desta branch ainda precisam ser executados; não considerar a implementação validada até o workflow ficar verde.
+
+
+**CI confirmado para o CAE:** execução `41273441641` passou em Python 3.11 e 3.12, incluindo compilação dos módulos e toda a suíte `unittest`. Testes no PC local ainda pendentes.
+
+
+## Permissões e autonomia — 2026-11-01 (branch de implementação)
+
+Adicionado protótipo `nexus_learning/permissions.py` com scopes para capacidades comuns, concessão/revogação e auditoria, além de documentação e testes. O objetivo é oferecer autorização ampla e explícita para módulos comuns do assistente pessoal, sem confundir scopes declarados com integrações reais.
+
+**Ainda incompleto e não validado:** o PermissionManager não está integrado ao dispatcher/runtime. A aprovação de alto impacto ainda é representada por um booleano de protótipo e precisa ser substituída por autorização de uso único, vinculada à ação exata, emitida por canal confiável e protegida contra replay. Até isso existir, operações de alto impacto devem permanecer bloqueadas. O Codex CLI recebeu instruções detalhadas em `CODEX_HANDOFF.md`.
+
+A branch `feat/cognitive-adaptation-engine` contém estas mudanças e o PR #1 continua separado da branch principal. Testes locais e CI do HEAD mais recente precisam ser conferidos antes de considerar o conjunto validado.

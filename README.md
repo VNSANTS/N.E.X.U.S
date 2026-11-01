@@ -4,7 +4,7 @@
 
 Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesquisar, organizar conhecimento, utilizar ferramentas, coordenar agentes e executar tarefas autorizadas, mantendo o usuário no controle.
 
-> **Estado atual:** base de planejamento e documentação. O runtime ainda não foi implementado nem validado neste repositório.
+> **Estado atual:** núcleo local Python/SQLite e runtime offline com MockProvider; ainda não há provider real, API, autenticação ou deploy. O CAE foi adicionado em branch de implementação; CI passou em Python 3.11 e 3.12.
 
 ## Visão do projeto
 
@@ -38,10 +38,11 @@ Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesq
 | [SELF_IMPROVEMENT.md](SELF_IMPROVEMENT.md) | Melhorias controladas |
 | [KNOWLEDGE_VALIDATION.md](KNOWLEDGE_VALIDATION.md) | Validação e confiança |
 | [SECURITY.md](SECURITY.md) | Segurança e permissões |
-| [DECISIONS.md](DECISIONS.md) | Decisões do projeto |
+| [DECISIONS.md](DECISIONS.md) | Decisões de arquitetura |
 | [CHECKPOINT.md](CHECKPOINT.md) | Ponto de continuidade |
 | [CHANGELOG.md](CHANGELOG.md) | Histórico de mudanças |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Regras de contribuição |
+| [docs/COGNITIVE_ADAPTATION.md](docs/COGNITIVE_ADAPTATION.md) | Cognitive Adaptation Engine (CAE) |
 
 ## Próximo passo
 
@@ -55,7 +56,6 @@ O desenvolvimento considera um computador modesto. Portanto, a arquitetura não 
 
 **N.E.X.U.S. — um assistente pessoal útil, capaz e confiável, sempre sob controle do usuário.**
 
-
 ## Primeiro módulo executável — motor de aprendizado
 
 Foi iniciado `nexus_learning/`, um núcleo Python baseado apenas na biblioteca padrão:
@@ -66,7 +66,6 @@ Foi iniciado `nexus_learning/`, um núcleo Python baseado apenas na biblioteca p
 - testes automatizados iniciais em `tests/test_learning_engine.py`.
 
 Este módulo é uma primeira base local. Ainda não inclui API, interface, pesquisa automática na web, integração com modelos de IA, sincronização cloud/PC ou execução contínua. Consulte [a arquitetura de aprendizado](docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md).
-
 
 ### Uso local do protótipo
 
@@ -84,65 +83,47 @@ python -m unittest discover -s tests -v
 
 O banco padrão é `nexus_learning.db` no diretório atual. Não coloque dados sensíveis no banco de teste nem envie o arquivo do banco ao GitHub.
 
-
 ### Comandos adicionais do núcleo
 
 ```bash
-# Registrar uma fonte e uma afirmação associada
 python -m nexus_learning source-add "https://example.org" --title "Fonte de exemplo"
 python -m nexus_learning claim-add "Afirmação a investigar" --source ID_DA_FONTE
-
-# Revisar uma afirmação (validação exige justificativa e confiança explícitas)
 python -m nexus_learning claim-review ID_DA_AFIRMACAO under_review "Precisa de mais evidências"
 python -m nexus_learning claim-list --state proposed
-
-# Gerar relatório de consolidação sem alterar automaticamente os registros
 python -m nexus_learning consolidate
-
-# Arquivar uma memória
 python -m nexus_learning memory-archive ID_DA_MEMORIA
 ```
 
-O relatório de consolidação aponta afirmações sem fontes, possíveis duplicatas, itens em disputa e itens ainda não revisados. Ele não decide se uma afirmação é verdadeira e não modifica o banco.
+## Ingestão local de documentos (protótipo)
 
-
-### Ingestão local de documentos (protótipo)
-
-O módulo `nexus_learning.ingestion` agora aceita arquivos de texto e Markdown, registra a origem, calcula SHA-256, divide o conteúdo em trechos com posições e permite busca lexical simples. Arquivos repetidos pelo mesmo conteúdo são reconhecidos pelo hash. Limite padrão: 1 MB por documento.
-
-Formatos aceitos: `.txt`, `.md` e `.markdown`. PDF, DOCX, páginas web e extração por IA ainda não estão incluídos.
+O módulo `nexus_learning.ingestion` aceita arquivos de texto e Markdown, registra a origem, calcula SHA-256, divide o conteúdo em trechos com posições e permite busca lexical simples. Formatos aceitos: `.txt`, `.md` e `.markdown`. Limite padrão: 1 MB.
 
 ```bash
 python -m nexus_learning ingest-file ./anotacoes.md
 python -m nexus_learning document-search "memória e aprendizado"
 ```
 
-A busca atual é lexical (termos coincidentes), não semântica. O conteúdo fica no banco SQLite local; não envie o banco ao repositório.
-
+A busca é lexical, não semântica. PDF/DOCX, web, OCR e extração por IA ainda não estão incluídos.
 
 ## Runtime controlado (protótipo offline)
 
-O repositório agora inclui:
-- `PolicyEngine`: política fail-closed com allowlist; ações READ, WRITE_REVERSIBLE e SENSITIVE;
-- contrato `ModelProvider` e `MockProvider` offline, sem credenciais e sem rede;
-- `TaskRuntime`: registra entrada, execução, conclusão/falha e eventos no SQLite;
-- comando de demonstração offline.
+O núcleo inclui política fail-closed, contrato de provedor e MockProvider offline. O runtime registra tarefas e eventos, mas não possui provider real, ferramentas reais ou execução de comandos.
 
 ```bash
 python -m nexus_learning runtime-once "Olá, N.E.X.U.S."
 ```
 
-O comando usa o provedor simulado, não uma IA real. O runtime ainda não possui API HTTP, autenticação, ferramentas reais, agendador distribuído ou worker remoto. Nenhuma saída de modelo executa comandos ou ferramentas.
+## Cognitive Adaptation Engine (CAE) — primeira implementação
 
-
-### Pesquisa científica pela Crossref API
-
-O módulo `nexus_learning.crossref` consulta metadados bibliográficos públicos da Crossref, sem dependências externas e sem chave de API. A busca retorna título, autores, ano, DOI, periódico/editora e URL. Não baixa o texto integral dos artigos, não cria afirmações automaticamente e não valida os resultados.
+O CAE adiciona preferências explícitas e padrões de raciocínio revisados pelo usuário. Fica desativado por padrão; padrões só entram no contexto depois de confirmação humana. Não faz diagnóstico psicológico nem armazena transcrições automaticamente.
 
 ```bash
-python -m nexus_learning research-search "memory consolidation learning" --limit 5
-# Opcional: informar um e-mail válido para usar o polite pool
-python -m nexus_learning research-search "neuroscience of memory" --limit 5 --mailto "seu-email@example.com"
+python -m nexus_learning cognitive-status
+python -m nexus_learning cognitive-preference-set response_length short
+python -m nexus_learning cognitive-pattern-propose "Questiona premissas antes de aceitar um problema" "Padrão observado em tarefas de raciocínio." --confidence 0.7
+python -m nexus_learning cognitive-pattern-review ID_DO_PADRAO confirmed "Confirmado pelo usuário."
+python -m nexus_learning cognitive-enable
+python -m nexus_learning cognitive-disable
 ```
 
-O limite local é de 20 resultados por consulta, com timeout de 12 segundos. A integração usa a biblioteca padrão do Python, identifica o cliente por User-Agent e permite o parâmetro `mailto` recomendado pela Crossref. Respeite os limites do serviço e evite consultas paralelas desnecessárias. Os metadados retornados são pistas para pesquisa, não evidência suficiente para validar uma afirmação.
+Consulte [docs/COGNITIVE_ADAPTATION.md](docs/COGNITIVE_ADAPTATION.md). O hook já pode fornecer o contexto ao runtime, mas o runtime atual usa MockProvider; integração com modelo real ainda não foi feita.

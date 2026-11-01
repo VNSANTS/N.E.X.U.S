@@ -68,3 +68,18 @@ O repositório possui um núcleo local em Python/SQLite, executável pela CLI, c
 - Não adicionar chaves ou dados privados ao Git.
 - Não habilitar shell, ferramentas sensíveis, deploy ou ações externas sem aprovação.
 - Toda alteração deve ter teste; toda alegação de teste precisa de evidência.
+
+
+## Continuidade — permissões e handoff Codex CLI (2026-11-01)
+
+Branch de trabalho: `feat/cognitive-adaptation-engine` (PR #1, ainda não mesclado).
+
+Adicionado:
+- `nexus_learning/permissions.py`: protótipo de gerenciador central de scopes, concessão/revogação de capacidades comuns, scopes de alto impacto com exigência de confirmação e trilha de auditoria;
+- `tests/test_permissions.py`;
+- `docs/ACCESS_AND_AUTONOMY.md`;
+- atualização de `CODEX_HANDOFF.md` com contexto, comandos, missão imediata e prompt de continuidade para o Codex CLI.
+
+**Atenção:** o PermissionManager ainda não está integrado ao dispatcher/runtime. A confirmação de alto impacto usa atualmente um booleano `confirmed=True`, que é insuficiente como fronteira de segurança. O Codex deve corrigir isso para aprovação confiável, de uso único, vinculada à ação exata, com expiração e prevenção de replay, antes de integrar ações reais. Enquanto não houver UI/canal confiável de aprovação, manter ações de alto impacto bloqueadas.
+
+**Não verificado nesta sessão:** execução local dos testes e CI dos commits mais recentes. Codex deve executar compileall/unittest e conferir workflow no HEAD atual antes de declarar sucesso. Nenhuma integração real, provider remoto, browser, shell, API ou worker foi habilitada por estes arquivos.
