@@ -122,3 +122,20 @@ Adicionado `nexus_learning/ingestion.py`:
 - `CODEX_HANDOFF.md`: instruções e critérios para concluir integração local via Codex CLI.
 
 **Ainda não implementado:** adaptador real de IA, API HTTP, autenticação, execução de ferramentas, worker cloud/PC, sincronização, agendamento, notificações e implantação. O MockProvider não é um modelo de IA. **CI confirmado:** o workflow executou com sucesso os testes em Python 3.11 e 3.12 após a inclusão do runtime e do comando `runtime-once` (execução associada ao commit `ec1b6fd`). As atualizações posteriores foram apenas de documentação.
+
+
+## Revisão de código e endurecimento — 2026-10-31
+
+Foi feita uma nova inspeção do tree e dos módulos Python do repositório. O estado real permanece: motor SQLite, ingestão TXT/Markdown, pesquisa de metadados Crossref, política fail-closed, runtime textual com MockProvider e CLI local; ainda não há provider remoto, API, autenticação, interface web, worker cloud/PC ou deploy.
+
+Correções gravadas nesta revisão:
+- `:memory:` agora usa SQLite compartilhado com conexão âncora, pois o engine abre conexões por operação.
+- Runtime reivindica tarefas com atualização condicional sob transação de escrita.
+- Exceções de providers não são persistidas com a mensagem original, evitando gravar acidentalmente URLs, cabeçalhos ou credenciais.
+- Validação dos limites do runtime e dos identificadores do modelo/provedor.
+- Testes de regressão específicos adicionados.
+- Workflow corrigido para observar seu próprio caminho, com permissões mínimas, timeout e compileall.
+
+**Validação pendente desta revisão:** conferir a nova execução do GitHub Actions. O checkout local não pôde ser executado neste ambiente; portanto, não afirmar que os novos testes passaram até a CI retornar sucesso.
+
+O backlog operacional foi criado em `docs/IMPLEMENTATION_BACKLOG.md`. O próximo bloqueio técnico para a primeira conversa com IA real é escolher o provedor, protocolo, armazenamento de credenciais e limites. API/autenticação e hospedagem continuam decisões posteriores, não implementações presumidas.
