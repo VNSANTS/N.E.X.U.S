@@ -13,12 +13,14 @@
 
 ## Active remote continuation — 2026-11-02
 
-- Working branch: `nexus/remote-continuation`; PR #3 targets `nexus/review-nov-02`, not `main`.
-- `NEXUS_AGENT_MODELS` supports independent provider/model configuration for Architect, Analyst and Reviewer. ProviderManager preserves remote opt-in, allowlist, credential and budget controls. No automatic model capability/health discovery or fallback after ambiguous provider failure exists yet.
-- `GET /api/v1/skills?query=...` now filters approved skills from the URL query string; its regression test passed.
-- Structured evidence claims are bounded and source IDs are validated. When sources are supplied, unreferenced claims are now removed deterministically before final synthesis and counted per agent. The Reviewer and final synthesis are instructed to flag unsupported assertions. A source ID proves only that the reference existed in supplied context, not that the source is accurate or the claim is true.
-- Latest CI head `18347368767042b78cfa86e0617550928a8152c0`: 193 unit tests passed on Python 3.11, 193 passed on Python 3.12, and 5/5 Playwright/Chromium browser E2E tests passed. Compilation succeeded in both unit-test jobs.
-- No real provider inference, Tavily search or paid API call is part of this remote work. The local app is still loopback-only and not deployed; switching off the PC does not make the app itself cloud-accessible.
+- **Remote source of truth:** branch `nexus/remote-continuation`; PR #3 targets `nexus/review-nov-02`, not `main`. Latest code head: `ed844c370458a8b8a8f233965b9043f23286af36`. PR remains open and unmerged.
+- **Latest CI:** GitHub Actions on head `ed844c3` passed: 211 unit tests in Python 3.11, 211 in Python 3.12, and 7/7 Playwright/Chromium E2E tests. Compilation passed in both Python jobs.
+- **Skills:** authenticated proposal listing, proposal creation, explicit approval and rejection, audit events, literal search, strict limits and SHA-256 integrity checks are implemented. The browser UI shows full instructions before approval/rejection and has a searchable approved list. Approved skills are loaded on demand into synchronous and SSE chat; they remain untrusted text and cannot grant tools or execute code.
+- **Agent activity:** the Agentes screen shows specialist roster and recent LLM pipeline events. `GET /api/v1/agents/activity` scopes to the signed-in owner and server-filters an allowlist of metadata; prompts, model outputs and tool results are never returned by this endpoint. Individual tool invocation events are not yet shown.
+- **Specialists:** `NEXUS_AGENT_MODELS` supports independent provider/model configuration for Architect, Analyst and Reviewer. ProviderManager preserves remote opt-in, allowlist, credential and budget controls. The Reviewer emits bounded assessments by claim; unsupported/conflicting claims are withheld before synthesis. Model review is not independent factual verification.
+- **Still pending/blocked:** durable stage checkpoint/resume and same-trust-lane fallback; semantic skill-conflict review; complete evidence provenance and human verification; real sandboxed execution (blocked because no validated isolation runtime is available); cloud/TLS deployment, remote worker, backups and production identity.
+- **External use:** no real provider inference, Tavily search or paid API call was made by the remote implementation/CI. The app remains local loopback-only and is not accessible just because the repository is on GitHub or the PC is off.
+- **Secrets:** `.env`, databases and logs remain excluded from Git. A pattern scan is not a complete guarantee that every secret format is absent.
 
 The entries below are historical development snapshots. They must not override this current remote summary.
 

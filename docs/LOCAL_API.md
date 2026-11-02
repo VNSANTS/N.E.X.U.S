@@ -30,7 +30,8 @@ The server persists data in `nexus_learning.db` (ignored by Git). Back up this d
 | `GET/POST /api/v1/memories`, `DELETE /api/v1/memories/{id}` | Search/list or explicitly add/archive memory. Writes require `confirm: true`; assistant output is never written automatically. |
 | `GET/POST /api/v1/sources` | List or register source metadata. Registering a URI does not fetch it. |
 | `GET/POST /api/v1/claims`, `GET /api/v1/claims/{id}`, `POST /api/v1/claims/{id}/review` | Propose, inspect and explicitly review sourced claims. New claims start `proposed`; validation requires rationale and confidence. Writes require `confirm: true`. |
-| `GET /api/v1/agents`, `GET /api/v1/activity` | Product agent roster and redacted task activity. |
+| `GET /api/v1/agents`, `GET /api/v1/agents/activity` | Specialist roster and server-sanitized `agent.llm_*` metadata for the authenticated owner. Prompt text, model responses and tool results are excluded. |
+| `GET /api/v1/activity` | General redacted task activity for the authenticated owner. |
 | `GET /api/v1/tools`, `POST /api/v1/tools/{id}/execute` | Tool catalog and bounded allowlisted READ tools only. No shell, code execution, remote MCP or sensitive tool exists. Unknown tools are denied. |
 | `GET/POST /api/v1/jobs`, `GET /api/v1/jobs/{id}`, `GET /api/v1/jobs/{id}/events`, `POST /api/v1/jobs/{id}/cancel`, `POST /api/v1/jobs/run-once`, `GET /api/v1/worker/status` | Durable local jobs with idempotency keys, priority, optional one-shot `run_after`, leases and bounded retries. Cancellation is for queued work; status reports the last worker heartbeat. |
 | `GET /api/v1/config` | Active provider/model; never returns secrets. |
@@ -47,6 +48,18 @@ Conversation turn example after login:
 {"content":"O que registrei sobre o projeto?"}
 ```
 
+### Skills management (owner review required)
+
+| Method and path | Behavior |
+|---|---|
+| `GET /api/v1/skills?query=...` | Search only approved text-only skills using literal, case-insensitive substring matching. |
+| `GET /api/v1/skills/proposals` | List up to 20 pending proposals, including full instruction text for owner review. Requires authentication. |
+| `POST /api/v1/skills` | Propose a versioned text-only skill. New proposals are pending and are not loaded into chat. |
+| `POST /api/v1/skills/{id}/approve` with `{"confirm":true}` | Explicitly approve a pending proposal; writes an audit event. |
+| `POST /api/v1/skills/{id}/reject` with `{"confirm":true}` | Explicitly reject a pending proposal; writes an audit event and removes it from the pending queue. |
+
+The Skills screen shows the full instructions before approval/rejection. Skills are untrusted text and cannot grant tools, permissions or code execution. Approved content is checked against its stored SHA-256 hash when loaded.
+
 ## Providers
 
 The provider manager supports Ollama, OpenAI, Anthropic, Google Gemini, Groq, OpenRouter and MockProvider. The code default without a local setting remains MockProvider for development; the local `.env` supplied with this checkout selects Ollama and `qwen2.5:0.5b`. Provider selection is persisted in `provider_settings`, so changing `.env` does not override a database selection that already exists. Use the authenticated provider settings screen or `POST /api/v1/providers/default` to change it.
@@ -57,7 +70,7 @@ Remote providers require `NEXUS_ENABLE_REMOTE_PROVIDER=true`, a provider key and
 
 ### Optional multi-agent conversation stage
 
-`NEXUS_MULTIAGENT_ENABLED=false` is the default. Set it to `true` locally to run the bounded Architect → Analyst → Reviewer sequence before the final answer for requests classified as ADVANCED or RESEARCH. Each role uses the same selected provider/model and makes up to one generation call; all agents have no tools. Results are size/schema validated, marked as untrusted data in the final prompt and excluded from logs. Remote runs first check that the configured budget can accommodate three specialist calls plus the final answer, then each call passes through the normal atomic budget gate. The preflight itself is not an all-or-nothing reservation, so concurrent usage or a budget change can make later stages stop after earlier calls have consumed budget. Leave this feature disabled if you do not want the additional inference calls.
+`NEXUS_MULTIAGENT_ENABLED=false` is the default. Set it to `true` locally to run the bounded Architect → Analyst → Reviewer sequence before the final answer for requests classified as ADVANCED or RESEARCH. By default each role uses the selected main provider/model; optional per-role `NEXUS_AGENT_MODELS` overrides may select separate providers/models. Each role makes up to one generation call; all agents have no tools. Results are size/schema validated, marked as untrusted data in the final prompt and excluded from logs. Remote runs first check that the configured budget can accommodate three specialist calls plus the final answer, then each call passes through the normal atomic budget gate. The preflight itself is not an all-or-nothing reservation, so concurrent usage or a budget change can make later stages stop after earlier calls have consumed budget. Leave this feature disabled if you do not want the additional inference calls.
 
 `GET /api/v1/providers` returns configured state, actual local Ollama availability, installed and loaded models, and the persisted selection without secrets. `GET /api/v1/providers/{provider}/models` lists models; `POST /api/v1/providers/{provider}/check` performs an explicit connection check with `{"confirm":true}`; Gemini checks use model discovery, not generation; `POST /api/v1/providers/default` selects an installed model with `{"provider":"ollama","model":"qwen2.5:0.5b","confirm":true}`. The web UI uses these endpoints.
 
@@ -145,3 +158,6 @@ Na síntese, claims `unsupported` e `conflicting` são removidas de forma determ
 ### Atividade dos agentes na interface
 
 `GET /api/v1/agents/activity` retorna no máximo 60 eventos `agent.llm_*` da conta autenticada. A resposta contém somente metadados permitidos: agente, provider/model, estado, duração, contagens de caracteres, código de erro, motivo, task ID e indicador de modelo distinto do Reviewer. Prompts, saídas dos modelos, resultados de ferramentas e eventos de outras contas são excluídos no servidor.
+
+
+The Agents screen uses the sanitized `GET /api/v1/agents/activity` route rather than the general activity feed. The server returns at most 100 specialist LLM events for the authenticated owner and filters event details through an allowlist. It does not return prompts, model response text, retrieved context, tool arguments or tool results. Individual tool-call activity has not yet been added to this screen.

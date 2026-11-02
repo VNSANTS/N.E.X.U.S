@@ -320,3 +320,15 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - API test exercises unauthorized access, another user's event isolation, and redaction of injected prompt/response/tool-result fields.
 - Browser rendering uses node/textContent helpers; no dynamic HTML strings or arbitrary activity JSON are inserted.
 - CI pending.
+
+
+## Skills administration + sanitized agent activity — 2026-11-02
+
+- Latest code head validated by CI: `ed844c370458a8b8a8f233965b9043f23286af36`.
+- GitHub Actions passed: Python 3.11 — 211 tests; Python 3.12 — 211 tests; Playwright/Chromium browser E2E — 7/7. Compile step passed in both Python jobs.
+- Skills registry now supports owner-reviewable pending proposals, explicit approval and explicit rejection, with audit records. The UI lets the owner propose a text-only skill, inspect the full instruction body, approve/reject after confirmation, and search approved skills.
+- The API proposal-list route is authenticated. Rejected skills are removed from the pending queue and never appear in approved discovery.
+- Agent activity is read via `GET /api/v1/agents/activity`, which returns only allowlisted metadata for `agent.llm_*` events belonging to the authenticated owner. Prompts, model responses and tool results are filtered server-side.
+- The Agentes UI renders roster and specialist LLM activity metadata. The UI uses DOM text nodes, not HTML insertion.
+- PR #3 remains open, based on `nexus/review-nov-02`; no merge into `main`.
+- Next priority: durable specialist-stage checkpoint/resume and carefully bounded same-trust-lane fallback; keep sandboxed code execution blocked until an actual isolation runtime is validated.
