@@ -383,3 +383,13 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Added tests for snapshot consistency, overwrite behavior, safety-copy behavior, corrupt backup rejection, path validation and symlink rejection.
 - Added `docs/DATABASE_BACKUP.md`; restore requires stopping API/worker first.
 - CI head `0fd07dc420241a32fcc3f347cefe39eff8eaa553`: 226 unit tests passed on Python 3.11 and 226 on Python 3.12 (8 optional E2E skipped in standard discovery); Playwright/Chromium passed 8/8. P3-01 remains partial until versioned migrations and a restore drill are implemented.
+
+
+## Android Termux preparation — 2026-11-02
+
+- Added `docs/ANDROID_TERMUX.md` describing the Galaxy J6+ single-owner deployment, local SQLite, loopback-only API, optional worker, and private Moto G52 access through Tailscale + an SSH local forward. The guide explicitly forbids public HTTP exposure, router port forwarding for N.E.X.U.S, Tailscale Funnel, and insecure `0.0.0.0` binding.
+- Added `scripts/termux-start.sh` and `scripts/termux-worker.sh`; both use the same default private database path, enforce Python 3.11+, and keep the API bound to `127.0.0.1:8765`. No credentials are included.
+- Added `tests/test_termux_launchers.py` to validate POSIX shell syntax and guard the loopback/database invariants. The test has been committed but has **not yet been observed passing in CI**. The workflow run created after the preceding launcher commit was cancelled when a newer commit arrived; no successful run is claimed for this change.
+- Commits on `nexus/remote-continuation`: `cae8c77` (guide), `68c6c92` (API launcher), `a903400` (worker launcher), `09dff48` (launcher tests). PR #3 remains the delivery vehicle; no merge to `main` was performed.
+- This is deployment preparation, not proof of a running Android installation. Device-side Termux/Python compatibility, first login, background stability, Tailscale routing and SSH key-only access still require validation on the Galaxy J6+ and Moto G52.
+- Next implementation priority remains **P2-01 durable specialist checkpoint/resume** from `docs/SPECIALIST_CHECKPOINTS.md`; versioned SQLite migrations and production deployment/TLS remain pending.
