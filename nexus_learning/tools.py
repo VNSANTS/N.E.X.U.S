@@ -36,15 +36,25 @@ class ToolRegistry:
 
     def register(self, spec):
         """Register code-owned tools; model output cannot extend this registry."""
-        if not isinstance(spec, ToolSpec) or not re.fullmatch(r"[a-z][a-z0-9_.-]{1,80}", spec.name or ""):
+        if not isinstance(spec, ToolSpec):
             raise ValueError("invalid tool specification")
-        permission = spec.permission or spec.risk
-        if permission not in {READ, WRITE_REVERSIBLE, SENSITIVE}:
+        if not isinstance(spec.name, str) or not re.fullmatch(r"[a-z][a-z0-9_.-]{1,80}", spec.name):
+            raise ValueError("invalid tool specification")
+        classes = {READ, WRITE_REVERSIBLE, SENSITIVE}
+        if not isinstance(spec.risk, str) or spec.risk not in classes:
+            raise ValueError("invalid tool risk")
+        permission = spec.risk if spec.permission is None else spec.permission
+        if not isinstance(permission, str) or permission not in classes:
             raise ValueError("invalid tool permission")
-        if (not isinstance(spec.description, str) or len(spec.description) > 500
+        risk_rank = {READ: 0, WRITE_REVERSIBLE: 1, SENSITIVE: 2}
+        if risk_rank[permission] < risk_rank[spec.risk]:
+            raise ValueError("tool permission cannot be weaker than its declared risk")
+        if (not isinstance(spec.description, str) or not spec.description.strip()
+                or len(spec.description) > 500
                 or not isinstance(spec.parameters, dict)
-                or any(not isinstance(key, str) or not isinstance(value, type)
-                       for key, value in spec.parameters.items())
+                or len(spec.parameters) > 20
+                or any(not isinstance(key, str) or not re.fullmatch(r"[a-z][a-z0-9_]{0,63}", key)
+                       or not isinstance(value, type) for key, value in spec.parameters.items())
                 or not callable(spec.handler)):
             raise ValueError("invalid tool specification")
         if spec.name in self._tools:

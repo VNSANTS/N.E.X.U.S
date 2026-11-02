@@ -31,6 +31,15 @@ class ToolRegistryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.registry.register(ToolSpec("bad.permission", "x", "ADMIN", {}, lambda args: None))
 
+    def test_registration_cannot_downgrade_declared_risk_or_mislabel_tools(self):
+        with self.assertRaises(ValueError):
+            self.registry.register(ToolSpec("sensitive.read", "Sensitive action", SENSITIVE,
+                                            {"query": str}, lambda args: args, permission=READ))
+        with self.assertRaises(ValueError):
+            self.registry.register(ToolSpec(123, "Invalid name", READ, {}, lambda args: None))
+        with self.assertRaises(ValueError):
+            self.registry.register(ToolSpec("empty.description", "   ", READ, {}, lambda args: None))
+
     def test_argument_schema_does_not_crash_on_non_string_values(self):
         self.registry.register(ToolSpec("read.example", "Example", READ,
                                         {"query": str}, lambda args: args))
