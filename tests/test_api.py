@@ -176,6 +176,18 @@ class APITests(unittest.TestCase):
         self.assertTrue(rejected["status"].startswith("400"))
         self.assertEqual(self.engine.get_claim(claim_id)["state"], "proposed")
 
+    def test_context_preview_is_authenticated_bounded_and_zero_cost(self):
+        self.engine.add_memory("semantic", "Project context", "The project uses local memory")
+        denied = self.request("/api/v1/context/preview", "POST", {"query": "project"})
+        self.assertTrue(denied["status"].startswith("401"))
+        result = self.request("/api/v1/context/preview", "POST", {"query": "project"}, self.owner)
+        self.assertTrue(result["status"].startswith("200"), result["body"])
+        self.assertTrue(result["body"]["items"])
+        self.assertFalse(result["body"]["used_semantic"])
+        malformed = self.request("/api/v1/context/preview", "POST",
+                                 {"query": "project", "confirm": True}, self.owner)
+        self.assertTrue(malformed["status"].startswith("400"))
+
     def test_claim_review_rejects_malformed_fields_and_returns_evidence_quality(self):
         source = self.engine.add_source("https://example.org/evidence", "Evidence")
         claim = self.engine.propose_claim("A testable claim", [source], {source: "A quoted source excerpt"})
