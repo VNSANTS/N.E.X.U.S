@@ -164,3 +164,8 @@ The Agents screen uses the sanitized `GET /api/v1/agents/activity` route rather 
 
 
 A aprovação de uma proposta revalida o SHA-256 das instruções sob transação de escrita. Se o conteúdo tiver sido alterado depois da criação, o endpoint falha com erro de integridade e mantém a proposta como pendente. A listagem de propostas informa `integrity_ok`; a interface desabilita a aprovação quando o valor é falso.
+
+
+### Eventos de worker na atividade de agentes
+
+`GET /api/v1/agents/activity` também inclui eventos de jobs. A consulta faz JOIN entre `worker_job_events` e `worker_jobs`, sempre filtrando por `worker_jobs.owner_id`. Retorna somente ID/tipo/estado do job, tentativa e códigos/motivos limitados. Não seleciona nem serializa `payload` ou `result`. A UI apresenta esses eventos junto aos de LLM e ferramentas. Os testes de API e navegador verificam isolamento por proprietário e ausência de conteúdo privado.

@@ -351,3 +351,13 @@ Limites que permanecem: não existe sandbox de código/arquivos porque não há 
 - A changed proposal fails closed and remains `proposed`; the proposals endpoint returns an `integrity_ok` boolean for the owner UI.
 - The Skills page displays the integrity state and disables approval when the hash does not match.
 - Added unit/API/Playwright tests for tampering and explicit approval. CI pending.
+
+
+## P2-04 agent/tool/worker observability — validated
+
+- `GET /api/v1/agents/activity` returns authenticated owner-scoped LLM, tool and worker-job event metadata.
+- LLM/tool events are field-allowlisted and bounded. Worker events are joined through `worker_jobs.owner_id`; the route never selects `payload` or `result`. Job kind, ID, state, bounded attempt/error metadata and timestamp are exposed.
+- The Agentes view renders specialist, tool and worker events with DOM text nodes; prompts, model outputs, tool arguments/results and worker payload/results are not rendered.
+- API isolation/privacy tests and browser E2E explicitly inject private payloads and verify they are absent from the response and UI.
+- GitHub Actions head `9224957e2623c344223b9ad39bc4cd6423965127`: 216 unit tests passed on Python 3.11 and 216 on Python 3.12 (8 optional E2E skipped in standard discovery); Playwright/Chromium passed 8/8.
+- Remaining improvement: correlate worker and specialist events more completely by task/session, without exposing private payloads.

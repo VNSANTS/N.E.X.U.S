@@ -351,3 +351,15 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - API and E2E tests inject private arguments/results and verify that neither the route nor the browser exposes them.
 - PR #3 remains open and unmerged, based on `nexus/review-nov-02`.
 - Next: durable specialist-stage checkpoint/resume; preserve no-repeat billing semantics and do not rerun completed stages automatically after ambiguous provider failures.
+
+
+## P2-04 — worker event visibility validated (2026-11-02)
+
+- CI head: `9224957e2623c344223b9ad39bc4cd6423965127`.
+- Python 3.11: 216 tests passed (8 optional E2E skipped in standard discovery).
+- Python 3.12: 216 tests passed (8 optional E2E skipped in standard discovery).
+- Playwright/Chromium: 8/8 browser E2E passed.
+- `GET /api/v1/agents/activity` now includes owner-scoped worker events joined to jobs; only allowlisted metadata is returned, never job payload/result.
+- Agentes view displays LLM, tool and worker events. API and browser tests confirm private prompts, model responses, tool arguments/results and job payload/results do not leak.
+- P2-04 validated for MVP. Better task/session correlation remains a follow-up.
+- Next: P2-01 durable specialist-stage checkpoints. Do not retry ambiguous provider calls automatically.
