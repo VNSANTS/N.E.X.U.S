@@ -1,11 +1,17 @@
 import json
 import unittest
 
-from nexus_learning.agent_execution import (AgentResult, EvidenceClaim, SpecialistPipeline, synthesis_deliverables)
+from nexus_learning.agent_execution import (AgentResult, ClaimReview, EvidenceClaim,
+                                            SpecialistPipeline, synthesis_deliverables)
 
 
 def response(summary, *items):
     return json.dumps({"summary": summary, "items": list(items), "claims": []})
+
+
+def review_response(summary, *items, reviews=()):
+    return json.dumps({"summary": summary, "items": list(items), "claims": [],
+                       "reviews": list(reviews)})
 
 
 class FakeProvider:
@@ -85,6 +91,9 @@ class SpecialistPipelineTests(unittest.TestCase):
         self.assertEqual(len(architect.requests), 1)
         self.assertEqual(len(analyst.requests), 1)
         self.assertEqual(len(reviewer.requests), 1)
+        started = [event for event in events if event["event"] == "agent_call_started"]
+        reviewer_started = next(event for event in started if event["agent_id"] == "reviewer")
+        self.assertTrue(reviewer_started["separate_review_model"])
         completed = [event for event in events if event["event"] == "agent_call_completed"]
         self.assertEqual(
             [(event["agent_id"], event["provider"], event["model"]) for event in completed],
@@ -96,7 +105,9 @@ class SpecialistPipelineTests(unittest.TestCase):
     def test_source_claims_are_linked_only_to_supplied_source_ids(self):
         analyst = json.dumps({"summary": "Analysis", "items": ["source comparison"],
                               "claims": [{"text": "A source-linked claim", "evidence_ids": ["S1"]}]})
-        provider = FakeProvider(outputs=[response("Plan"), analyst, response("Review")])
+        reviewer = review_response("Review", reviews=[
+            {"claim_index": 0, "assessment": "uncertain", "note": "Needs stronger support."}])
+        provider = FakeProvider(outputs=[response("Plan"), analyst, reviewer])
         result = SpecialistPipeline(provider).run("Compare claims", {
             "sources": [{"url": "https://example.test/a", "title": "Source A",
                          "excerpt": "Source data"}],
@@ -126,11 +137,34 @@ class SpecialistPipelineTests(unittest.TestCase):
     def test_unreferenced_claims_are_labelled_without_fake_confidence(self):
         output = json.dumps({"summary": "Analysis", "items": [],
                              "claims": [{"text": "Unverified statement", "evidence_ids": []}]})
-        provider = FakeProvider(outputs=[response("Plan"), output, response("Review")])
+        reviewer = review_response("Review", reviews=[
+            {"claim_index": 0, "assessment": "unsupported", "note": "No source was supplied."}])
+        provider = FakeProvider(outputs=[response("Plan"), output, reviewer])
         result = SpecialistPipeline(provider).run("Analyze", {"sources": []})
         claim = result.results[1].claims[0]
         self.assertEqual(claim.link_status, "unreferenced")
         self.assertFalse(hasattr(claim, "confidence"))
+
+    def test_reviewer_must_review_each_analyst_claim_exactly_once(self):
+        analyst = json.dumps({"summary": "Analysis", "items": [],
+                              "claims": [{"text": "Claim A", "evidence_ids": ["S1"]}]})
+        incomplete = review_response("Review", reviews=[])
+        provider = FakeProvider(outputs=[response("Plan"), analyst, incomplete])
+        result = SpecialistPipeline(provider).run("Review claims", {
+            "sources": [{"url": "https://example.test/a", "title": "Source", "excerpt": "Data"}],
+        })
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.results[2].error_code, "invalid_output")
+
+    def test_reviewer_cannot_mark_unreferenced_claim_supported(self):
+        analyst = json.dumps({"summary": "Analysis", "items": [],
+                              "claims": [{"text": "Claim A", "evidence_ids": []}]})
+        reviewer = review_response("Review", reviews=[
+            {"claim_index": 0, "assessment": "supported", "note": "Trust me."}])
+        provider = FakeProvider(outputs=[response("Plan"), analyst, reviewer])
+        result = SpecialistPipeline(provider).run("Review claims")
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.results[2].error_code, "invalid_output")
 
     def test_synthesis_with_sources_withholds_claims_without_source_ids(self):
         result = (
@@ -140,7 +174,7 @@ class SpecialistPipelineTests(unittest.TestCase):
                             EvidenceClaim("unreferenced claim", (), "unreferenced"),
                         )),
             AgentResult("reviewer", "completed", "Review", ("unsupported claim flagged",),
-                        claims=(EvidenceClaim("reviewed", ("S1",), "source_linked"),)),
+                        reviews=(ClaimReview(0, "uncertain", "Needs stronger support."),)),
         )
         delivered = synthesis_deliverables(result, require_source_links=True)
         self.assertEqual(delivered[0]["claims"], [{
@@ -148,6 +182,29 @@ class SpecialistPipelineTests(unittest.TestCase):
         self.assertEqual(delivered[0]["unreferenced_claims_withheld"], 1)
         self.assertEqual(delivered[1]["unreferenced_claims_withheld"], 0)
         self.assertIn("unsupported claim flagged", delivered[1]["items"])
+
+    def test_synthesis_withholds_claim_rejected_by_reviewer(self):
+        result = (
+            AgentResult("analyst", "completed", "Analysis", claims=(
+                EvidenceClaim("Claim", ("S1",), "source_linked"),)),
+            AgentResult("reviewer", "completed", "Review",
+                        reviews=(ClaimReview(0, "conflicting", "Sources disagree."),)),
+        )
+        delivered = synthesis_deliverables(result, require_source_links=True)
+        self.assertEqual(delivered[0]["claims"], [])
+        self.assertEqual(delivered[0]["claims_rejected_by_review"], 1)
+
+    def test_reviewer_rejection_applies_even_without_source_filter(self):
+        result = (
+            AgentResult("analyst", "completed", "Analysis", claims=(
+                EvidenceClaim("Claim", ("S1",), "source_linked"),)),
+            AgentResult("reviewer", "completed", "Review",
+                        reviews=(ClaimReview(0, "unsupported", "Cannot substantiate."),)),
+        )
+        delivered = synthesis_deliverables(result, require_source_links=False)
+        self.assertEqual(delivered[0]["claims"], [])
+        self.assertEqual(delivered[0]["unreferenced_claims_withheld"], 0)
+        self.assertEqual(delivered[0]["claims_rejected_by_review"], 1)
 
     def test_synthesis_without_sources_preserves_unreferenced_claims_as_labelled_analysis(self):
         result = (AgentResult("analyst", "completed", "Analysis", claims=(

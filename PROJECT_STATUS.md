@@ -307,3 +307,12 @@ Limites que permanecem: não existe sandbox de código/arquivos porque não há 
 - A stored SHA-256 mismatch after approval is rejected.
 - CI head `182f59ea06897a9e4eaafff1e1866597b51fe2aa`: 199 unit tests passed on Python 3.11 and 199 on Python 3.12; 5/5 Playwright/Chromium browser E2E passed.
 - Skill administration UI and semantic conflict review remain pending. Skills are still untrusted text; no permissions/tools are granted.
+
+
+## P2-02 structured Reviewer assessments — pending CI
+
+- Reviewer output now has a typed assessment for every Analyst claim: `supported`, `unsupported`, `uncertain`, or `conflicting`, with a zero-based claim index and a note capped at 100 characters.
+- Parser requires exact one-to-one coverage of all Analyst claims and rejects missing/duplicate/out-of-range indices, invalid assessment values, and `supported` without an evidence ID.
+- Reviewer cannot author new factual claims in this stage. When the Reviewer marks a claim `unsupported` or `conflicting`, the final synthesis serializer withholds it deterministically, including when source-link filtering is disabled. The final model is instructed not to restate those claims as facts.
+- Activity metadata indicates whether Reviewer provider/model differs from Analyst's. A different model is only a second model opinion, not independent truth verification or human approval.
+- The implementation uses the same bounded, sequential, tool-less pipeline and global deadline. CI for this delta is pending.

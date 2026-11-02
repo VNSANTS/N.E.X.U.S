@@ -133,3 +133,10 @@ A pipeline sequencial tem um prazo global padrão de **90 segundos** (configurad
 
 
 Skill discovery uses literal case-insensitive text matching rather than SQL wildcard semantics. API search terms containing '%' or '_' are treated as ordinary text. Internal selection limits are strict: at most 10 skills and 12,000 total instruction characters; invalid numeric types, negative values and oversized values are rejected. Approved skill instructions are hash-checked on every load.
+
+
+### Revisão estruturada por claim
+
+O Reviewer produz uma avaliação por claim do Analyst usando índice zero-based, status `supported`, `unsupported`, `uncertain` ou `conflicting` e nota de até 100 caracteres. A API valida cobertura 1:1; avaliações ausentes, duplicadas ou fora do intervalo falham. `supported` sem evidência fornecida é rejeitado. Reviewer não cria claims novas nesse estágio.
+
+Na síntese, claims `unsupported` e `conflicting` são removidas de forma determinística, mesmo sem exigir source filtering. Claims `uncertain` continuam identificadas. Eventos metadata-only indicam se o Reviewer usou provider/model diferente do Analyst. Essa diversidade não comprova veracidade e não substitui revisão humana.

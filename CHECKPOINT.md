@@ -280,3 +280,13 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Skill search treats wildcard symbols as literal text; query/selection limits reject invalid values; tampered approved instructions fail the stored SHA-256 integrity check.
 - Remaining: skill-management UI and semantic instruction-conflict detection; no execution/permission capabilities are granted.
 - Next: P2-02 independent review/provenance.
+
+
+## P2-02 — typed Reviewer assessments (2026-11-02, CI pending)
+
+- Reviewer schema adds a one-to-one `reviews` array for Analyst claims: zero-based `claim_index`, assessment `supported` / `unsupported` / `uncertain` / `conflicting`, note up to 100 chars.
+- The parser rejects incomplete/duplicate review coverage, invalid indices/assessment/note, and any `supported` assessment where the Analyst claim has no supplied evidence ID. Reviewer cannot add claims.
+- Synthesis drops Analyst claims assessed `unsupported` or `conflicting` even if source-link filtering is disabled; uncertain claims remain labelled. The final response is instructed not to restate rejected claims as facts.
+- Activity events include `separate_review_model` to distinguish a reviewer configured with a different provider/model. That is model diversity, not proof or human approval.
+- New unit tests cover exact review coverage, unsupported source-less claims, suppression and model difference. An API integration fixture exercises an unsupported Analyst claim through the real conversation route.
+- CI pending for this delta.

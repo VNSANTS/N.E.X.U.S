@@ -207,8 +207,14 @@ class APITests(unittest.TestCase):
                 self.calls = 0
             def generate(self, messages, *, max_tokens=800, timeout=30):
                 self.calls += 1
-                return ModelResponse(json.dumps({"summary": self.summary, "items": [], "claims": []}),
-                                     self.provider_name, self.model)
+                role = messages[0]["content"].lower()
+                payload = {"summary": self.summary, "items": [], "claims": []}
+                if "analyst specialist" in role:
+                    payload["claims"] = [{"text": "uncited observation", "evidence_ids": []}]
+                if "reviewer specialist" in role:
+                    payload["reviews"] = [{"claim_index": 0, "assessment": "unsupported",
+                                          "note": "No source was supplied."}]
+                return ModelResponse(json.dumps(payload), self.provider_name, self.model)
 
         main = RecordingProvider()
         main.provider_name = "ollama"
@@ -250,6 +256,8 @@ class APITests(unittest.TestCase):
         self.assertIn("architect", final_context)
         self.assertIn("analyst", final_context)
         self.assertIn("reviewer", final_context)
+        self.assertIn("unsupported", final_context)
+        self.assertIn("uncited observation", final_context)
 
     def test_opt_in_specialists_skip_simple_conversation(self):
         import os

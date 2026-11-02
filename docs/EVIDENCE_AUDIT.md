@@ -49,3 +49,19 @@ Quando a execução inclui fontes, a camada de síntese remove deterministicamen
 Sem catálogo de fontes, claims permanecem visíveis como `unreferenced`, mas o contexto da síntese instrui explicitamente que não podem ser apresentadas como fatos verificados. O Reviewer recebe a instrução de apontar afirmações sem referência nos seus itens de revisão.
 
 Esta política é uma barreira de estrutura e instrução, não uma garantia de que o LLM final nunca vá parafrasear incorretamente uma afirmação. Para uso crítico, é necessária revisão independente/humana.
+
+
+## Reviewer claim assessments
+
+The Reviewer must return one assessment per Analyst claim. Each finding includes a zero-based `claim_index`, a bounded note (maximum 100 characters), and one of:
+
+- `supported`: the Reviewer model believes the supplied evidence is relevant; this is advisory, not proof.
+- `unsupported`: the Reviewer model did not find support in the supplied context.
+- `uncertain`: insufficient context to assess.
+- `conflicting`: the Reviewer model identifies disagreement in the supplied material.
+
+The parser requires one-to-one coverage and rejects duplicated/missing/out-of-range indices. It rejects `supported` when the Analyst claim has no supplied evidence ID. The Reviewer cannot create factual claims in its review output.
+
+Before final synthesis, Analyst claims marked `unsupported` or `conflicting` are withheld deterministically, even if source-link filtering is disabled. Claims marked `uncertain` remain labelled with their review status/note. The final model is instructed not to restate rejected claims as facts.
+
+A distinct Reviewer provider/model is recorded in metadata as `separate_review_model`; using a second model is not independent verification, source validation, human review, or approval of actions.
