@@ -173,3 +173,13 @@ Next: verify UI behavior in a local browser; implement provider-native tool call
 - The remote-provider budget now rejects non-integer, boolean, or negative token reservations before writing usage records.
 - Routing preflight and the atomic reservation gate both fail closed when either configured model token price is zero or invalid, including legacy/corrupted settings.
 - Added regression tests for corrupted zero output pricing and invalid token reservations. GitHub Actions is being re-run against the final branch head; the earlier successful run covered the preceding code revision, not these last regression tests.
+
+
+### Phase 2 — Evidence quality foundation (2026-11-02)
+
+- Added deterministic claim evidence assessment: linked source count, HTTP(S) URL validity, non-empty excerpt coverage, distinct-domain count, and explicit issue codes.
+- Claim promotion to `validated` now requires every linked source to have a valid HTTP(S) URL and a non-empty excerpt. Claims with no source, local-only URI, or missing excerpts remain unvalidated.
+- Confidence validation rejects booleans, non-numeric values, NaN, infinity, and values outside 0–1. Claim creation/review input types are hardened.
+- Claim detail/list API now exposes `evidence_quality`; the Knowledge dashboard shows completeness and warnings.
+- The system explicitly reports that provenance/completeness checks do not prove an excerpt semantically supports a claim. Semantic entailment and contradiction review remain future work and must not be automated as fact without a verifiable method.
+- GitHub Actions passed on the phase code/UI head: 127 tests on Python 3.11 and 127 on Python 3.12; compileall succeeded.
