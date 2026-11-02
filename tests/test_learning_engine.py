@@ -35,6 +35,34 @@ class LearningEngineTests(unittest.TestCase):
         self.engine.review_claim(claim, "validated", "Checked against source", .8)
         self.assertEqual(self.engine.get_claim(claim)["state"], "validated")
 
+    def test_claim_validation_requires_http_source_and_nonempty_excerpt(self):
+        local_source = self.engine.add_source("local://notes", "Local notes")
+        claim = self.engine.propose_claim("A sourced claim", [local_source], {local_source: "Evidence"})
+        quality = self.engine.assess_claim_evidence(claim)
+        self.assertFalse(quality["complete"])
+        self.assertIn("source_url_not_http", quality["issues"])
+        with self.assertRaises(ValueError):
+            self.engine.review_claim(claim, "validated", "Reviewed", .8)
+        web_source = self.engine.add_source("https://example.org/page", "Web source")
+        claim2 = self.engine.propose_claim("Another claim", [web_source])
+        with self.assertRaises(ValueError):
+            self.engine.review_claim(claim2, "validated", "No excerpt", .8)
+
+    def test_claim_confidence_rejects_boolean_and_nonfinite_values(self):
+        source = self.engine.add_source("https://example.org", "Example")
+        claim = self.engine.propose_claim("Example claim", [source], {source: "Evidence excerpt"})
+        for confidence in (True, float("nan"), float("inf"), -0.1, 1.1):
+            with self.assertRaises(ValueError):
+                self.engine.review_claim(claim, "validated", "Reviewed", confidence)
+
+    def test_claim_evidence_report_exposes_semantic_verification_limit(self):
+        source = self.engine.add_source("https://example.org", "Example")
+        claim = self.engine.propose_claim("Example claim", [source], {source: "Evidence excerpt"})
+        report = self.engine.get_claim(claim)["evidence_quality"]
+        self.assertTrue(report["complete"])
+        self.assertIn("do not establish", report["limitation"])
+        self.assertEqual(self.engine.list_claims()[0]["evidence_quality"]["claim_id"], claim)
+
     def test_claim_rejects_unknown_source(self):
         with self.assertRaises(ValueError):
             self.engine.propose_claim("Unsupported claim", ["missing-source"])
