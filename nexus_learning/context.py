@@ -30,7 +30,7 @@ class ContextRetriever:
         title_matches = [term for term in terms if term in heading]
         return len(matched) + 2 * len(title_matches), matched
 
-    def retrieve_detailed(self, query):
+    def retrieve_detailed(self, query, *, include_semantic=True):
         terms = self._terms(query)
         if not terms:
             return {"items": [], "query_terms": [], "lexical_candidates": 0,
@@ -74,7 +74,7 @@ class ContextRetriever:
                 "text": f"[validated claim {claim_id}, confidence {item['confidence']}; {source_text}] {item['claim']}"})
         lexical_count = len(ranked)
         semantic_count = 0
-        if self.semantic_index is not None:
+        if include_semantic and self.semantic_index is not None:
             try:
                 semantic = self.semantic_index.search(query, limit=self.max_items)
                 semantic_count = len(semantic)
