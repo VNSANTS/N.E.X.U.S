@@ -262,3 +262,12 @@ Gemini and OpenAI adapters use the existing provider contract and shared HTTP tr
 - Added an authenticated `/api/v1/context/preview` endpoint and a dashboard preview that explicitly uses lexical-only retrieval, avoiding embedding/provider calls and cost during inspection.
 - Fixed the memory category selector to offer only the supported episodic, semantic and procedural values (the previous UI default `note` was invalid).
 - Added context and memory boundary tests. The latest full CI run is queued behind an older GitHub Actions run that has not reported job steps; do not treat Phase 3 as validated until the latest branch-head run completes successfully.
+
+
+### Continuidade verificada — 2026-11-02
+
+- Corrigido o diagnóstico da recuperação lexical: termos encontrados somente no título agora aparecem em `matched_terms`, alinhando explicabilidade e pontuação.
+- Contratos de agentes agora validam IDs, papéis, operações, contexto permitido, estados de resultado e limites inteiros de passos (1–10). Isso fortalece a delegação determinística; **não** transforma os papéis em agentes LLM independentes nem habilita colaboração autônoma.
+- Registro de ferramentas agora rejeita nomes/descrições/esquemas inválidos, classes de risco desconhecidas e permissões menos restritivas que o risco declarado.
+- GitHub Actions passou no commit `26c77c3d0e3b7140e9bde3c1569d3c42e5443f6b`: **138 testes** em Python 3.11 e **138 testes** em Python 3.12; compilação dos módulos Python também passou.
+- Os trabalhos continuam na branch de desenvolvimento. `main` permanece intacta; nenhum deploy, serviço remoto, provedor pago ou cobrança foi ativado.
