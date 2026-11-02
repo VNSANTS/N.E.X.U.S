@@ -45,6 +45,7 @@ class ProviderBudgetTests(unittest.TestCase):
         self.assertEqual(count,0)
         self.provider.generate([{'role':'user','content':'hello'}],max_tokens=1,task_id='done')
         self.assertFalse(self.budget.can_reserve(self.inner,10,10))
+    # Persisted settings may predate current validation, so runtime gates must re-check them.
     def test_zero_output_price_fails_closed_even_if_legacy_settings_are_corrupt(self):
         self.config()
         with self.engine.db() as c:
