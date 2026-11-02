@@ -183,3 +183,12 @@ Next: verify UI behavior in a local browser; implement provider-native tool call
 - Claim detail/list API now exposes `evidence_quality`; the Knowledge dashboard shows completeness and warnings.
 - The system explicitly reports that provenance/completeness checks do not prove an excerpt semantically supports a claim. Semantic entailment and contradiction review remain future work and must not be automated as fact without a verifiable method.
 - GitHub Actions passed on the phase code/UI head: 127 tests on Python 3.11 and 127 on Python 3.12; compileall succeeded.
+
+
+### Phase 3 — Memory retrieval and governance (in progress, 2026-11-02)
+
+- Memory writes now validate title/body types and size, require object-shaped JSON metadata, reject NaN/infinity/non-JSON values, and cap metadata at 8 KiB. Search query and limit types are checked.
+- Context retrieval now ranks lexical matches with title weighting, groups multiple sources for the same validated claim, returns matched terms and retrieval-method metadata, and exposes bounded diagnostics via `retrieve_detailed` while preserving the existing `retrieve` interface.
+- Added an authenticated `/api/v1/context/preview` endpoint and a dashboard preview that explicitly uses lexical-only retrieval, avoiding embedding/provider calls and cost during inspection.
+- Fixed the memory category selector to offer only the supported episodic, semantic and procedural values (the previous UI default `note` was invalid).
+- Added context and memory boundary tests. The latest full CI run is queued behind an older GitHub Actions run that has not reported job steps; do not treat Phase 3 as validated until the latest branch-head run completes successfully.
