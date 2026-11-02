@@ -5,11 +5,13 @@ on:
     paths:
       - "nexus_learning/**"
       - "tests/**"
+      - "requirements-e2e.txt"
       - ".github/workflows/learning-core-tests.yml"
   pull_request:
     paths:
       - "nexus_learning/**"
       - "tests/**"
+      - "requirements-e2e.txt"
       - ".github/workflows/learning-core-tests.yml"
 
 permissions:
@@ -35,3 +37,20 @@ jobs:
         run: python -m compileall -q nexus_learning tests
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
+
+  browser-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-e2e.txt
+      - name: Install optional browser-test dependency
+        run: python -m pip install -r requirements-e2e.txt
+      - name: Install Playwright Chromium and system dependencies
+        run: python -m playwright install --with-deps chromium
+      - name: Run browser end-to-end tests
+        run: python -m unittest discover -s tests/e2e -v

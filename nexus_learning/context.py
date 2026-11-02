@@ -4,6 +4,10 @@ import re
 
 class ContextRetriever:
     def __init__(self, engine, *, max_chars=3500, max_items=8, semantic_index=None):
+        if isinstance(max_chars, bool) or not isinstance(max_chars, int) or max_chars < 1:
+            raise ValueError("max_chars must be a positive integer")
+        if isinstance(max_items, bool) or not isinstance(max_items, int) or max_items < 1:
+            raise ValueError("max_items must be a positive integer")
         self.engine = engine
         self.max_chars = max_chars
         self.max_items = max_items
@@ -33,6 +37,11 @@ class ContextRetriever:
               ORDER BY cl.confidence DESC,cl.updated_at DESC LIMIT ?""",
               (*claim_args, self.max_items)).fetchall()
         results = []
+        for row in claims:
+            excerpt = (row["excerpt"] or "")[:500]
+            results.append({"kind": "validated_claim", "id": row["id"], "text":
+                            f"[validated claim {row['id']}, confidence {row['confidence']}; source {row['uri']} "
+                            f"{row['source_title']}; excerpt: {excerpt}] {row['claim']}"})
         if self.semantic_index is not None:
             try:
                 results.extend(self.semantic_index.search(query, limit=self.max_items))
@@ -44,13 +53,8 @@ class ContextRetriever:
             if row["id"] not in seen_memory_ids:
                 results.append({"kind": "memory", "id": row["id"], "text":
                                 f"[{row['kind']} memory {row['id']}] {row['title']}: {row['body']}"})
-        for row in claims:
-            excerpt = (row["excerpt"] or "")[:500]
-            results.append({"kind": "validated_claim", "id": row["id"], "text":
-                            f"[validated claim {row['id']}, confidence {row['confidence']}; source {row['uri']} "
-                            f"{row['source_title']}; excerpt: {excerpt}] {row['claim']}"})
         bounded, used = [], 0
-        for item in results:
+        for item in results[:self.max_items]:
             text = item["text"][:self.max_chars - used]
             if not text:
                 break

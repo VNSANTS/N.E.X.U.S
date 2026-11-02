@@ -16,6 +16,7 @@ class TaskQueue:
         self.engine = engine
         self.max_attempts = max_attempts
         self.lease_seconds = lease_seconds
+        self._enqueue_lock = threading.Lock()
         with engine.db() as c:
             c.executescript("""
             CREATE TABLE IF NOT EXISTS worker_jobs(
@@ -53,19 +54,24 @@ class TaskQueue:
                 parsed = parsed.replace(tzinfo=timezone.utc)
             run_after = parsed.astimezone(timezone.utc).isoformat(timespec="seconds")
         stamp, job_id = now(), uid("job")
-        with self.engine.db() as c:
-            if idempotency_key:
-                existing = c.execute("SELECT id FROM worker_jobs WHERE idempotency_key=? AND owner_id IS ?",
-                                     (idempotency_key, owner_id)).fetchone()
-                if existing:
-                    return existing["id"]
-            c.execute("""INSERT INTO worker_jobs
-              (id,owner_id,kind,payload,priority,idempotency_key,state,attempts,max_attempts,
-               lease_until,lease_token,run_after,result,error_code,created_at,updated_at)
-              VALUES(?,?,?,?,?,?,'queued',0,?,NULL,NULL,?,NULL,NULL,?,?)""",
-              (job_id, owner_id, kind, json.dumps(payload, sort_keys=True), priority,
-               idempotency_key, self.max_attempts, run_after or stamp, stamp, stamp))
-            self._event(c, job_id, "job.queued")
+        with self._enqueue_lock:
+            with self.engine.db() as c:
+                # Serialize the lookup and insert across queue instances/processes.
+                # The Python lock also avoids SQLITE_LOCKED from SQLite shared-cache
+                # databases used by in-memory tests.
+                c.execute("BEGIN IMMEDIATE")
+                if idempotency_key:
+                    existing = c.execute("SELECT id FROM worker_jobs WHERE idempotency_key=? AND owner_id IS ?",
+                                         (idempotency_key, owner_id)).fetchone()
+                    if existing:
+                        return existing["id"]
+                c.execute("""INSERT INTO worker_jobs
+                  (id,owner_id,kind,payload,priority,idempotency_key,state,attempts,max_attempts,
+                   lease_until,lease_token,run_after,result,error_code,created_at,updated_at)
+                  VALUES(?,?,?,?,?,?,'queued',0,?,NULL,NULL,?,NULL,NULL,?,?)""",
+                  (job_id, owner_id, kind, json.dumps(payload, sort_keys=True), priority,
+                   idempotency_key, self.max_attempts, run_after or stamp, stamp, stamp))
+                self._event(c, job_id, "job.queued")
         return job_id
 
     def claim(self, owner_id=None):
@@ -76,11 +82,22 @@ class TaskQueue:
             c.execute("BEGIN IMMEDIATE")
             recovery_sql = """UPDATE worker_jobs
                        SET state=CASE WHEN attempts>=max_attempts THEN 'failed' ELSE 'queued' END,
+                           error_code=CASE WHEN attempts>=max_attempts THEN 'lease_expired' ELSE error_code END,
                            lease_until=NULL,lease_token=NULL,updated_at=? WHERE state='running' AND lease_until<?"""
             recovery_args = [stamp, stamp]
             if owner_id is not None:
                 recovery_sql += " AND owner_id=?"
                 recovery_args.append(owner_id)
+            expired_sql = "SELECT id,attempts,max_attempts FROM worker_jobs WHERE state='running' AND lease_until<?"
+            expired_args = [stamp]
+            if owner_id is not None:
+                expired_sql += " AND owner_id=?"
+                expired_args.append(owner_id)
+            expired = c.execute(expired_sql, expired_args).fetchall()
+            for row in expired:
+                terminal = row["attempts"] >= row["max_attempts"]
+                self._event(c, row["id"], "job.failed" if terminal else "job.requeued",
+                            {"reason": "lease_expired", "attempt": row["attempts"]})
             c.execute(recovery_sql, recovery_args)
             if owner_id is None:
                 row = c.execute("SELECT * FROM worker_jobs WHERE state='queued' AND run_after<=? ORDER BY priority DESC,created_at LIMIT 1",
@@ -108,6 +125,14 @@ class TaskQueue:
             if cur.rowcount != 1:
                 raise ValueError("job is not running")
             self._event(c, job_id, "job.completed")
+
+    def renew(self, job_id, *, lease_token):
+        """Extend a live lease only while this worker still owns its fencing token."""
+        lease = (datetime.now(timezone.utc) + timedelta(seconds=self.lease_seconds)).isoformat(timespec="seconds")
+        with self.engine.db() as c:
+            cursor = c.execute("UPDATE worker_jobs SET lease_until=?,updated_at=? WHERE id=? AND state='running' AND lease_token=?",
+                               (lease, now(), job_id, lease_token))
+            return cursor.rowcount == 1
 
     def fail(self, job_id, error_code, *, lease_token):
         if not isinstance(error_code, str) or not error_code.replace("_", "").isalnum() or len(error_code) > 64:
@@ -209,19 +234,67 @@ class LocalWorker:
         if job is None:
             self._heartbeat("idle")
             return False
+        renewal_stop = threading.Event()
+        lease_lost = threading.Event()
+        interval = max(0.1, self.queue.lease_seconds / 3)
+
+        def renew_while_running():
+            while not renewal_stop.wait(interval):
+                try:
+                    if not self.queue.renew(job["id"], lease_token=job["lease_token"]):
+                        lease_lost.set()
+                        return
+                    try:
+                        self._heartbeat("running")
+                    except Exception:
+                        # Monitoring failure must not revoke an otherwise valid lease.
+                        pass
+                except Exception:
+                    # Without a confirmed renewal, do not claim the result was committed.
+                    lease_lost.set()
+                    return
+
+        renewal = threading.Thread(target=renew_while_running,
+                                   name=f"lease-renew-{job['id']}", daemon=True)
+        renewal.start()
         try:
             result = self.handlers[job["kind"]](json.loads(job["payload"]))
-            self.queue.complete(job["id"], result, lease_token=job["lease_token"])
         except Exception:
-            state = self.queue.fail(job["id"], "worker_execution_failed", lease_token=job["lease_token"])
-            if state == "failed" and self.cycles is not None and job["kind"] == "learning.cycle_step":
-                try:
-                    self.cycles._set_status(json.loads(job["payload"])["cycle_id"],
-                                            "paused_error", "worker_retries_exhausted")
-                except Exception:
-                    pass
+            renewal_stop.set()
+            renewal.join(timeout=max(1.0, interval * 2))
+            if not lease_lost.is_set():
+                self._fail_job(job)
+            self._heartbeat("idle")
+            return True
+        finally:
+            renewal_stop.set()
+            renewal.join(timeout=max(1.0, interval * 2))
+        if lease_lost.is_set() or not self.queue.renew(job["id"], lease_token=job["lease_token"]):
+            self._heartbeat("idle")
+            return True
+        try:
+            self.queue.complete(job["id"], result, lease_token=job["lease_token"])
+        except Exception as exc:
+            if not (isinstance(exc, ValueError) and str(exc) == "job is not running"):
+                self._fail_job(job)
+            self._heartbeat("idle")
+            return True
         self._heartbeat("idle")
         return True
+
+    def _fail_job(self, job):
+        try:
+            state = self.queue.fail(job["id"], "worker_execution_failed", lease_token=job["lease_token"])
+        except ValueError:
+            # A reclaimed lease fences this worker from changing retry state.
+            return None
+        if state == "failed" and self.cycles is not None and job["kind"] == "learning.cycle_step":
+            try:
+                self.cycles._set_status(json.loads(job["payload"])["cycle_id"],
+                                        "paused_error", "worker_retries_exhausted")
+            except Exception:
+                pass
+        return state
 
     def _heartbeat(self, state):
         stamp = now()

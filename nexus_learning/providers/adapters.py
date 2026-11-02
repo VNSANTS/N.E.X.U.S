@@ -10,7 +10,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from .base import ModelResponse
+from .base import ModelResponse, ToolCall
 from .errors import (ProviderAuthenticationError, ProviderConfigurationError,
                      ProviderError, ProviderModelNotFoundError, ProviderRateLimitError, ProviderResponseError,
                      ProviderTimeoutError, ProviderUnavailableError)
@@ -33,6 +33,7 @@ class HTTPModelProvider:
     key_env = ""
     model_env = ""
     compatible_chat = True
+    supports_tools = True
     models_endpoint = ""
 
     def __init__(self, api_key, model, *, timeout=30, opener=None):
@@ -47,12 +48,12 @@ class HTTPModelProvider:
         self.default_timeout = float(timeout)
         self.opener = opener or _safe_open
 
-    def _request(self, messages, max_tokens, timeout):
+    def _request(self, messages, max_tokens, timeout, tools=None):
         if not self.model:
             raise ProviderConfigurationError()
         if not isinstance(messages, list) or not messages or any(
-            not isinstance(m, dict) or m.get("role") not in {"system", "user", "assistant"}
-            or not isinstance(m.get("content"), str) for m in messages
+            not isinstance(m, dict) or m.get("role") not in {"system", "user", "assistant", "tool"}
+            or not isinstance(m.get("content", ""), str) for m in messages
         ):
             raise ProviderResponseError()
         if isinstance(max_tokens, bool) or not isinstance(max_tokens, int) or not 1 <= max_tokens <= 8192:
@@ -60,6 +61,12 @@ class HTTPModelProvider:
         if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or not 0 < timeout <= 120:
             raise ProviderConfigurationError()
         payload = self._payload(messages, max_tokens)
+        if tools:
+            if not self.supports_tools or not isinstance(tools, list):
+                raise ProviderConfigurationError()
+            payload["tools"] = self._format_tools(tools)
+            if self.compatible_chat:
+                payload["tool_choice"] = "auto"
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         headers.update(self._headers())
         request = Request(self.endpoint, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
@@ -98,28 +105,69 @@ class HTTPModelProvider:
         try:
             parsed = json.loads(raw.decode("utf-8"))
             text, input_tokens, output_tokens = self._parse_response(parsed)
+            tool_calls = self._parse_tool_calls(parsed)
         except ProviderError:
             raise
         except (UnicodeDecodeError, json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError, AttributeError):
             raise ProviderResponseError() from None
-        if not isinstance(text, str):
+        if not isinstance(text, str) or (not text and not tool_calls):
             raise ProviderResponseError()
-        return ModelResponse(text, self.provider_name, self.model, input_tokens, output_tokens)
+        return ModelResponse(text, self.provider_name, self.model, input_tokens, output_tokens,
+                             tuple(tool_calls))
+
+    def _parse_tool_calls(self, parsed):
+        if not self.supports_tools:
+            return []
+        try:
+            calls = parsed["choices"][0]["message"].get("tool_calls") or []
+            if not isinstance(calls, list) or len(calls) > 8:
+                raise ValueError
+            result = []
+            for index, item in enumerate(calls):
+                function = item["function"]
+                arguments = function.get("arguments", "{}")
+                if isinstance(arguments, str):
+                    arguments = json.loads(arguments)
+                if not isinstance(arguments, dict):
+                    raise ValueError
+                result.append(ToolCall(str(item.get("id") or "call-" + str(index)),
+                                       function["name"], arguments))
+            return result
+        except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError):
+            raise ProviderResponseError() from None
 
     def _headers(self):
         return {"Authorization": "Bearer " + self._api_key}
 
+    def _format_tools(self, tools):
+        return tools
+
     def _payload(self, messages, max_tokens):
-        return {"model": self.model, "messages": messages, "max_tokens": max_tokens,
+        return {"model": self.model, "messages": self._format_messages(messages), "max_tokens": max_tokens,
                 "stream": False}
+
+    @staticmethod
+    def _format_messages(messages):
+        formatted = []
+        for item in messages:
+            message = {"role": item["role"], "content": item.get("content", "")}
+            if item["role"] == "assistant" and item.get("tool_calls"):
+                message["tool_calls"] = [{"id": call["id"], "type": "function",
+                    "function": {"name": call["name"],
+                                 "arguments": json.dumps(call["arguments"], ensure_ascii=False)}}
+                    for call in item["tool_calls"]]
+            if item["role"] == "tool":
+                message.update({"tool_call_id": item["tool_call_id"], "name": item["name"]})
+            formatted.append(message)
+        return formatted
 
     def _parse_response(self, parsed):
         usage = parsed.get("usage") or {}
-        return (parsed["choices"][0]["message"]["content"],
+        return (parsed["choices"][0]["message"].get("content") or "",
                 usage.get("prompt_tokens"), usage.get("completion_tokens"))
 
-    def generate(self, messages, *, max_tokens=800, timeout=30):
-        return self._request(messages, max_tokens, min(timeout, self.default_timeout))
+    def generate(self, messages, *, max_tokens=800, timeout=30, tools=None):
+        return self._request(messages, max_tokens, min(timeout, self.default_timeout), tools=tools)
 
     def _get_json(self, endpoint):
         request = Request(endpoint, headers={"Accept": "application/json", **self._headers()}, method="GET")
@@ -235,15 +283,33 @@ class AnthropicProvider(HTTPModelProvider):
     provider_name = "anthropic"
     endpoint = "https://api.anthropic.com/v1/messages"
     models_endpoint = "https://api.anthropic.com/v1/models"
+    supports_tools = True
+
+    def _format_tools(self, tools):
+        return [{"name": t["function"]["name"], "description": t["function"]["description"],
+                 "input_schema": t["function"]["parameters"]} for t in tools]
 
     def _headers(self):
         return {"x-api-key": self._api_key, "anthropic-version": "2023-06-01"}
 
     def _payload(self, messages, max_tokens):
         system = "\n".join(m["content"] for m in messages if m["role"] == "system")
+        converted = []
+        for message in messages:
+            role = message["role"]
+            if role == "system": continue
+            if role == "assistant" and message.get("provider_data", {}).get("anthropic_content"):
+                converted.append({"role": "assistant", "content": message["provider_data"]["anthropic_content"]})
+            elif role == "assistant" and message.get("tool_calls"):
+                converted.append({"role": "assistant", "content": [
+                    {"type": "tool_use", "id": call["id"], "name": call["name"], "input": call["arguments"]}
+                    for call in message["tool_calls"]]})
+            elif role == "tool":
+                converted.append({"role": "user", "content": [{"type": "tool_result",
+                    "tool_use_id": message["tool_call_id"], "content": message["content"]}]})
+            else: converted.append({"role": role, "content": message["content"]})
         result = {"model": self.model, "max_tokens": max_tokens,
-                  "messages": [{"role": m["role"], "content": m["content"]}
-                               for m in messages if m["role"] != "system"]}
+                  "messages": converted}
         if system:
             result["system"] = system
         return result
@@ -253,6 +319,16 @@ class AnthropicProvider(HTTPModelProvider):
                        if isinstance(block, dict) and block.get("type") == "text")
         usage = parsed.get("usage") or {}
         return text, usage.get("input_tokens"), usage.get("output_tokens")
+
+    def _parse_tool_calls(self, parsed):
+        try:
+            blocks = parsed.get("content", [])
+            calls = [b for b in blocks if b.get("type") == "tool_use"]
+            if len(calls) > 8: raise ValueError
+            return [ToolCall(c["id"], c["name"], c["input"],
+                             {"anthropic_content": blocks}) for c in calls]
+        except (AttributeError, KeyError, TypeError, ValueError):
+            raise ProviderResponseError() from None
 
     def list_models(self):
         payload = self._get_json(self.models_endpoint)
@@ -308,6 +384,12 @@ class GeminiProvider(HTTPModelProvider):
     provider_name = "gemini"
     endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     compatible_chat = False
+    supports_tools = True
+
+    def _format_tools(self, tools):
+        return [{"functionDeclarations": [{"name": t["function"]["name"],
+            "description": t["function"]["description"],
+            "parameters": t["function"]["parameters"]} for t in tools]}]
 
     def __init__(self, api_key, model, *, embedding_model="gemini-embedding-001", **kwargs):
         if not isinstance(model, str) or not MODEL_RE.fullmatch(model):
@@ -323,13 +405,37 @@ class GeminiProvider(HTTPModelProvider):
 
     def _payload(self, messages, max_tokens):
         system = "\n".join(m["content"] for m in messages if m["role"] == "system")
-        contents = [{"role": "model" if m["role"] == "assistant" else "user",
-                     "parts": [{"text": m["content"]}]}
-                    for m in messages if m["role"] != "system"]
+        contents = []
+        for m in messages:
+            if m["role"] == "system": continue
+            if m["role"] == "assistant" and m.get("provider_data", {}).get("gemini_content"):
+                contents.append({"role": "model", "parts": m["provider_data"]["gemini_content"]})
+            elif m["role"] == "assistant" and m.get("tool_calls"):
+                contents.append({"role": "model", "parts": [{"functionCall": {
+                    "name": call["name"], "args": call["arguments"]}} for call in m["tool_calls"]]})
+            elif m["role"] == "tool":
+                contents.append({"role": "user", "parts": [{"functionResponse": {
+                    "name": m["name"], "response": {"result": m["content"]}}}]})
+            else:
+                contents.append({"role": "model" if m["role"] == "assistant" else "user",
+                                 "parts": [{"text": m["content"]}]})
         result = {"contents": contents, "generationConfig": {"maxOutputTokens": max_tokens}}
         if system:
             result["systemInstruction"] = {"parts": [{"text": system}]}
         return result
+
+    def generate(self, messages, *, max_tokens=800, timeout=30, tools=None):
+        return super().generate(messages, max_tokens=max_tokens, timeout=timeout, tools=tools)
+
+    def _parse_tool_calls(self, parsed):
+        try:
+            content = parsed["candidates"][0]["content"]; parts = content["parts"]
+            calls = [p["functionCall"] for p in parts if isinstance(p, dict) and "functionCall" in p]
+            if len(calls) > 8: raise ValueError
+            return [ToolCall(c.get("id") or "gemini-call-" + str(i), c["name"], c["args"],
+                             {"gemini_content": parts}) for i,c in enumerate(calls)]
+        except (KeyError, IndexError, TypeError, ValueError):
+            raise ProviderResponseError() from None
 
     def _parse_response(self, parsed):
         text = "".join(part.get("text", "") for part in parsed["candidates"][0]["content"]["parts"])

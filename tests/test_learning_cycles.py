@@ -1,4 +1,5 @@
-import json
+﻿import json
+from contextlib import contextmanager
 import unittest
 
 from nexus_learning.engine import LearningEngine
@@ -98,6 +99,43 @@ class LearningCycleTests(unittest.TestCase):
         self.cycles.answer_question(question["id"], self.owner, "Quero priorizar estabilidade", remember=False)
         self.assertEqual(self.engine.search_memories(), [])
         self.assertEqual(self.cycles.questions(self.owner, "answered")[0]["remember"], 0)
+        self.assertTrue(worker.run_once(owner_id=self.owner))
+        resumed = self.cycles.get_cycle(cycle["id"], self.owner)
+        self.assertEqual(resumed["checkpoint"]["opportunity"]["owner_context"],
+                         "Quero priorizar estabilidade")
+
+    def test_remember_consent_and_memory_commit_atomically_on_storage_failure(self):
+        topic = self.cycles.create_topic(self.owner, "meu objetivo pessoal", allow_research=False)
+        cycle = self.cycles.start_cycle(topic["id"], self.owner)
+        worker = LocalWorker(self.queue, cycles=self.cycles)
+        worker.run_once(owner_id=self.owner)
+        worker.run_once(owner_id=self.owner)
+        question = self.cycles.questions(self.owner, "pending")[0]
+        original_db = self.engine.db
+
+        @contextmanager
+        def fail_memory_insert():
+            with original_db() as connection:
+                class ConnectionProxy:
+                    def execute(self, sql, *args):
+                        if sql.lstrip().upper().startswith("INSERT INTO MEMORIES"):
+                            raise RuntimeError("simulated interruption while saving memory")
+                        return connection.execute(sql, *args)
+
+                    def __getattr__(self, name):
+                        return getattr(connection, name)
+                yield ConnectionProxy()
+
+        self.engine.db = fail_memory_insert
+        try:
+            with self.assertRaisesRegex(RuntimeError, "saving memory"):
+                self.cycles.answer_question(question["id"], self.owner,
+                                            "Quero aprender com evid?ncias", remember=True)
+        finally:
+            self.engine.db = original_db
+        self.assertEqual(self.cycles.questions(self.owner, "pending")[0]["id"], question["id"])
+        self.assertEqual(self.engine.search_memories(), [])
+        self.assertEqual(self.cycles.get_cycle(cycle["id"], self.owner)["status"], "waiting_owner")
 
     def test_answer_can_be_explicitly_saved_as_personal_memory(self):
         topic = self.cycles.create_topic(self.owner, "meu objetivo pessoal", allow_research=False)

@@ -4,6 +4,32 @@ from datetime import datetime, timezone
 from .engine import now, uid
 from .providers.errors import ProviderConfigurationError, ProviderError
 
+
+def estimate_chat_input_tokens(messages, tools=None):
+    """Conservative preflight bound: UTF-8 content bytes plus chat framing allowance."""
+    if not isinstance(messages, list) or not messages:
+        raise ProviderConfigurationError()
+    estimate = 32
+    for message in messages:
+        if (not isinstance(message, dict) or message.get("role") not in {"system", "user", "assistant", "tool"}
+                or not isinstance(message.get("content", ""), str)):
+            raise ProviderConfigurationError()
+        estimate += len(message["content"].encode("utf-8")) + 16
+        if message.get("tool_calls"):
+            estimate += len(str(message["tool_calls"]).encode("utf-8"))
+    if tools is not None:
+        if not isinstance(tools, list):
+            raise ProviderConfigurationError()
+        estimate += len(str(tools).encode("utf-8"))
+    return estimate
+
+
+def estimate_embedding_input_tokens(text, title=None):
+    """Conservative UTF-8 byte estimate with allowance for embedding metadata."""
+    if not isinstance(text, str) or title is not None and not isinstance(title, str):
+        raise ProviderConfigurationError()
+    return 32 + len(text.encode("utf-8")) + (len(title.encode("utf-8")) + 16 if title else 0)
+
 class ProviderBudgetExceededError(ProviderError):
     code='provider_budget_exceeded'
     safe_message='Provider usage budget is unavailable or exhausted.'
@@ -49,30 +75,6 @@ class ProviderBudget:
             rows=[dict(r) for r in c.execute('SELECT provider,COUNT(*) calls,SUM(input_tokens+output_tokens) tokens,SUM(COALESCE(actual_usd,estimated_usd)) usd FROM provider_usage WHERE created_at LIKE ? GROUP BY provider',(today,)).fetchall()]
         return {'today':rows,'budget':self.settings()}
     def can_reserve(self,provider,input_tokens,output_tokens):
-        """Read-only routing preflight; `_reserve` remains the atomic hard gate."""
-        if any(isinstance(value,bool) or not isinstance(value,int) or value<0
-               for value in (input_tokens,output_tokens)):
-            return False
-        cfg=self.settings()
-        required=('daily_calls','daily_tokens','daily_usd','task_calls','task_tokens','task_usd')
-        if not cfg['enabled'] or not all(cfg.get(key,0)>0 for key in required):
-            return False
-        if cfg.get('input_usd_per_million',0)<=0 or cfg.get('output_usd_per_million',0)<0:
-            return False
-        estimate=(input_tokens*cfg['input_usd_per_million']+
-                  output_tokens*cfg['output_usd_per_million'])/1_000_000
-        today=datetime.now(timezone.utc).date().isoformat()+'%'
-        with self.engine.db() as c:
-            usage=c.execute("""SELECT COUNT(*) calls,
-                COALESCE(SUM(input_tokens+output_tokens),0) tokens,
-                COALESCE(SUM(COALESCE(actual_usd,estimated_usd)),0) usd
-                FROM provider_usage WHERE created_at LIKE ?""",(today,)).fetchone()
-        return (usage['calls']<cfg['daily_calls']
-                and usage['tokens']+input_tokens+output_tokens<=cfg['daily_tokens']
-                and usage['usd']+estimate<=cfg['daily_usd']
-                and input_tokens+output_tokens<=cfg['task_tokens']
-                and estimate<=cfg['task_usd'])
-    def can_reserve(self,provider,input_tokens,output_tokens):
         """Read-only route preflight. `_reserve` remains the atomic final gate."""
         if any(isinstance(value,bool) or not isinstance(value,int) or value<0
                for value in (input_tokens,output_tokens)):
@@ -96,17 +98,64 @@ class ProviderBudget:
                 and usage['usd']+estimate<=cfg['daily_usd']
                 and input_tokens+output_tokens<=cfg['task_tokens']
                 and estimate<=cfg['task_usd'])
+
+    def can_reserve_batch(self, provider, requests, *, task_id):
+        """Read-only preflight for a bounded multi-call task; each call still reserves atomically."""
+        if (not isinstance(task_id, str) or not task_id or len(task_id) > 128
+                or not isinstance(requests, list) or not requests or len(requests) > 10):
+            return False
+        try:
+            input_tokens = 0
+            output_tokens = 0
+            for request in requests:
+                if not isinstance(request, dict):
+                    return False
+                max_tokens = request.get("max_tokens")
+                if isinstance(max_tokens, bool) or not isinstance(max_tokens, int) or max_tokens < 1:
+                    return False
+                input_tokens += estimate_chat_input_tokens(request.get("messages"))
+                output_tokens += max_tokens
+        except ProviderError:
+            return False
+        cfg = self.settings()
+        required = ("daily_calls", "daily_tokens", "daily_usd", "task_calls", "task_tokens", "task_usd")
+        if (not cfg["enabled"] or not all(cfg.get(key, 0) > 0 for key in required)
+                or cfg.get("input_usd_per_million", 0) <= 0
+                or cfg.get("output_usd_per_million", 0) <= 0):
+            return False
+        estimate = (input_tokens * cfg["input_usd_per_million"] +
+                    output_tokens * cfg["output_usd_per_million"]) / 1_000_000
+        today = datetime.now(timezone.utc).date().isoformat() + "%"
+        with self.engine.db() as c:
+            daily = c.execute("""SELECT COUNT(*) calls,
+                COALESCE(SUM(input_tokens+output_tokens),0) tokens,
+                COALESCE(SUM(COALESCE(actual_usd,estimated_usd)),0) usd
+                FROM provider_usage WHERE created_at LIKE ?""", (today,)).fetchone()
+            task = c.execute("""SELECT COUNT(*) calls,
+                COALESCE(SUM(input_tokens+output_tokens),0) tokens,
+                COALESCE(SUM(COALESCE(actual_usd,estimated_usd)),0) usd
+                FROM provider_usage WHERE task_id=? AND created_at LIKE ?""", (task_id, today)).fetchone()
+        count = len(requests)
+        return (daily["calls"] + count <= cfg["daily_calls"]
+                and daily["tokens"] + input_tokens + output_tokens <= cfg["daily_tokens"]
+                and daily["usd"] + estimate <= cfg["daily_usd"]
+                and task["calls"] + count <= cfg["task_calls"]
+                and task["tokens"] + input_tokens + output_tokens <= cfg["task_tokens"]
+                and task["usd"] + estimate <= cfg["task_usd"])
     def _reserve(self,provider,input_tokens,output_tokens,task_id):
-        cfg=self.settings()
-        if not cfg['enabled'] or not all(cfg[k]>0 for k in ('daily_usd','daily_calls','daily_tokens','task_usd','task_calls','task_tokens')):
-            raise ProviderBudgetExceededError()
-        if cfg['input_usd_per_million']<=0: raise ProviderConfigurationError()
-        estimate=(input_tokens*cfg['input_usd_per_million']+output_tokens*cfg['output_usd_per_million'])/1_000_000
-        if estimate<=0: estimate=1e-12
-        usage_id=uid('usage'); stamp=now(); day=datetime.now(timezone.utc).date().isoformat()+'%'
-        effective_task=task_id or usage_id
         with self.engine.db() as c:
             c.execute('BEGIN IMMEDIATE')
+            # Read authorization only after obtaining the write lock. This makes a
+            # concurrent budget disable/reduction serialize before or after the
+            # reservation, never leave it using stale limits.
+            cfg=dict(c.execute('SELECT * FROM provider_budget_settings WHERE id=1').fetchone())
+            if not cfg['enabled'] or not all(cfg[k]>0 for k in ('daily_usd','daily_calls','daily_tokens','task_usd','task_calls','task_tokens')):
+                raise ProviderBudgetExceededError()
+            if cfg['input_usd_per_million']<=0: raise ProviderConfigurationError()
+            estimate=(input_tokens*cfg['input_usd_per_million']+output_tokens*cfg['output_usd_per_million'])/1_000_000
+            if estimate<=0: estimate=1e-12
+            usage_id=uid('usage'); stamp=now(); day=datetime.now(timezone.utc).date().isoformat()+'%'
+            effective_task=task_id or usage_id
             daily=c.execute('SELECT COUNT(*) calls,COALESCE(SUM(input_tokens+output_tokens),0) tokens,COALESCE(SUM(COALESCE(actual_usd,estimated_usd)),0) usd FROM provider_usage WHERE created_at LIKE ?',(day,)).fetchone()
             task=c.execute('SELECT COUNT(*) calls,COALESCE(SUM(input_tokens+output_tokens),0) tokens,COALESCE(SUM(COALESCE(actual_usd,estimated_usd)),0) usd FROM provider_usage WHERE task_id=? AND created_at LIKE ?',(effective_task,day)).fetchone()
             if (daily['calls']+1>cfg['daily_calls'] or daily['tokens']+input_tokens+output_tokens>cfg['daily_tokens'] or daily['usd']+estimate>cfg['daily_usd']
@@ -120,11 +169,14 @@ class ProviderBudget:
         b=output_tokens if not isinstance(actual_out,int) or actual_out<0 else actual_out
         actual=(a*cfg['input_usd_per_million']+b*cfg['output_usd_per_million'])/1_000_000
         with self.engine.db() as c: c.execute('UPDATE provider_usage SET state=?,input_tokens=?,output_tokens=?,actual_usd=? WHERE id=?',(state,a,b,actual,usage_id))
-    def generate(self,provider,messages,*,max_tokens=800,timeout=30,task_id=None):
-        input_estimate=sum(len(m['content']) for m in messages) # conservative upper bound, not a tokenizer claim
+    def generate(self,provider,messages,*,max_tokens=800,timeout=30,task_id=None,tools=None):
+        input_estimate=estimate_chat_input_tokens(messages, tools)
         output_estimate=max_tokens
         usage_id,cfg,input_estimate,output_estimate=self._reserve(provider,input_estimate,output_estimate,task_id)
-        try: response=provider.generate(messages,max_tokens=max_tokens,timeout=timeout)
+        try:
+            kwargs={"max_tokens":max_tokens,"timeout":timeout}
+            if tools is not None: kwargs["tools"]=tools
+            response=provider.generate(messages,**kwargs)
         except Exception:
             with self.engine.db() as c: c.execute("UPDATE provider_usage SET state='uncertain' WHERE id=?",(usage_id,))
             raise
@@ -132,7 +184,7 @@ class ProviderBudget:
         return response
     def embed(self,provider,text,*,title=None,task_type='RETRIEVAL_QUERY',timeout=30,task_id=None):
         if not callable(getattr(provider,'embed',None)): raise ProviderConfigurationError()
-        estimated=len(text)
+        estimated=estimate_embedding_input_tokens(text,title)
         usage_id,cfg,estimated,_=self._reserve(provider,estimated,0,task_id)
         try: vector=provider.embed(text,title=title,task_type=task_type,timeout=timeout)
         except Exception:
@@ -144,17 +196,20 @@ class ProviderBudget:
 class BudgetedProvider:
     supports_task_tracking=True
     def __init__(self,provider,budget): self.provider,self.budget=provider,budget
+    budget_managed=True
     @property
     def model(self): return getattr(self.provider,'model','unknown')
     @property
     def provider_name(self): return getattr(self.provider,'provider_name','unknown')
-    def generate(self,messages,*,max_tokens=800,timeout=30,task_id=None):
+    @property
+    def supports_tools(self): return bool(getattr(self.provider,'supports_tools',False))
+    def generate(self,messages,*,max_tokens=800,timeout=30,task_id=None,tools=None):
         if self.provider_name=='mock': return self.provider.generate(messages,max_tokens=max_tokens,timeout=timeout)
-        return self.budget.generate(self.provider,messages,max_tokens=max_tokens,timeout=timeout,task_id=task_id)
+        return self.budget.generate(self.provider,messages,max_tokens=max_tokens,timeout=timeout,task_id=task_id,tools=tools)
     def stream_generate(self,messages,*,max_tokens=800,timeout=60,task_id=None,cancel_event=None):
         stream=getattr(self.provider,'stream_generate',None)
         if not callable(stream): raise ProviderConfigurationError()
-        estimated_input=sum(len(m['content']) for m in messages)
+        estimated_input=estimate_chat_input_tokens(messages)
         usage_id,cfg,input_tokens,output_tokens=self.budget._reserve(
             self.provider,estimated_input,max_tokens,task_id)
         completed=False

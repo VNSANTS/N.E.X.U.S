@@ -1,0 +1,2 @@
+# Optional browser-test dependency; kept separate from runtime requirements.
+playwright==1.64.1

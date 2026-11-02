@@ -1,5 +1,17 @@
 # Development Checkpoint
 
+## Continuidade - pipeline de especialistas (2026-11-02)
+
+- O checkout continua na branch `main`, HEAD `852131e52f454175c501e6f36bcea2c04a73e9e7`, sem commit/push nesta rodada. Alteracoes locais anteriores foram preservadas.
+- A pipeline opt-in `nexus_learning/agent_execution.py` foi conectada aos fluxos POST de conversa normal e streaming. ADVANCED/RESEARCH podem executar Architect → Analyst → Reviewer no provider/model selecionado e passar deliverables delimitados como dados não confiáveis ao modelo final.
+- A opção `NEXUS_MULTIAGENT_ENABLED=false` foi adicionada a `.env.example`. Só habilitar explicitamente; adiciona três chamadas antes da geração. Pesquisa Tavily mantém sua confirmação própria.
+- Para providers remotos, o sistema verifica orçamento para o lote antes da primeira chamada, e cada inferência continua exigindo reserva atômica individual. O preflight não reserva o lote atomicamente: concorrência ou redução do orçamento pode deixar uma execução parcial, mas o limite monetário configurado segue protegido.
+- O histórico de atividade registra início/conclusão/falha e dimensões das chamadas; não armazena prompts nem entregáveis. Cada papel continua sem ferramentas e usa o mesmo modelo. A arquitetura não representa agentes com seleção independente de modelo.
+- Testes novos cobrem fluxo normal, streaming, chamadas remotas com orçamento, bloqueio remoto sem orçamento, falha de especialista sem chamar a resposta final, segurança dos eventos e saída estruturada.
+- Verificação final local: `python -m compileall -q nexus_learning tests` passou; `python -m unittest discover -s tests -q` passou com 162 testes (5 ignorados por serem E2E opt-in); Playwright/Chromium `python -m unittest discover -s tests/e2e -v` passou com 5/5, incluindo a conversa especialista opt-in. Nenhuma chamada externa foi feita.
+- CI não foi executado remotamente (não houve push); YAML parser local não está instalado. A configuração do workflow foi inspecionada, mas apenas as execuções locais são evidência disponível.
+- Nenhum provider externo, serviço pago ou Tavily foi chamado. Configuração multiagente permanece desativada por padrão.
+
 **Atualizado:** 2026-11-01
 **Projeto:** N.E.X.U.S. — Neural Engine Expert Underground System  
 **Branch principal:** `main`
@@ -155,3 +167,43 @@ Next: verify UI behavior in a local browser; implement provider-native tool call
 - Mock tests cover Gemini/OpenAI SSE, manual selection and redacted status, plus automatic OpenAI routing with test-only budget authorization.
 - No local credentials were read, no live provider request was issued, and no credits were consumed. No budget setting or runtime default was changed.
 - Verification: python -m compileall -q nexus_learning tests passed; python -m unittest discover -s tests -q passed (119 tests); git diff --check passed with only the existing README.md LF-to-CRLF warning.
+
+
+## Continuidade - revisao de integridade e orcamento (2026-11-02)
+
+- Checkout preservado em `main`, commit `852131e52f454175c501e6f36bcea2c04a73e9e7`; apos `git fetch origin main`, `origin/main` estava no mesmo commit. Sem merge, commit ou push.
+- Revisao leu documentacao e arquitetura; `.env` foi consultado apenas para switches/endpoint nao secretos, sem exibir credenciais; banco local e `debug.log` nao foram lidos. Nenhuma chamada a Gemini, OpenAI, Tavily ou outro servico externo.
+- Corrigida a concorrencia da idempotencia no enqueue via `BEGIN IMMEDIATE` e lock local; teste com banco SQLite em arquivo cobre chamadas simultaneas com o mesmo identificador.
+- Estimativa de entrada para orcamento usa bytes UTF-8 e margem de enquadramento. Corrigido risco P1: `_reserve` le autorizacao e limites depois de obter `BEGIN IMMEDIATE`, na mesma transacao da reserva.
+- Teste de regressao reproduziu a autorizacao obsoleta antes da correcao; testes focados de worker, orcamento e roteamento passaram. `python -m compileall -q nexus_learning tests` e `python -m unittest discover -s tests -q` passaram, com 122 testes.
+- Limite: estimativa local de tokens/custo nao equivale ao tokenizer ou faturamento real do provedor. Nao habilitar chamadas pagas com base somente nessa estimativa.
+- Browser E2E: `tests/e2e/test_browser_ui.py` uses an in-memory SQLite DB, injected deterministic provider, ephemeral loopback server, and headless Chromium. Four browser tests passed; Playwright 1.64.1 and Chromium were installed only in a temporary environment/cache, not as runtime or CI dependencies.
+- Recovery tests cover expired lease after engine/worker reconstruction, committed checkpoint without next enqueue, duplicate owner question prevention, uncertain research reservation without retry, completed and partial-failure result recovery, additive schema migration, failure-label allowlisting, and atomic rollback/retry for task-link creation.
+- Multiprocess worker tests cover one claimant per job, idempotent enqueue across independent processes, and stale-token rejection. Long-running handlers renew leases and worker heartbeats; terminal lease expiry records `lease_expired` plus a failure event.
+- `.github/workflows/learning-core-tests.yml` now has a separate Playwright/Chromium E2E job. The workflow was validated by local test runs only; no GitHub Actions run is available without a push or PR.
+- Chromium exposed a UI defect: the Learning page passed the wrong value into `listRows`, causing `(rows || []).slice is not a function`; fixed and covered by E2E navigation.
+- Owner answer resume now increments the idempotency generation and stores the answer in the cycle checkpoint. Consent and memory/audit persistence share a transaction when the owner requests remembering.
+- Research reservation is unique per cycle and written before outbound I/O. Recovery reports the persisted result, including sanitized provider failures, or an uncertain status when interruption occurred before completion; it never retries the reserved request. Exactly-once provider delivery is not guaranteed.
+- Context recovery applies a global item cap and prioritizes validated claims with provenance when semantic results would otherwise fill the cap.
+- Final validation: `python -m compileall -q nexus_learning tests` and `python -m unittest discover -s tests -q` passed with 144 tests (4 optional E2E tests skipped by default); `python -m unittest discover -s tests/e2e -v` passed all 4 Chromium browser tests. `git diff --check` passed.
+- No remote provider or research calls were made. Next: expand multi-process worker races and external-request in-flight tests; consider CI E2E without making browser a runtime requirement.
+## Tool calling — implementação local, 2026-11-02
+
+ModelResponse agora aceita chamadas tipadas opcionais. O ciclo usa ferramentas READ, limita rodadas, chamadas, tempo e tamanho de payload e mantém os resultados como dados não confiáveis. Ollama e OpenAI-compatible são implementados; o uso exige allowlist local explícita por provider:model. Gemini/Anthropic ficam sem tool calling até adapters nativos serem implementados. Pesquisa Tavily permanece no fluxo de confirmação do proprietário.
+
+- Endpoint POST síncrono: tool calling disponível para modelo explicitamente permitido.
+- SSE: streaming e cancelamento preservados; schemas de ferramenta não são anunciados, pois o transporte de geração síncrona não permite cancelamento confiável.
+- Especialistas: pipeline opt-in Architect → Analyst → Reviewer permanece sequencial/tool-less; demais papéis são supervisionados deterministicamente. Não é uma rede paralela de agentes independentes.
+- Skills do produto e execução isolada de código ainda não implementadas.
+- Cópia do comparative review foi lida na branch fonte do PR #2, pois o arquivo não existe localmente; nenhuma alteração Git remota foi feita.
+
+Continuar com: testar a suíte completa depois desta rodada; então implementar streaming com cancelamento real ou preparar o fluxo de confirmação para ferramenta sensível sem contornar o consentimento existente. Não habilitar Tavily ou providers remotos automaticamente.
+
+
+## Registro de execução — 2026-11-02T15:33:40+00:00
+
+- Tarefa: `P1-05` — **CONCLUÍDA E TESTADA**
+- Resumo: AGENTS.md agora exige retomar plano/checkpoint; NEXUS_EXECUTION_PLAN.md ordena backlog e tools/update_checkpoint.py registra marcos sem apagar histórico. Skills aprovadas são selecionadas e injetadas no chat como instruções não confiáveis; teste de API autenticada comprova que skill proposta não é carregada e aprovada é.
+- Testes (resultado observado): API skill integration: passou; tests/test_skills.py 3 passaram; compileall passou.
+- Arquivos: AGENTS.md, NEXUS_EXECUTION_PLAN.md, tools/update_checkpoint.py, nexus_learning/api.py, tests/test_api.py, CHECKPOINT.md
+- Próxima tarefa: P1-04 modelos independentes por especialista; P1-06 auditoria de evidências

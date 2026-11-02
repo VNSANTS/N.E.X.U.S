@@ -147,3 +147,44 @@ CI confirmado: execução [41255344883](https://github.com/VNSANTS/N.E.X.U.S/act
 - Fixed provider_from_env to enforce an explicitly configured NEXUS_REMOTE_PROVIDERS allowlist; empty means deny all, absent preserves legacy opt-in behavior.
 - Documented model discovery, local configuration, official API references, and the fact that API access is not necessarily free or unlimited.
 - No real provider request or credential access was performed.
+
+
+## 2026-11-02 - concorrencia e orcamento
+
+- Serializada verificacao/insercao idempotente da fila com transacao de escrita.
+- Estimativa de entrada para orcamento usa bytes UTF-8 e margem de enquadramento.
+- Reserva de inferencia le configuracao dentro de `BEGIN IMMEDIATE`, evitando autorizacao obsoleta em concorrencia com alteracao do orcamento.
+- Acrescentados testes de concorrencia da fila, entrada Unicode e orcamento desativado/obsoleto. `compileall` e os 122 testes passaram localmente; nenhuma chamada externa foi realizada.
+
+
+## 2026-11-02 - recuperacao de ciclos e E2E
+
+- Adicionados testes de recuperacao de worker/ciclo cobrindo lease expirado, checkpoint sem enqueue seguinte, pergunta repetida, reserva externa concorrente/incerta e atomicidade de tarefa/vinculo.
+- Reservas de pesquisa passaram a ser unicas por ciclo; recuperacao nao repete chamada externa depois de uma reserva cuja conclusao e incerta.
+- Retomada de resposta humana usa nova geracao idempotente; checkpoint recebe o contexto, e memoria consentida e persistida atomicamente com a resposta.
+- Recuperacao contextual agora limita o total de itens e preserva prioridade de afirmacoes validadas com fonte.
+- E2E no Chromium encontrou e corrigiu erro na listagem de ciclos da tela Aprendizagem; 4 testes de navegador cobrem autenticacao, navegacao, streaming, historico, sessao, logout, mobile e confirmacao de pesquisa.
+- Teste adicional cobre a recuperacao de uma pesquisa concluida antes do checkpoint do ciclo. Nenhuma chamada de IA/pesquisa externa foi feita; nenhum commit/push.
+- Recuperacao agora preserva resultados de pesquisa com falhas parciais e apenas metadados de falha sanitizados; adicionada migracao aditiva do schema de reservas existente.
+- Identificadores de provider, operacao e tipo de erro sao allowlisted, ou substituidos por categorias genericas, para evitar que dados arbitrarios de adapters cheguem ao checkpoint.
+- Validacao atualizada apos as fatias subsequentes: 144 testes unitarios/integracao passaram (4 E2E opt-in ignorados na descoberta padrao); suite Playwright separada cobre 4 fluxos de navegador.
+
+## 2026-11-02 - workers multiprocesso e CI E2E
+
+- Adicionados testes com processos independentes para reivindicacao exclusiva, enqueue idempotente e rejeicao de tokens de lease antigos.
+- LocalWorker renova leases durante handlers longos; conclusoes com lease perdido nao sao gravadas como resultado desse worker.
+- Lease expirado apos esgotar tentativas agora registra `lease_expired` e evento terminal de falha.
+- Heartbeat de worker e atualizado durante tarefas longas; cobertura confirma que outro worker nao rouba o lease antes da conclusao.
+- Workflow existente ganhou job Playwright/Chromium separado, mantendo dependencias de browser fora das dependencias de runtime. Execucao local validada; execucao no GitHub pendente de push/PR.
+
+## 2026-11-02 - pipeline de especialistas LLM opt-in
+
+- Integrada pipeline Architect → Analyst → Reviewer nos fluxos de conversa síncrono e SSE para tarefas ADVANCED/RESEARCH, mantendo a opção desativada por padrão.
+- Delimitado o contexto compartilhado e validada saída JSON limitada. Entregáveis seguem como dados não confiáveis; os agentes não recebem ferramentas e a atividade persiste apenas metadados.
+- Adicionado preflight de orçamento remoto para o pipeline e geração final; cada chamada mantém a reserva transacional individual. Uma corrida de orçamento pode abortar etapas futuras após consumo parcial, sem ultrapassar os limites configurados.
+- Marcado `BudgetedProvider` como já gerenciado para impedir wrapping duplicado no caminho de roteamento/runtime.
+- Testes cobrem execução normal, streaming, bloqueio sem orçamento, falha fail-closed e contabilização das três chamadas especialistas mais a geração final. A suíte passou com 162 testes (5 E2E opt-in ignorados); 5 E2E Playwright passaram separadamente no Chromium, incluindo a conversa especialista pela interface.
+- CI não foi executado remotamente e nenhuma integração externa foi chamada nesta rodada.
+## 2026-11-02 — native tool calling
+
+Added a bounded, provider-neutral tool-call lifecycle to the authenticated synchronous conversation path. Ollama and OpenAI-compatible adapters normalize calls; only explicitly allowlisted models receive READ-only memory/knowledge tool schemas. Every execution passes ToolRegistry and PolicyEngine. Tool results remain untrusted and ephemeral. Tavily confirmation is unchanged. SSE streaming stays cancellable and tool-less. Gemini/Anthropic tool calling, isolated execution and product runtime skills remain unimplemented.

@@ -2,6 +2,12 @@
 
 Phases are review gates, not date promises. Complete and review each phase before expanding scope.
 
+## Estado confirmado - 2026-11-02
+
+O MVP local possui API/UI autenticadas em loopback, historico, memoria contextual lexical, adaptadores de provedores, roteamento manual/automatico, pesquisa Tavily com confirmacao, fila local e orcamento fail-closed. Os papeis do supervisor ainda nao sao agentes LLM independentes. Nenhuma chamada externa foi feita nesta revisao. Consulte `PROJECT_STATUS.md` e `docs/IMPLEMENTATION_BACKLOG.md` para evidencias e limites.
+
+Estado desta rodada: fila validada entre processos independentes; leases renovados em handlers longos; E2E local e workflow separado configurados; pipeline especialista LLM sequencial opt-in integrada ao chat ADVANCED/RESEARCH, sem ferramentas, com orçamento e testes mockados. Próximas lacunas: reserva atômica de orçamento para o lote completo, seleção independente de modelo por especialista, integração de ferramentas com aprovação, execução remota de CI quando houver push/PR autorizado, Cloud/TLS, multiusuário de produção e propostas de autoaperfeiçoamento em sandbox isolado.
+
 ## 0 — Audit and foundation
 Audit the intended base code/OpenJarvis, license, dependencies, working modules and tests. Establish repository hygiene, audit Agent Skills and define a realistic architecture. **Exit:** reviewed code audit, skills audit and architecture baseline. (Remote static OpenJarvis audit completed; local validation remains.)
 
@@ -106,3 +112,20 @@ Still ahead: provider-native tool calling and tool-result cycles, browser-level 
 - Added a regression fix so an explicit NEXUS_REMOTE_PROVIDERS allowlist is enforced by provider_from_env, matching ProviderManager. Empty allowlist denies remote providers; missing variable retains compatibility with existing global-opt-in configurations.
 - No real provider calls, credentials access, or credit usage occurred. Remote budgets and defaults were not changed.
 - Verification: compileall passed; the full suite passed with 119 tests; git diff --check passed with an existing line-ending warning for README.md.
+## Marco 2026-11-02 — ciclo universal READ
+
+Feito:
+- Contrato provider-neutral para retorno com tool calls, sem quebrar respostas textuais.
+- Parsing/serialização para Ollama e Chat Completions OpenAI-compatible.
+- Runtime bounded com schema JSON, registro de ferramentas, PolicyEngine fail-closed e resultados não confiáveis.
+- Ativação somente por lista local exata provider:model; vazia por padrão.
+- Persistência de eventos sem argumentos/resultados; continuations remotas passam pelo ledger de orçamento.
+- Streaming mantém cancelamento real e não anuncia tools enquanto transporte de geração não é cancelável.
+- Tavily permanece sensível e fora do ciclo automático.
+
+Pendente:
+- Tool calls nativos Gemini e Anthropic.
+- Capacidade específica por modelo ainda depende de verificação e allowlist humana.
+- SSE de ferramentas e cancelamento do transporte síncrono.
+- Skills de runtime aprovadas, paralelismo de especialistas e revisão independente independente de modelo.
+- Sandbox isolada somente quando houver ferramenta de execução que justifique essa infraestrutura.

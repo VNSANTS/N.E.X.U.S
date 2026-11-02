@@ -5,6 +5,7 @@ import math
 import time
 
 from .model_router import ModelRoute, ModelRouter, NoRouteAvailable
+from .provider_budget import estimate_chat_input_tokens
 from .providers.errors import ProviderError
 
 
@@ -129,7 +130,9 @@ class ModelRoutingService:
             return RoutingResult(mode, route, provider, 1)
 
         candidates = self._verified_candidates(messages, streaming=streaming)
-        estimated_context = max(512, sum(len(item["content"]) for item in messages) // 3 + 512)
+        estimated_context = max(
+            512, estimate_chat_input_tokens(messages)
+            + int(self.env.get("NEXUS_ROUTER_MAX_OUTPUT_TOKENS", "800")))
         remote_allowed = self.env.get("NEXUS_ENABLE_REMOTE_PROVIDER", "false").strip().lower() == "true"
         route = self.router.choose(text, candidates, estimated_context=estimated_context,
                                    remote_allowed=remote_allowed)
@@ -180,7 +183,7 @@ class ModelRoutingService:
         else:
             candidates = self._discover_candidates(self._candidate_specs(), streaming=streaming)
             self._cache = {cache_key: (time.monotonic(), candidates)}
-        input_estimate = sum(len(item["content"]) for item in messages)
+        input_estimate = estimate_chat_input_tokens(messages)
         output_estimate = int(self.env.get("NEXUS_ROUTER_MAX_OUTPUT_TOKENS", "800"))
         prepared = []
         for item in candidates:

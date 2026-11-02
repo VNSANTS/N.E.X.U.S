@@ -1,6 +1,7 @@
 """Typed allowlisted read tools; no arbitrary shell or filesystem execution."""
 from dataclasses import dataclass
 import json
+import math
 import re
 
 from .policy import PolicyEngine, READ, SENSITIVE, WRITE_REVERSIBLE
@@ -39,7 +40,7 @@ class ToolRegistry:
         if not isinstance(spec, ToolSpec) or not re.fullmatch(r"[a-z][a-z0-9_.-]{1,80}", spec.name or ""):
             raise ValueError("invalid tool specification")
         permission = spec.permission or spec.risk
-        if permission not in {READ, WRITE_REVERSIBLE, SENSITIVE}:
+        if spec.risk not in {READ, WRITE_REVERSIBLE, SENSITIVE} or permission != spec.risk:
             raise ValueError("invalid tool permission")
         if (not isinstance(spec.description, str) or len(spec.description) > 500
                 or not isinstance(spec.parameters, dict)
@@ -58,6 +59,25 @@ class ToolRegistry:
                  "parameters": {k: v.__name__ for k, v in x.parameters.items()}}
                 for x in self._tools.values()]
 
+    def model_tools(self):
+        """OpenAI-compatible function declarations for explicitly allowlisted READ tools only."""
+        types = {str: "string", int: "integer", float: "number", bool: "boolean",
+                 dict: "object", list: "array"}
+        result = []
+        for spec in self._tools.values():
+            if (spec.permission or spec.risk) != READ:
+                continue
+            properties = {}
+            for name, value_type in spec.parameters.items():
+                if value_type not in types:
+                    raise ValueError("tool parameter type has no JSON Schema mapping")
+                properties[name] = {"type": types[value_type]}
+            result.append({"type": "function", "function": {
+                "name": spec.name, "description": spec.description,
+                "parameters": {"type": "object", "properties": properties,
+                               "required": list(spec.parameters), "additionalProperties": False}}})
+        return result
+
     def execute(self, name, arguments, *, owner_id, approved=False, context=None):
         spec = self._tools.get(name)
         decision = self.policy.evaluate(name, (spec.permission or spec.risk) if spec else READ, approved)
@@ -69,10 +89,18 @@ class ToolRegistry:
         if not isinstance(arguments, dict) or set(arguments) != set(spec.parameters):
             self._audit(owner_id, "tool.failed", name, {"error_type": "invalid_arguments"})
             raise ValueError("tool arguments do not match its schema")
+        try:
+            if len(json.dumps(arguments, ensure_ascii=False, allow_nan=False).encode("utf-8")) > 8000:
+                raise ValueError("tool arguments exceed configured limit")
+        except (TypeError, ValueError):
+            self._audit(owner_id, "tool.failed", name, {"error_type": "invalid_arguments"})
+            raise ValueError("tool arguments are not valid bounded JSON") from None
         for key, expected in spec.parameters.items():
             value = arguments[key]
             invalid = not isinstance(value, expected)
             if expected is int and isinstance(value, bool):
+                invalid = True
+            if expected is float and not math.isfinite(value):
                 invalid = True
             if isinstance(value, str) and len(value) > 500:
                 invalid = True

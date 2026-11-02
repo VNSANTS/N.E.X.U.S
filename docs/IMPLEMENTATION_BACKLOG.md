@@ -1,24 +1,43 @@
 # N.E.X.U.S. — Backlog técnico de implementação
 
-**Data da revisão:** 2026-11-01
+**Data da revisão:** 2026-11-02
 **Escopo:** revisão somente do repositório N.E.X.U.S.; não inclui Nexus Finance nem outros projetos.
 
 Este documento é o plano operacional derivado do código e da documentação existentes. Ele separa o que está no repositório do que ainda depende de escolhas, credenciais ou execução no computador.
 
-## 1. Estado verificado no código
+## 1. Estado verificado no codigo - revisao 2026-11-02
 
-| Área | Evidência no repositório | Estado real |
+| Area | Evidencia no repositorio | Estado real |
 |---|---|---|
-| Persistência | `nexus_learning/engine.py` | SQLite para memórias, fontes, afirmações, tarefas e auditoria |
-| Ingestão | `nexus_learning/ingestion.py` | TXT/Markdown, hash, chunks e busca lexical; sem PDF, OCR ou embeddings |
-| Pesquisa | `nexus_learning/crossref.py` | Metadados bibliográficos da Crossref; não baixa artigos nem valida afirmações |
-| Política | `nexus_learning/policy.py` | Allowlist fail-closed para READ, WRITE_REVERSIBLE e SENSITIVE |
-| Runtime | `nexus_learning/runtime.py` | Uma tarefa textual por vez usando um provider; sem ferramentas executáveis |
-| Providers | `nexus_learning/providers/` | Contrato e MockProvider offline; nenhum provider remoto implementado |
-| CLI | `nexus_learning/__main__.py` | Comandos locais de memória, fontes, afirmações, tarefas, ingestão, pesquisa e demonstração offline |
-| Testes | `tests/` | unittest; execução CI anterior confirmada em Python 3.11 e 3.12 |
-| API/web | Não existe implementação correspondente no tree atual | Pendente |
-| Cloud/worker | Não existe implementação correspondente no tree atual | Pendente |
+| Persistencia e memoria | `nexus_learning/engine.py`, `memory.py`, `knowledge.py` | SQLite local; memorias, fontes, afirmacoes, auditoria e recuperacao contextual lexical. Promocao exige revisao; saidas de modelo nao viram fatos automaticamente. |
+| Ingestao e pesquisa | `ingestion.py`, `research.py`, `crossref.py`, `integrations/` | TXT/Markdown e busca lexical; Crossref publico; Tavily requer configuracao e confirmacao explicita. Nenhuma pesquisa real foi executada nesta revisao. |
+| API e interface | `api.py`, `web/` | WSGI autenticada em loopback, sessoes/historico e interface conectada. Nao e implantacao remota/de producao; sem TLS de producao ou multiusuario. |
+| Provedores e roteamento | `providers/`, `routing.py`, `model_router.py`, `provider_budget.py` | Adaptadores opcionais, selecao manual/automatica e preflight de capacidade. Chamadas remotas exigem permissoes e orcamento explicitos; MockProvider continua para offline/testes. Nenhuma chamada real nesta revisao. |
+| Ferramentas e agentes | `tools.py`, `agents.py`, `agent_execution.py`, `runtime.py`, `api.py` | Ferramentas continuam allowlisted e policy-gated. Há pipeline LLM opt-in Architect→Analyst→Reviewer antes de respostas ADVANCED/RESEARCH, sem tools e com contexto explícito, saída JSON validada, orçamento fail-closed e eventos sem conteúdo bruto. Usa o mesmo provider/model e não armazena entregáveis; ainda é colaboração sequencial limitada. |
+| Worker e tarefas | `worker.py`, `learning_cycles.py` | Fila SQLite local com prioridade, idempotencia, leases renovaveis, fencing e limites; concorrencia testada com processos independentes. Nao e worker distribuido. |
+| Seguranca/orcamento | `auth.py`, `policy.py`, `provider_budget.py` | Auth local e autorizacao fail-closed; orcamento estimado com reserva transacional. Estimativa nao garante valor final cobrado pelo fornecedor. |
+| Testes | `tests/`, `.github/workflows/` | `unittest` e mocks; 162 testes passaram localmente em Python 3.13.17 (5 E2E opt-in ignorados na descoberta padrão), e 5 testes Playwright passaram no Chromium, incluindo conversa com pipeline LLM mockado no browser. Workflow CI tem job browser separado, ainda sem execução remota. Integrações externas não foram chamadas nesta rodada. |
+
+O historico abaixo registra marcos anteriores; nao trate anotacoes antigas como estado atual quando contradisserem esta tabela.
+
+### Pipeline especialista opt-in - 2026-11-02
+
+- `NEXUS_MULTIAGENT_ENABLED=false` por padrão. Quando habilitado, somente solicitações classificadas como ADVANCED ou RESEARCH executam Architect → Analyst → Reviewer e depois a resposta final.
+- Os papéis usam o mesmo provider selecionado, são sequenciais, sem ferramentas e com contextos permitidos por papel. Saídas são JSON limitadas, tratadas como dados não confiáveis; prompts/saídas não são gravados na atividade.
+- Pesquisa continua exigindo confirmação antes do pipeline. O worker/API não ganha autorização para ferramentas ou ações externas.
+- Em providers remotos, a aplicação faz preflight de orçamento para as três etapas e a resposta final; cada chamada ainda passa pela reserva atômica existente. Uma mudança concorrente de orçamento pode interromper o pipeline depois de uma ou mais chamadas, sem ultrapassar os limites.
+- Testes offline cobrem execução, streaming, registros, falha fail-closed sem orçamento remoto e contabilização de todas as chamadas. Não houve chamadas externas reais.
+
+### Continuity implementation - 2026-11-02
+
+- Worker/cycle tests reconstruct file-backed SQLite services across lost leases, committed checkpoints with lost follow-up enqueue, interrupted questions, uncertain external research, and task/link transaction interruption.
+- Research reservation is unique per cycle and committed before external I/O. After overlap/restart, the cycle records an uncertain outcome rather than issuing a duplicate request. This is at-most-once after reservation, not exactly-once delivery.
+- Owner answers resume with a new idempotency generation; the answer is copied into the cycle checkpoint. When `remember=true`, question state, checkpoint and memory/audit entry are committed together.
+- Context retrieval caps the aggregate result count and puts validated sourced claims ahead of semantic/lexical memories when the cap is reached.
+- Optional Playwright E2E passed locally using a temporary environment and browser; see `tests/e2e/test_browser_ui.py` and `requirements-e2e.txt`. No dependency was added to runtime requirements. CI now has a separate browser job; the workflow has not yet run remotely.
+- The E2E failure that found the learning page's incorrect `listRows` arguments was corrected and all 4 browser tests passed.
+- Completed research outcomes and sanitized provider failure metadata are now persisted before cycle checkpointing, so restart recovery preserves partial/failed/no-result status without retrying the external request. A migration test covers existing reservation tables; provider, operation, and error labels are allowlisted.
+- Independent-process tests cover exclusive claims, same-key enqueue idempotency, and stale-worker fencing. `LocalWorker` renews leases while handlers run; exhausted expired leases now store a failure code and activity event.
 
 ## 2. Endurecimento aplicado nesta revisão
 
@@ -193,3 +212,17 @@ Pend?ncias para avan?ar sem falsa declara??o de prontid?o:
 4. Design isolated self-improvement proposals: separate workspace, explicit changed-file manifest, bounded test command allowlist, and promotion only after review.
 5. Improve citation quality beyond reference-index validation; compare claims to excerpts and disclose unresolved contradiction/date gaps.
 6. Add concurrency tests for multiple confirmed Tavily requests sharing the daily cap; verify reservation remains atomic.
+## Update backlog — universal tool calling (2026-11-02)
+
+**Implemented and locally tested:** normalized provider tool-call envelope; Ollama/OpenAI-compatible parsing and serialization; exact model capability allowlist; READ-only schemas; policy-gated execution; bounded arguments/results, rounds/calls/time; safe activity metadata; API authenticated continuation; budgeted remote continuation; tool-less cancellable SSE.
+
+**Next, in order:**
+1. Add native protocol implementations and simulated contract tests for Gemini and Anthropic before capability exposure.
+2. Add cancellation-aware asynchronous generation so SSE can support tools without hidden work after disconnect.
+3. Add a two-phase owner confirmation UI/API for model-requested SENSITIVE tools; never let the model approve its own action.
+4. Add progress events in the interface for tools and agent steps.
+5. Add runtime skills as proposed → owner-reviewed → approved, with bounded on-demand context and no permission elevation.
+6. Add an isolated executor only with a concrete code/file tool, least-privilege mounts, no secret forwarding, resource/network limits, audit and owner review.
+7. Evolve current sequential Architect/Analyst/Reviewer inference into budgeted role-specific orchestration; use concurrency only for independent tasks and preserve a separate reviewer gate.
+
+Do not interpret provider protocol support as proof that every model supports tools; the exact model allowlist remains empty until manually verified.

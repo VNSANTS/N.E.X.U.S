@@ -47,3 +47,13 @@ Ações como envio de mensagens em nome do usuário, compras, movimentações fi
 - Evite perguntas sobre decisões triviais. Adote soluções reversíveis e de baixo custo, documentando hipóteses. Provedor remoto, credenciais, hospedagem, política de retenção, gastos, deploy e ações irreversíveis permanecem sob decisão/autorização humana.
 - Se os agentes personalizados não estiverem carregados, não finja delegação: diagnostique e continue de forma sequencial quando for seguro.
 - O Codex é ferramenta de engenharia. A aplicação final, runtime e interface pertencem ao N.E.X.U.S. e devem funcionar independentemente do Codex.
+
+## Continuidade de execução do produto
+
+- Em cada sessão, leia `NEXUS_EXECUTION_PLAN.md` e `CHECKPOINT.md` depois dos documentos obrigatórios. Retome a próxima tarefa com status `PENDENTE` ou `EM ANDAMENTO`; não repita auditorias já registradas sem novo motivo.
+- Trabalhe continuamente por dependências até esgotar tarefas seguras e desbloqueadas. Ao concluir uma fatia, valide-a, registre evidência e passe à próxima; conclusão de módulo ou prompt não significa conclusão do projeto.
+- Priorize código integrado ao fluxo real sobre planejamento. Um plano só é progresso quando acompanhado de implementação/teste ou quando registra bloqueio real.
+- Atualize o checkpoint após marcos verificáveis usando `python tools/update_checkpoint.py --task <ID> --status <STATUS> --summary "..." --tests "..." --files "..."`. O script acrescenta registro datado sem apagar histórico. Nunca declare testes que não foram executados.
+- Mantenha tarefas incompletas como `EM ANDAMENTO`, `PENDENTE` ou `BLOQUEADA`; só mova para concluída com critério de aceite e teste descritos.
+- Preserve alterações locais, nunca faça reset/clean/commit/push sem pedido explícito. Não leia ou modifique segredos, bancos ou logs locais proibidos; sem chamadas pagas ou ações externas não autorizadas.
+- Se a sessão terminar, deixe em `CHECKPOINT.md` o próximo ID de tarefa e o comando exato para retomar. `NEXUS_EXECUTION_PLAN.md` é fonte de sequência; código/testes são fonte de verdade de implementação.

@@ -63,6 +63,10 @@ class LearningCycleService:
             CREATE TABLE IF NOT EXISTS learning_cycle_task_links(
               cycle_id TEXT NOT NULL REFERENCES learning_cycles(id),finding_id TEXT NOT NULL REFERENCES learning_findings(id),
               task_id TEXT NOT NULL,created_at TEXT NOT NULL,UNIQUE(cycle_id,finding_id));
+            CREATE TABLE IF NOT EXISTS learning_research_reservations(
+              cycle_id TEXT PRIMARY KEY REFERENCES learning_cycles(id),status TEXT NOT NULL,
+              providers_json TEXT NOT NULL,result_json TEXT NOT NULL DEFAULT '{}',
+              created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS agent_runs(
               id TEXT PRIMARY KEY,cycle_id TEXT NOT NULL REFERENCES learning_cycles(id),agent_id TEXT NOT NULL,
               operation TEXT NOT NULL,status TEXT NOT NULL,max_steps INTEGER NOT NULL,
@@ -73,6 +77,10 @@ class LearningCycleService:
               run_id TEXT NOT NULL REFERENCES agent_runs(id),sender TEXT NOT NULL,recipient TEXT NOT NULL,
               message_json TEXT NOT NULL,created_at TEXT NOT NULL);
             """)
+            columns = {row["name"] for row in c.execute(
+                "PRAGMA table_info(learning_research_reservations)").fetchall()}
+            if "result_json" not in columns:
+                c.execute("ALTER TABLE learning_research_reservations ADD COLUMN result_json TEXT NOT NULL DEFAULT '{}' ")
 
     def settings(self):
         with self.engine.db() as c:
@@ -285,11 +293,26 @@ class LearningCycleService:
         if phase == "opportunity":
             question = self._context_question(topic["topic"])
             if question:
-                qid = uid("question")
                 with self.engine.db() as c:
-                    c.execute("INSERT INTO learning_questions VALUES(?,?,?,?,'personal_context_required','pending',NULL,0,?,NULL)",
-                              (qid, cycle_id, owner_id, question, now()))
-                self._event_simple(cycle_id, "owner.question_created", {"question_id": qid})
+                    c.execute("BEGIN IMMEDIATE")
+                    existing = c.execute("SELECT id,status,answer,remember FROM learning_questions WHERE cycle_id=? ORDER BY created_at LIMIT 1",
+                                         (cycle_id,)).fetchone()
+                    if existing:
+                        qid = existing["id"]
+                        pending = existing["status"] == "pending"
+                        owner_context = existing["answer"] if not pending else None
+                        remembered = bool(existing["remember"])
+                    else:
+                        qid = uid("question")
+                        c.execute("INSERT INTO learning_questions VALUES(?,?,?,?,'personal_context_required','pending',NULL,0,?,NULL)",
+                                  (qid, cycle_id, owner_id, question, now()))
+                        self._event(c, cycle_id, "owner.question_created", {"question_id": qid})
+                        pending = True
+                        owner_context = None
+                        remembered = False
+                if not pending:
+                    return {"question_id": qid, "reason": "personal_context_already_answered",
+                            "owner_context": owner_context, "remembered": remembered}, None
                 return {"question_id": qid, "reason": "personal_context_required"}, "waiting_owner"
             result = {"opportunity": "topic_study", "topic": topic["topic"]}
             self._agent(cycle_id, "orchestrator", "identify_opportunity", {"scope": "topic"}, result)
@@ -304,8 +327,28 @@ class LearningCycleService:
                         {"execution": "sequential", "max_concurrent_agents": 1})
             return plan, None
         if phase == "research":
+            reservation = self._research_reservation(cycle_id)
+            if reservation:
+                records = self.research.for_cycle(cycle_id)
+                completed = reservation["status"] == "completed"
+                persisted = reservation.get("result") or {}
+                if completed and persisted:
+                    result = {**persisted, "records": [r["id"] for r in records],
+                              "providers": reservation["providers"], "network_used": True}
+                else:
+                    result = {"status": ("completed" if records else "no_results") if completed else "interrupted_uncertain",
+                              "records": [r["id"] for r in records], "providers": reservation["providers"],
+                              "network_used": True if completed else "unknown"}
+                if not completed:
+                    result["reason"] = "A request was reserved before interruption; it was not repeated to avoid duplicate external usage."
+                self._agent(cycle_id, "researcher", "recover_completed_search" if completed else "recover_uncertain_search",
+                            {"cycle_id": cycle_id}, result)
+                return result, None
             permitted, denial = self._reserve_research_call(cycle, topic, settings)
             if not permitted:
+                if denial == "research_reservation_already_exists":
+                    return {"status": "interrupted_uncertain", "records": [], "providers": [],
+                            "network_used": "unknown", "reason": "A concurrent or prior worker owns this research reservation; the request was not repeated."}, None
                 self._agent(cycle_id, "researcher", "search_metadata", {"allowed": False},
                             {"status": "not_configured_or_not_consented", "network_used": False,
                              "reason": denial})
@@ -313,9 +356,13 @@ class LearningCycleService:
                         "records": []}, None
             records = self.research.search_and_store(cycle_id, topic["topic"],
                                                      min(cycle["source_budget"], settings["max_sources_per_cycle"]))
-            provider_failures = getattr(self.research.adapter, "last_failures", [])
+            provider_failures = self._safe_provider_failures(
+                getattr(self.research.adapter, "last_failures", []))
             research_status = ("partial_failure" if provider_failures and records else
                                "failed" if provider_failures else "completed" if records else "no_results")
+            research_outcome = {"status": research_status, "records": records,
+                                "provider_failures": provider_failures}
+            self._complete_research_reservation(cycle_id, research_outcome)
             self._agent(cycle_id, "researcher", "search_metadata", {"providers": getattr(self.research.adapter, "names", [getattr(self.research.adapter, "name", "unknown")]),
                                                                         "record_ids": records},
                         {"status": research_status, "records_found": len(records),
@@ -421,11 +468,7 @@ class LearningCycleService:
                                      (cycle_id,finding["id"])).fetchone()
                 if linked:
                     task_ids.append(linked["task_id"]); continue
-                task_id=self.engine.add_task("Revisar aprendizagem: "+finding["title"][:180],
-                    relevance=.75,uncertainty=.8,impact=.6,novelty=.4,cost=.2,sensitivity=.1)
-                with self.engine.db() as c:
-                    c.execute("INSERT OR IGNORE INTO learning_cycle_task_links VALUES(?,?,?,?)",
-                              (cycle_id,finding["id"],task_id,now()))
+                task_id = self._link_finding_task(cycle_id, finding)
                 task_ids.append(task_id)
                 self._event_simple(cycle_id,"learning.task_created",{"task_id":task_id,"finding_id":finding["id"]})
             result = {"finding_count": len(findings), "next_check_due": topic["next_run"],
@@ -436,6 +479,25 @@ class LearningCycleService:
                          "task_ids":task_ids})
             return result, None
         return {"error": "unknown_phase"}, "paused_error"
+
+    def _link_finding_task(self, cycle_id, finding):
+        title = "Revisar aprendizagem: " + finding["title"][:180]
+        stable_id = "task_cycle_" + hashlib.sha256(
+            f"{cycle_id}:{finding['id']}".encode("utf-8")).hexdigest()[:32]
+        with self.engine.db() as c:
+            c.execute("BEGIN IMMEDIATE")
+            linked = c.execute("SELECT task_id FROM learning_cycle_task_links WHERE cycle_id=? AND finding_id=?",
+                               (cycle_id, finding["id"])).fetchone()
+            if linked:
+                return linked["task_id"]
+            stamp = now()
+            inserted = c.execute("INSERT OR IGNORE INTO tasks VALUES(?,?,.75,.8,.6,.4,.2,.1,'pending',?,?)",
+                                 (stable_id, title, stamp, stamp))
+            if inserted.rowcount:
+                self.engine._audit(c, "task.created", "task", stable_id)
+            c.execute("INSERT OR IGNORE INTO learning_cycle_task_links VALUES(?,?,?,?)",
+                      (cycle_id, finding["id"], stable_id, stamp))
+            return stable_id
 
     @staticmethod
     def _context_question(topic):
@@ -479,9 +541,14 @@ class LearningCycleService:
 
     def _agent(self, cycle_id, agent_id, operation, input_scope, result):
         description, context_allowlist, tools = AGENT_CONTRACTS[agent_id]
-        run_id = uid("arun")
-        stamp = now()
         with self.engine.db() as c:
+            c.execute("BEGIN IMMEDIATE")
+            existing = c.execute("SELECT id FROM agent_runs WHERE cycle_id=? AND agent_id=? AND operation=? LIMIT 1",
+                                 (cycle_id, agent_id, operation)).fetchone()
+            if existing:
+                return {"run_id": existing["id"], "agent": agent_id, "role": description}
+            run_id = uid("arun")
+            stamp = now()
             c.execute("INSERT INTO agent_runs VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
                       (run_id, cycle_id, agent_id, operation, "completed", 1,
                        json.dumps(context_allowlist), json.dumps(tools),
@@ -495,6 +562,62 @@ class LearningCycleService:
                       (uid("amsg"), cycle_id, run_id, agent_id, "orchestrator",
                        json.dumps({"status": "completed", "result": result}, ensure_ascii=False), now()))
         return {"run_id": run_id, "agent": agent_id, "role": description}
+
+    def _research_reservation(self, cycle_id):
+        with self.engine.db() as c:
+            row = c.execute("SELECT status,providers_json,result_json FROM learning_research_reservations WHERE cycle_id=?",
+                            (cycle_id,)).fetchone()
+            if row:
+                try:
+                    result = json.loads(row["result_json"] or "{}")
+                except (TypeError, ValueError):
+                    result = {}
+                return {"status": row["status"], "providers": json.loads(row["providers_json"]),
+                        "result": result}
+            legacy = c.execute("SELECT details FROM learning_cycle_events WHERE cycle_id=? AND event='research.requested' ORDER BY created_at",
+                               (cycle_id,)).fetchall()
+        if legacy:
+            providers = []
+            for item in legacy:
+                try:
+                    provider = json.loads(item["details"]).get("provider")
+                    if provider and provider not in providers:
+                        providers.append(provider)
+                except (TypeError, ValueError):
+                    continue
+            return {"status": "reserved", "providers": providers}
+        return None
+
+    @staticmethod
+    def _safe_provider_failures(failures):
+        providers = {"crossref", "tavily", "composite", "fake_discovery"}
+        error_types = {"TimeoutError", "ConnectionError", "OSError", "RuntimeError", "ValueError",
+                       "TypeError", "ProviderConfigurationError", "ProviderAuthenticationError",
+                       "ProviderRateLimitError", "ProviderTimeoutError", "ProviderUnavailableError",
+                       "ProviderResponseError", "ProviderModelNotFoundError"}
+        safe = []
+        for failure in failures if isinstance(failures, list) else []:
+            if not isinstance(failure, dict):
+                continue
+            raw_provider = failure.get("provider")
+            raw_operation = failure.get("operation")
+            raw_error = failure.get("error_type")
+            item = {
+                "provider": raw_provider if isinstance(raw_provider, str) and raw_provider in providers else "custom",
+                "operation": raw_operation if isinstance(raw_operation, str) and raw_operation in {"search", "extract"} else "other",
+                "error_type": raw_error if isinstance(raw_error, str) and raw_error in error_types else "ExternalError",
+            }
+            if item:
+                safe.append(item)
+        return safe[:20]
+
+    def _complete_research_reservation(self, cycle_id, outcome):
+        safe_outcome = {"status": outcome["status"],
+                        "records": [str(item)[:100] for item in outcome.get("records", [])][:50],
+                        "provider_failures": self._safe_provider_failures(outcome.get("provider_failures", []))}
+        with self.engine.db() as c:
+            c.execute("UPDATE learning_research_reservations SET status='completed',result_json=?,updated_at=? WHERE cycle_id=? AND status='reserved'",
+                      (json.dumps(safe_outcome, ensure_ascii=False, sort_keys=True), now(), cycle_id))
 
     def _finding(self, cycle_id, kind, title, details):
         with self.engine.db() as c:
@@ -546,6 +669,11 @@ class LearningCycleService:
             current = c.execute("SELECT level FROM autonomy_settings WHERE id=1").fetchone()
             if not active or active["status"] != "running" or current["level"] != "metadata_research":
                 return False, "research_paused_or_not_configured"
+            existing = c.execute("SELECT status FROM learning_research_reservations WHERE cycle_id=?",
+                                 (cycle["id"],)).fetchone()
+            if existing or c.execute("SELECT 1 FROM learning_cycle_events WHERE cycle_id=? AND event='research.requested' LIMIT 1",
+                                     (cycle["id"],)).fetchone():
+                return False, "research_reservation_already_exists"
             today = datetime.now(timezone.utc).date().isoformat() + "%"
             used = c.execute("""SELECT COUNT(*) FROM learning_cycles lc
               JOIN learning_cycle_events e ON e.cycle_id=lc.id
@@ -554,6 +682,9 @@ class LearningCycleService:
             limits = c.execute("SELECT max_research_calls_per_day FROM autonomy_settings WHERE id=1").fetchone()[0]
             if used + len(providers) > limits:
                 return False, "daily_research_call_limit"
+            stamp = now()
+            c.execute("INSERT INTO learning_research_reservations(cycle_id,status,providers_json,result_json,created_at,updated_at) VALUES(?,'reserved',?,'{}',?,?)",
+                      (cycle["id"], json.dumps(providers, sort_keys=True), stamp, stamp))
             for index, provider in enumerate(providers):
                 self._event(c, cycle["id"], "research.requested", {
                     "provider": provider,
@@ -626,15 +757,27 @@ class LearningCycleService:
             if not row:
                 raise KeyError(question_id)
             stamp = now()
+            memory_id = None
+            if remember:
+                topic = c.execute("SELECT t.topic FROM learning_cycles lc JOIN learning_topics t ON t.id=lc.topic_id WHERE lc.id=?",
+                                  (row["cycle_id"],)).fetchone()
+                memory_id = uid("mem")
+                title = "Resposta do proprietário sobre " + (topic["topic"][:160] if topic else "aprendizagem")
+                metadata = self.engine._metadata({"origin": "owner_answer", "question_id": question_id})
+                c.execute("INSERT INTO memories VALUES(?,?,?,?,?,?, 'active',?)",
+                          (memory_id, "semantic", title, answer.strip(), stamp, stamp, metadata))
+                self.engine._audit(c, "memory.created", "memory", memory_id, {"kind": "semantic"})
             c.execute("UPDATE learning_questions SET status='answered',answer=?,remember=?,answered_at=? WHERE id=?",
                       (answer.strip(), int(remember), stamp, question_id))
-            c.execute("UPDATE learning_cycles SET status='running',updated_at=? WHERE id=? AND status='waiting_owner'",
+            c.execute("UPDATE learning_cycles SET status='running',recovery_generation=recovery_generation+1,updated_at=? WHERE id=? AND status='waiting_owner'",
                       (stamp, row["cycle_id"]))
-        memory_id = None
-        if remember:
-            topic = self.get_cycle(row["cycle_id"], owner_id)["topic"]
-            memory_id = self.engine.add_memory("semantic", "Resposta do proprietário sobre " + topic[:160],
-                                               answer.strip(), {"origin": "owner_answer", "question_id": question_id})
+            cycle_state = c.execute("SELECT checkpoint_json FROM learning_cycles WHERE id=?",
+                                    (row["cycle_id"],)).fetchone()
+            checkpoint = json.loads(cycle_state["checkpoint_json"])
+            opportunity = checkpoint.setdefault("opportunity", {})
+            opportunity.update(owner_context=answer.strip(), remembered=remember)
+            c.execute("UPDATE learning_cycles SET checkpoint_json=?,updated_at=? WHERE id=?",
+                      (json.dumps(checkpoint, ensure_ascii=False, sort_keys=True), stamp, row["cycle_id"]))
         self._event_simple(row["cycle_id"], "owner.question_answered", {"question_id": question_id,
                                                                          "remembered": remember,
                                                                          "memory_id": memory_id})

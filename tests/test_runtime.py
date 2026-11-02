@@ -81,6 +81,15 @@ class RuntimeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             runtime.run(task_id)
 
+    def test_pre_generation_pipeline_failure_closes_received_task_safely(self):
+        runtime = TaskRuntime(self.engine, MockProvider())
+        task_id = runtime.submit("Teste")
+        self.assertTrue(runtime.fail_unstarted(task_id, "agent_pipeline_failed"))
+        task = runtime.get(task_id)
+        self.assertEqual(task["state"], "failed")
+        self.assertEqual(task["error"], "agent_pipeline_failed: task preparation failed")
+        self.assertFalse(runtime.fail_unstarted(task_id, "agent_pipeline_failed"))
+
     def test_stream_disconnect_cancels_task_and_preserves_partial_result_out_of_history(self):
         class StreamingProvider:
             provider_name = "ollama"

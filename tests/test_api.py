@@ -24,6 +24,29 @@ class RecordingProvider:
         yield self.response
 
 
+class SpecialistAwareProvider(RecordingProvider):
+    provider_name = "ollama"
+
+    def __init__(self):
+        super().__init__()
+        self.calls = []
+
+    def generate(self, messages, *, max_tokens=800, timeout=30, task_id=None):
+        from nexus_learning.providers.base import ModelResponse
+        self.calls.append(messages)
+        self.messages = messages
+        if len(self.calls) <= 3:
+            import json
+            agent = ("architect", "analyst", "reviewer")[len(self.calls) - 1]
+            return ModelResponse(json.dumps({"summary": agent + " result", "items": []}),
+                                 self.provider_name, self.model)
+        return ModelResponse(self.response, self.provider_name, self.model)
+
+    def stream_generate(self, messages, *, max_tokens=800, timeout=30, cancel_event=None):
+        self.messages = messages
+        yield self.response
+
+
 class APITests(unittest.TestCase):
     def setUp(self):
         self.engine = LearningEngine(":memory:")
@@ -82,6 +105,188 @@ class APITests(unittest.TestCase):
         task = self.request("/api/v1/tasks/" + history[0]["task_id"], token=self.owner)
         self.assertEqual(task["body"]["state"], "completed")
         self.assertEqual(self.request("/api/v1/tasks", token=self.owner)["body"][0]["id"], history[0]["task_id"])
+
+    def test_chat_loads_only_relevant_owner_approved_skill_on_demand(self):
+        draft=self.app.skills.propose("research-brief","1.0.0","Research source evidence",
+                                       "Compare sources and mark uncertainty.")
+        sid=self.request("/api/v1/sessions","POST",{},self.owner)["body"]["id"]
+        before=self.request(f"/api/v1/sessions/{sid}/messages","POST",
+                            {"content":"Research source evidence"},self.owner)
+        self.assertTrue(before["status"].startswith("200"))
+        self.assertNotIn("Compare sources",json.dumps(self.provider.messages))
+        self.app.skills.approve(draft,owner_id="owner",approved=True)
+        after=self.request(f"/api/v1/sessions/{sid}/messages","POST",
+                           {"content":"Research source evidence"},self.owner)
+        self.assertTrue(after["status"].startswith("200"))
+        self.assertIn("Compare sources",json.dumps(self.provider.messages))
+        self.assertTrue(any("untrusted procedural suggestions" in message["content"]
+                            for message in self.provider.messages))
+
+    def test_chat_executes_allowlisted_model_tool_through_policy_and_returns_result(self):
+        import os
+        from unittest.mock import patch
+        from nexus_learning.providers.base import ModelResponse, ToolCall
+
+        class ToolChatProvider:
+            provider_name = "ollama"
+            model = "qwen-offline-test"
+            supports_tools = True
+            def __init__(self): self.calls = []
+            def generate(self, messages, *, max_tokens=800, timeout=30, tools=None):
+                self.calls.append((messages, tools))
+                if len(self.calls) == 1:
+                    return ModelResponse("", self.provider_name, self.model,
+                        tool_calls=(ToolCall("lookup-1", "memory.search", {"query": "favorite color"}),))
+                self.assert_result = messages[-1]["content"]
+                return ModelResponse("A memória encontrada diz azul.", self.provider_name, self.model)
+
+        provider = ToolChatProvider()
+        self.app = NexusAPI(self.engine, provider)
+        with self.engine.db() as c:
+            c.execute("UPDATE provider_settings SET provider='ollama',model=? WHERE id=1",
+                      (provider.model,))
+        self.owner = self.app.auth.login("owner", "correct horse battery staple")["access_token"]
+        self.engine.add_memory("episodic", "Preferência", "A cor favorita é azul.")
+        sid = self.request("/api/v1/sessions", "POST", {}, self.owner)["body"]["id"]
+        with patch.dict(os.environ, {"NEXUS_TOOL_CALLING_MODELS": "ollama:qwen-offline-test"}):
+            reply = self.request(f"/api/v1/sessions/{sid}/messages", "POST",
+                                 {"content": "Qual é minha cor favorita?"}, self.owner)
+        self.assertTrue(reply["status"].startswith("200"), reply["body"])
+        self.assertEqual(reply["body"]["message"]["content"], "A memória encontrada diz azul.")
+        self.assertEqual(len(provider.calls), 2)
+        self.assertIn("UNTRUSTED TOOL RESULT", provider.assert_result)
+        self.assertEqual(provider.calls[0][1][0]["function"]["name"], "memory.search")
+
+    def test_opt_in_specialists_run_before_final_response_and_record_metadata(self):
+        import os
+        from unittest.mock import patch
+        provider = SpecialistAwareProvider()
+        provider.provider_name = "ollama"
+        self.app.provider_manager.injected_provider = provider
+        with self.engine.db() as c:
+            c.execute("UPDATE provider_settings SET provider='ollama',model=? WHERE id=1", (provider.model,))
+        sid = self.request("/api/v1/sessions", "POST", {}, self.owner)["body"]["id"]
+        with patch.dict(os.environ, {"NEXUS_MULTIAGENT_ENABLED": "true"}):
+            reply = self.request(f"/api/v1/sessions/{sid}/messages", "POST",
+                                 {"content": "Analise e planeje uma melhoria"}, self.owner)
+        self.assertTrue(reply["status"].startswith("200"), reply["body"])
+        self.assertEqual(len(provider.calls), 4)
+        final_prompt = json.dumps(provider.calls[-1], ensure_ascii=False)
+        self.assertIn("architect result", final_prompt)
+        self.assertIn("analyst result", final_prompt)
+        self.assertIn("reviewer result", final_prompt)
+        self.assertEqual(provider.calls[-1][-1], {"role": "user", "content": "Analise e planeje uma melhoria"})
+        with self.engine.db() as c:
+            records = [json.loads(row[0]) for row in c.execute(
+                "SELECT details FROM api_activity WHERE event LIKE 'agent.llm_call_%'").fetchall()]
+        self.assertEqual(len(records), 6)
+        self.assertNotIn("architect result", json.dumps(records))
+
+    def test_opt_in_specialists_skip_simple_conversation(self):
+        import os
+        from unittest.mock import patch
+        provider = SpecialistAwareProvider()
+        provider.provider_name = "ollama"
+        self.app.provider_manager.injected_provider = provider
+        with self.engine.db() as c:
+            c.execute("UPDATE provider_settings SET provider='ollama',model=? WHERE id=1", (provider.model,))
+        sid = self.request("/api/v1/sessions", "POST", {}, self.owner)["body"]["id"]
+        with patch.dict(os.environ, {"NEXUS_MULTIAGENT_ENABLED": "true"}):
+            reply = self.request(f"/api/v1/sessions/{sid}/messages", "POST",
+                                 {"content": "Oi"}, self.owner)
+        self.assertTrue(reply["status"].startswith("200"), reply["body"])
+        self.assertEqual(len(provider.calls), 1)
+
+    def test_remote_specialists_fail_closed_when_budget_is_unavailable(self):
+        import os
+        from unittest.mock import patch
+
+        class Remote(SpecialistAwareProvider):
+            provider_name = "gemini"
+
+        provider = Remote()
+        provider.provider_name = "gemini"
+        self.app.provider_manager.injected_provider = provider
+        with self.engine.db() as c:
+            c.execute("UPDATE provider_settings SET provider='gemini',model=? WHERE id=1", (provider.model,))
+        sid = self.request("/api/v1/sessions", "POST", {}, self.owner)["body"]["id"]
+        with patch.dict(os.environ, {"NEXUS_MULTIAGENT_ENABLED": "true"}):
+            reply = self.request(f"/api/v1/sessions/{sid}/messages", "POST",
+                                 {"content": "Analise e planeje uma melhoria"}, self.owner)
+        self.assertTrue(reply["status"].startswith("429"), reply["body"])
+        self.assertEqual(provider.calls, [])
+        self.assertEqual(reply["body"]["code"], "multiagent_budget_unavailable")
+
+    def test_remote_specialists_and_final_call_are_all_budgeted(self):
+        import os
+        from unittest.mock import patch
+
+        class Remote(SpecialistAwareProvider):
+            pass
+
+        provider = Remote()
+        provider.provider_name = "gemini"
+        self.app.provider_manager.injected_provider = provider
+        with self.engine.db() as c:
+            c.execute("UPDATE provider_settings SET provider='gemini',model=? WHERE id=1", (provider.model,))
+        self.app.provider_budget.update(enabled=True, daily_calls=10, daily_tokens=100_000,
+            daily_usd=1, task_calls=10, task_tokens=100_000, task_usd=1,
+            input_price=1, output_price=1)
+        sid = self.request("/api/v1/sessions", "POST", {}, self.owner)["body"]["id"]
+        with patch.dict(os.environ, {"NEXUS_MULTIAGENT_ENABLED": "true"}):
+            reply = self.request(f"/api/v1/sessions/{sid}/messages", "POST",
+                                 {"content": "Analise e planeje uma melhoria"}, self.owner)
+        self.assertTrue(reply["status"].startswith("200"), reply["body"])
+        with self.engine.db() as c:
+            usages = c.execute("SELECT state FROM provider_usage WHERE task_id=?",
+                               (reply["body"]["task_id"],)).fetchall()
+        self.assertEqual(len(usages), 4)
+        self.assertTrue(all(row["state"] == "settled" for row in usages))
+
+    def test_opt_in_specialists_are_run_before_streamed_final_answer(self):
+        import os
+        from unittest.mock import patch
+        provider = SpecialistAwareProvider()
+        provider.provider_name = "ollama"
+        self.app.provider_manager.injected_provider = provider
+        with self.engine.db() as c:
+            c.execute("UPDATE provider_settings SET provider='ollama',model=? WHERE id=1", (provider.model,))
+        sid = self.request("/api/v1/sessions", "POST", {}, self.owner)["body"]["id"]
+        with patch.dict(os.environ, {"NEXUS_MULTIAGENT_ENABLED": "true"}):
+            reply = self.request(f"/api/v1/sessions/{sid}/messages/stream", "POST",
+                                 {"content": "Analise e planeje o fluxo"}, self.owner)
+        self.assertTrue(reply["status"].startswith("200"))
+        body = reply["body"].decode("utf-8")
+        self.assertIn('event: start', body)
+        self.assertIn('event: delta', body)
+        self.assertIn('event: done', body)
+        self.assertEqual(len(provider.calls), 3)
+        self.assertIn("reviewer result", json.dumps(provider.messages, ensure_ascii=False))
+
+    def test_failed_specialist_stage_does_not_call_final_provider(self):
+        import os
+        from unittest.mock import patch
+        from nexus_learning.providers.base import ModelResponse
+
+        class MalformedSpecialist(SpecialistAwareProvider):
+            def generate(self, messages, *, max_tokens=800, timeout=30, task_id=None):
+                self.calls.append(messages)
+                return ModelResponse("not-json", "ollama", self.model)
+
+        provider = MalformedSpecialist()
+        provider.provider_name = "ollama"
+        self.app.provider_manager.injected_provider = provider
+        with self.engine.db() as c:
+            c.execute("UPDATE provider_settings SET provider='ollama',model=? WHERE id=1", (provider.model,))
+        sid = self.request("/api/v1/sessions", "POST", {}, self.owner)["body"]["id"]
+        with patch.dict(os.environ, {"NEXUS_MULTIAGENT_ENABLED": "true"}):
+            reply = self.request(f"/api/v1/sessions/{sid}/messages", "POST",
+                                 {"content": "Analise e planeje uma melhoria"}, self.owner)
+        self.assertTrue(reply["status"].startswith("502"), reply["body"])
+        self.assertEqual(len(provider.calls), 1)
+        task = self.request("/api/v1/tasks/" + reply["body"]["task_id"], token=self.owner)
+        self.assertEqual(task["body"]["state"], "failed")
+        self.assertIn("specialist_pipeline_failed", task["body"]["error"])
 
     def test_chat_research_requires_confirmation_and_synthesizes_attributed_results(self):
         class FakeTavily:

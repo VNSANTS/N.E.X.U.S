@@ -4,7 +4,7 @@
 
 Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesquisar, organizar conhecimento, utilizar ferramentas, coordenar agentes e executar tarefas autorizadas, mantendo o usuário no controle.
 
-> **Estado atual:** aplicação local em Python/SQLite com API WSGI autenticada, sessões e conversas persistidas, recuperação contextual lexical, UI web conectada, ferramentas READ em allowlist e worker local de tarefas seguras. MockProvider é o padrão offline; adapters opcionais estão disponíveis para Gemini, Groq e OpenRouter mediante configuração explícita. Ainda não é uma implantação cloud nem um assistente com colaboração autônoma geral entre modelos. Consulte [PROJECT_STATUS.md](PROJECT_STATUS.md) e [docs/LOCAL_API.md](docs/LOCAL_API.md).
+> **Estado atual:** aplicação local em Python/SQLite com API WSGI autenticada, conversas persistidas, recuperação contextual, UI web conectada, ferramentas READ em allowlist e worker local resiliente. MockProvider é o padrão offline; adapters opcionais existem para Ollama, Gemini, OpenAI, Anthropic, Groq e OpenRouter. Um pipeline sequencial Architect→Analyst→Reviewer pode ser habilitado explicitamente para tarefas ADVANCED/RESEARCH; fica desabilitado por padrão, não usa ferramentas e seus papéis compartilham o provider/modelo escolhido. O MVP não é cloud nem colaboração multi-modelo geral. Consulte [PROJECT_STATUS.md](PROJECT_STATUS.md) e [docs/LOCAL_API.md](docs/LOCAL_API.md).
 
 ## Visão do projeto
 
@@ -30,6 +30,7 @@ Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesq
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | Estado atual, próximo marco e riscos |
 | [ROADMAP.md](ROADMAP.md) | Fases e critérios para avançar |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Arquitetura conceitual |
+| [docs/UNIVERSAL_TOOL_CALLING.md](docs/UNIVERSAL_TOOL_CALLING.md) | Contrato, limites e ativação de chamadas nativas de ferramentas |
 | [TECH_STACK.md](TECH_STACK.md) | Tecnologias em avaliação |
 | [LEARNING_ENGINE.md](LEARNING_ENGINE.md) | Pesquisa e aprendizado |
 | [KNOWLEDGE_SYSTEM.md](KNOWLEDGE_SYSTEM.md) | Conhecimento e fontes |
@@ -81,6 +82,16 @@ python -m nexus_learning task-add "Estudar memória" --relevance 0.9 --uncertain
 python -m nexus_learning task-list
 python -m unittest discover -s tests -v
 ```
+
+Browser E2E tests are optional and do not install with runtime dependencies:
+
+```powershell
+python -m pip install -r requirements-e2e.txt
+python -m playwright install chromium
+python -m unittest discover -s tests/e2e -v
+```
+
+The CI workflow runs these browser tests in a separate job. GitHub Actions has not run the current uncommitted workflow changes yet.
 
 ## Executar a aplicação local
 

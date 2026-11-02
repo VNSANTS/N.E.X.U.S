@@ -1,11 +1,12 @@
 """Local-only Ollama adapter with bounded requests and cancellable streaming."""
 import json
 import math
+import uuid
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from .base import ModelResponse
+from .base import ModelResponse, ToolCall
 from .errors import (ProviderConfigurationError, ProviderModelNotFoundError,
                      ProviderRateLimitError, ProviderResponseError,
                      ProviderTimeoutError, ProviderUnavailableError)
@@ -21,6 +22,7 @@ _open = build_opener(_NoRedirect()).open
 
 class OllamaProvider:
     provider_name = "ollama"
+    supports_tools = True
 
     def __init__(self, base_url="http://127.0.0.1:11434", model=None, *,
                  num_ctx=2048, num_predict=800, temperature=0.2, timeout=120, opener=None):
@@ -117,33 +119,71 @@ class OllamaProvider:
                                             "tools": None, "vision": None, "embeddings": None}})
         return result
 
-    def generate(self, messages, *, max_tokens=None, timeout=120):
+    def generate(self, messages, *, max_tokens=None, timeout=120, tools=None):
         if not self.model:
             raise ProviderConfigurationError()
         if not isinstance(messages, list) or not messages or any(
-            not isinstance(m, dict) or m.get("role") not in {"system", "user", "assistant"}
-            or not isinstance(m.get("content"), str) for m in messages
+            not isinstance(m, dict) or m.get("role") not in {"system", "user", "assistant", "tool"}
+            or not isinstance(m.get("content", ""), str) for m in messages
         ):
             raise ProviderResponseError()
         output_limit = self.num_predict if max_tokens is None else max_tokens
         if isinstance(output_limit, bool) or not isinstance(output_limit, int) or not 1 <= output_limit <= 8192:
             raise ProviderConfigurationError()
-        response = self._request("/api/chat", payload={
-            "model": self.model, "messages": messages, "stream": False,
+        payload = {
+            "model": self.model, "messages": self._format_messages(messages), "stream": False,
             "options": {"num_ctx": self.num_ctx, "num_predict": output_limit,
                         "temperature": self.temperature},
-        }, timeout=timeout)
+        }
+        if tools:
+            payload["tools"] = tools
+        response = self._request("/api/chat", payload=payload, timeout=timeout)
         with response:
             try:
                 data = json.loads(response.read(2_000_000).decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError):
                 raise ProviderResponseError() from None
         message = data.get("message") if isinstance(data, dict) else None
-        text = message.get("content") if isinstance(message, dict) else None
-        if not isinstance(text, str) or not text:
+        text = message.get("content", "") if isinstance(message, dict) else None
+        if not isinstance(text, str):
+            raise ProviderResponseError()
+        calls = self._parse_tool_calls(message)
+        if not text and not calls:
             raise ProviderResponseError()
         return ModelResponse(text, self.provider_name, data.get("model") or self.model,
-                             data.get("prompt_eval_count"), data.get("eval_count"))
+                             data.get("prompt_eval_count"), data.get("eval_count"), tuple(calls))
+
+    @staticmethod
+    def _format_messages(messages):
+        result = []
+        for item in messages:
+            message = {"role": item["role"], "content": item.get("content", "")}
+            if item["role"] == "assistant" and item.get("tool_calls"):
+                message["tool_calls"] = [{"type": "function", "function": {
+                    "name": call["name"], "arguments": call["arguments"]}}
+                    for call in item["tool_calls"]]
+            if item["role"] == "tool":
+                message["tool_name"] = item["name"]
+            result.append(message)
+        return result
+
+    @staticmethod
+    def _parse_tool_calls(message):
+        try:
+            calls = message.get("tool_calls") or []
+            if not isinstance(calls, list) or len(calls) > 8:
+                raise ValueError
+            result = []
+            for index, item in enumerate(calls):
+                function = item["function"]
+                arguments = function["arguments"]
+                if not isinstance(arguments, dict):
+                    raise ValueError
+                result.append(ToolCall("ollama-" + uuid.uuid4().hex + "-" + str(index),
+                                       function["name"], arguments))
+            return result
+        except (KeyError, TypeError, ValueError):
+            raise ProviderResponseError() from None
 
     def stream_generate(self, messages, *, max_tokens=None, timeout=120, cancel_event=None):
         """Yield text deltas; closing the iterator closes the HTTP response/socket."""
