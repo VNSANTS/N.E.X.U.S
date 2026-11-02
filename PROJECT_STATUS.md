@@ -225,3 +225,14 @@ O backlog operacional foi criado em `docs/IMPLEMENTATION_BACKLOG.md`. O próximo
 ## Gemini/OpenAI provider validation — 2026-11-01
 
 Gemini and OpenAI adapters use the existing provider contract and shared HTTP transport; provider selection remains with ProviderManager and automatic decisions with ModelRoutingService. The runtime keeps manual routing as the default and leaves remote inference budgets disabled. provider_from_env now enforces an explicitly configured NEXUS_REMOTE_PROVIDERS allowlist, closing a gate inconsistency with ProviderManager while preserving legacy behavior when no allowlist variable exists. Gemini/OpenAI adapter, SSE, manual selection/status, and OpenAI automatic routing paths are covered by mocked tests. No API key was read, no provider request was sent, and no credits were consumed. See docs/INTEGRATIONS.md for configuration, model discovery, official API links, and limitations.
+
+
+## Reliability foundation — 2026-11-02
+
+- Created development branch `dev/reliability-zero-cost-foundation` from the audited `main` commit `852131e52f454175c501e6f36bcea2c04a73e9e7`. Main remains unchanged.
+- Removed the duplicate `ProviderBudget.can_reserve` definition.
+- Added conservative UTF-8 byte-based text estimates and per-message framing allowance; used the shared estimator in provider accounting and automatic routing. These are safety estimates, not tokenizer-exact counts. Provider usage returned by a provider remains preferred when available.
+- Expired 401 sessions now clear the stale browser `sessionStorage` token before showing login again.
+- Added unit tests for estimator behavior and malformed input.
+- Validation is pending GitHub Actions on this branch. No live provider calls, paid requests, deployment, or local-machine changes were performed.
+- Remaining hardening: task-aware preflight accounting, provider-specific tokenizers/usage normalization, robust tests for browser session lifecycle, and per-claim citation support validation.
