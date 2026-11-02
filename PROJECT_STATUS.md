@@ -316,3 +316,10 @@ Limites que permanecem: não existe sandbox de código/arquivos porque não há 
 - Reviewer cannot author new factual claims in this stage. When the Reviewer marks a claim `unsupported` or `conflicting`, the final synthesis serializer withholds it deterministically, including when source-link filtering is disabled. The final model is instructed not to restate those claims as facts.
 - Activity metadata indicates whether Reviewer provider/model differs from Analyst's. A different model is only a second model opinion, not independent truth verification or human approval.
 - The implementation uses the same bounded, sequential, tool-less pipeline and global deadline. CI for this delta is pending.
+
+
+## Reviewer schema size adjustment — pending CI
+
+- Bounded each specialist response to a 160-character summary, up to two 100-character items, and at most one 50-character claim. Reviewer notes are capped at 60 characters.
+- The smaller schema reduces the worst-case preflight prompt footprint; default specialist input budget remains unchanged. This preserves conservative request bounds rather than inflating provider context limits.
+- CI is pending.

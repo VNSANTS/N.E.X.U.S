@@ -193,17 +193,17 @@ class NexusAPI:
         }
         # Preflight the specialists and final response together. Only remote
         # calls consume the configured remote budget; local calls do not.
-        placeholder = [{"agent_id": agent, "summary": "\x00" * 250,
-                        "items": ["\x00" * 150] * 3,
-                        "claims": [{"text": "\x00" * 60,
+        placeholder = [{"agent_id": agent, "summary": "\x00" * 160,
+                        "items": ["\x00" * 100] * 2,
+                        "claims": [{"text": "\x00" * 50,
                                     "evidence_ids": ["S1", "S2", "S3"],
                                     "link_status": "source_linked",
                                     "review_assessment": "conflicting",
-                                    "review_note": "\x00" * 100} for _ in range(2)],
+                                    "review_note": "\x00" * 60}],
                         "reviews": [{"claim_index": index, "assessment": "conflicting",
-                                     "note": "\x00" * 100} for index in range(2)],
-                        "unreferenced_claims_withheld": 2,
-                        "claims_rejected_by_review": 2}
+                                     "note": "\x00" * 60}],
+                        "unreferenced_claims_withheld": 1,
+                        "claims_rejected_by_review": 1}
                        for agent in ("architect", "analyst", "reviewer")]
         final_messages = [dict(message) for message in messages]
         if not final_messages or final_messages[-1].get("role") != "user":

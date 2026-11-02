@@ -290,3 +290,11 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Activity events include `separate_review_model` to distinguish a reviewer configured with a different provider/model. That is model diversity, not proof or human approval.
 - New unit tests cover exact review coverage, unsupported source-less claims, suppression and model difference. An API integration fixture exercises an unsupported Analyst claim through the real conversation route.
 - CI pending for this delta.
+
+
+## Reviewer preflight footprint adjustment — 2026-11-02 (CI pending)
+
+- Reduced specialist output bounds to summary 160 chars, at most two items (100 chars each), one claim (50 chars) and Reviewer note (60 chars). Source references still cap at three IDs.
+- Worst-case preflight placeholders were aligned to the accepted schema, retaining the default 12,000-character specialist input limit and 24,000-character API pipeline limit.
+- Updated synthesis test to assert the structured review assessment/note metadata.
+- CI pending.

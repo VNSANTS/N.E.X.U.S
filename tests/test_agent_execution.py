@@ -178,7 +178,8 @@ class SpecialistPipelineTests(unittest.TestCase):
         )
         delivered = synthesis_deliverables(result, require_source_links=True)
         self.assertEqual(delivered[0]["claims"], [{
-            "text": "linked claim", "evidence_ids": ["S1"], "link_status": "source_linked"}])
+            "text": "linked claim", "evidence_ids": ["S1"], "link_status": "source_linked",
+            "review_assessment": "uncertain", "review_note": "Needs stronger support."}])
         self.assertEqual(delivered[0]["unreferenced_claims_withheld"], 1)
         self.assertEqual(delivered[1]["unreferenced_claims_withheld"], 0)
         self.assertIn("unsupported claim flagged", delivered[1]["items"])

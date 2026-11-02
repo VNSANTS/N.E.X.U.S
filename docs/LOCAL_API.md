@@ -137,6 +137,6 @@ Skill discovery uses literal case-insensitive text matching rather than SQL wild
 
 ### Revisão estruturada por claim
 
-O Reviewer produz uma avaliação por claim do Analyst usando índice zero-based, status `supported`, `unsupported`, `uncertain` ou `conflicting` e nota de até 100 caracteres. A API valida cobertura 1:1; avaliações ausentes, duplicadas ou fora do intervalo falham. `supported` sem evidência fornecida é rejeitado. Reviewer não cria claims novas nesse estágio.
+O Reviewer produz uma avaliação por claim do Analyst usando índice zero-based, status `supported`, `unsupported`, `uncertain` ou `conflicting` e nota de até 60 caracteres. A API valida cobertura 1:1; avaliações ausentes, duplicadas ou fora do intervalo falham. `supported` sem evidência fornecida é rejeitado. Reviewer não cria claims novas nesse estágio.
 
 Na síntese, claims `unsupported` e `conflicting` são removidas de forma determinística, mesmo sem exigir source filtering. Claims `uncertain` continuam identificadas. Eventos metadata-only indicam se o Reviewer usou provider/model diferente do Analyst. Essa diversidade não comprova veracidade e não substitui revisão humana.
