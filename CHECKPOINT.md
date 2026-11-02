@@ -155,3 +155,14 @@ Next: verify UI behavior in a local browser; implement provider-native tool call
 - Mock tests cover Gemini/OpenAI SSE, manual selection and redacted status, plus automatic OpenAI routing with test-only budget authorization.
 - No local credentials were read, no live provider request was issued, and no credits were consumed. No budget setting or runtime default was changed.
 - Verification: python -m compileall -q nexus_learning tests passed; python -m unittest discover -s tests -q passed (119 tests); git diff --check passed with only the existing README.md LF-to-CRLF warning.
+
+
+## Reliability foundation — 2026-11-02
+
+- Created development branch `dev/reliability-zero-cost-foundation` from the audited `main` commit `852131e52f454175c501e6f36bcea2c04a73e9e7`. Main remains unchanged.
+- Removed the duplicate `ProviderBudget.can_reserve` definition.
+- Added conservative UTF-8 byte-based text estimates and per-message framing allowance; used the shared estimator in provider accounting and automatic routing. These are safety estimates, not tokenizer-exact counts. Provider usage returned by a provider remains preferred when available.
+- Expired 401 sessions now clear the stale browser `sessionStorage` token before showing login again.
+- Added unit tests for estimator behavior and malformed input.
+- Validation is pending GitHub Actions on this branch. No live provider calls, paid requests, deployment, or local-machine changes were performed.
+- Remaining hardening: task-aware preflight accounting, provider-specific tokenizers/usage normalization, robust tests for browser session lifecycle, and per-claim citation support validation.
