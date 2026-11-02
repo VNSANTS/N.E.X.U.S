@@ -167,7 +167,8 @@ class APITests(unittest.TestCase):
         self.assertTrue(rejected["status"].startswith("200"), rejected)
         self.assertEqual(rejected["body"]["status"], "rejected")
         self.assertEqual(self.request("/api/v1/skills/proposals", token=self.owner)["body"], [])
-        self.assertEqual(self.request("/api/v1/skills?query=temporary", token=self.owner)["body"], [])
+        self.assertEqual(self.request("/api/v1/skills", token=self.owner,
+                                         query="query=temporary")["body"], [])
 
     def test_skill_discovery_endpoint_reads_query_string(self):
         research = self.app.skills.propose(
