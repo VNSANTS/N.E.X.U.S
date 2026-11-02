@@ -125,3 +125,8 @@ O orçamento configurado usa preços estimados globais, não tarifários por mod
 
 
 Na síntese final, quando o pipeline recebe fontes, a API omite as claims `unreferenced` de forma determinística e registra a quantidade omitida em cada deliverable. O texto do contexto diferencia `source_linked` de verificação factual: resumo e itens continuam não confiáveis; links não provam a verdade de uma afirmação. Sem fontes, claims ficam rotuladas como `unreferenced` e a síntese recebe instrução para não tratá-las como fatos.
+
+
+## Limite global do pipeline de especialistas
+
+A pipeline sequencial tem um prazo global padrão de **90 segundos** (configurado internamente, máximo permitido de 180 segundos). Cada chamada recebe o menor valor entre o timeout por chamada e o tempo restante. Se uma chamada ultrapassar o prazo, a execução é marcada como `pipeline_timeout`, as etapas seguintes são marcadas como ignoradas e a síntese final não é chamada. O adaptador recebe um timeout reduzido, mas o limite efetivo depende de o transporte HTTP/provedor respeitar esse timeout; nenhuma interrupção forçada de código externo é simulada.

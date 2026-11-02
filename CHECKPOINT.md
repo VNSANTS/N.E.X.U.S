@@ -244,3 +244,11 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Without sources, claims remain labelled `unreferenced` and are explicitly described to final synthesis as analysis, not verified facts.
 - This is structural reference hygiene, not semantic validation. It does not prove the source is reliable or that the claim is true.
 - Next: P2-01 bounded delegation with explicit stage records, resumability/cancellation semantics and no cycles. Do not introduce parallel execution until isolation and budget accounting are sound.
+
+
+## P2-01 bounded-stage deadline — 2026-11-02 (CI pending)
+
+- Added a global specialist pipeline deadline (90 seconds default, constructor maximum 180 seconds). Each provider call receives the remaining time capped by the existing per-call timeout.
+- If a stage returns after the global deadline, it is reported as `pipeline_timeout`; remaining specialists are marked skipped and final synthesis is not called.
+- Tests cover an overlong first stage and reject invalid/unbounded deadline settings.
+- Timeout is cooperative through provider/HTTP timeout; no false claim of forcibly stopping a non-cooperative external provider.

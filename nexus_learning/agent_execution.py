@@ -88,6 +88,7 @@ _SAFE_ERRORS = {
     "provider_error": "Provider call failed.",
     "invalid_output": "Provider returned an invalid bounded result.",
     "input_limit": "Specialist request exceeds the configured input limit.",
+    "pipeline_timeout": "The bounded specialist pipeline exceeded its total time limit.",
 }
 
 
@@ -102,7 +103,8 @@ class SpecialistPipeline:
     """
 
     def __init__(self, provider, *, providers=None, event_sink=None, timeout=30,
-                 max_tokens=320, max_input_chars=12000, max_output_chars=4000):
+                 max_total_seconds=90, max_tokens=320, max_input_chars=12000,
+                 max_output_chars=4000):
         if not callable(getattr(provider, "generate", None)):
             raise ValueError("provider must implement generate")
         if providers is None:
@@ -115,6 +117,11 @@ class SpecialistPipeline:
         if (isinstance(timeout, bool) or not isinstance(timeout, (int, float))
                 or not math.isfinite(timeout) or not 0 < timeout <= 60):
             raise ValueError("timeout must be between 0 and 60 seconds")
+        if (isinstance(max_total_seconds, bool)
+                or not isinstance(max_total_seconds, (int, float))
+                or not math.isfinite(max_total_seconds)
+                or not 0 < max_total_seconds <= 180):
+            raise ValueError("max_total_seconds must be between 0 and 180")
         for name, value, high in (("max_tokens", max_tokens, 1024),
                                   ("max_input_chars", max_input_chars, 50000),
                                   ("max_output_chars", max_output_chars, 12000)):
@@ -126,6 +133,7 @@ class SpecialistPipeline:
         self.providers = dict(providers)
         self.event_sink = event_sink
         self.timeout = float(timeout)
+        self.max_total_seconds = float(max_total_seconds)
         self.max_tokens = max_tokens
         self.max_input_chars = max_input_chars
         self.max_output_chars = max_output_chars
@@ -182,7 +190,17 @@ class SpecialistPipeline:
         task_id, normalized = self._validate_input(task, context, task_id=task_id)
         results = []
         prior = {}
+        pipeline_deadline = time.monotonic() + self.max_total_seconds
         for specialist in _SPECIALISTS:
+            remaining_seconds = pipeline_deadline - time.monotonic()
+            if remaining_seconds <= 0:
+                result = self._failed(specialist.agent_id, "pipeline_timeout")
+                self._emit({"event": "agent_call_failed", "agent_id": specialist.agent_id,
+                            "status": "failed", "duration_ms": 0, "input_chars": 0,
+                            "output_chars": 0, "error_code": "pipeline_timeout"})
+                results.append(result)
+                self._append_skipped(results, specialist.agent_id)
+                return PipelineResult(task_id, "failed", tuple(results))
             messages = self._messages(specialist, task, normalized, prior)
             input_chars = sum(len(message["content"]) for message in messages)
             if input_chars > self.max_input_chars:
@@ -202,7 +220,8 @@ class SpecialistPipeline:
                         "output_chars": 0})
             started = time.monotonic()
             try:
-                kwargs = {"max_tokens": self.max_tokens, "timeout": self.timeout}
+                stage_timeout = min(self.timeout, remaining_seconds)
+                kwargs = {"max_tokens": self.max_tokens, "timeout": stage_timeout}
                 if getattr(selected_provider, "supports_task_tracking", False):
                     kwargs["task_id"] = task_id
                 response = selected_provider.generate(messages, **kwargs)
@@ -220,6 +239,11 @@ class SpecialistPipeline:
                 duration_ms = self._elapsed_ms(started)
                 result = self._failed(specialist.agent_id, "provider_error", duration_ms=duration_ms,
                                       input_chars=input_chars)
+            if time.monotonic() > pipeline_deadline:
+                result = self._failed(
+                    specialist.agent_id, "pipeline_timeout",
+                    duration_ms=self._elapsed_ms(started), input_chars=input_chars,
+                    output_chars=result.output_chars)
             if result.status != "completed":
                 self._emit({"event": "agent_call_failed", "agent_id": specialist.agent_id,
                             "provider": provider_name, "model": model_name,

@@ -164,6 +164,31 @@ class SpecialistPipelineTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             SpecialistPipeline(FakeProvider(), providers={"orchestrator": FakeProvider()})
 
+    def test_pipeline_total_deadline_stops_later_specialists(self):
+        import time
+
+        class SlowFirstProvider(FakeProvider):
+            def generate(self, messages, *, max_tokens=800, timeout=30, **kwargs):
+                self.requests.append({"messages": messages, "max_tokens": max_tokens,
+                                      "timeout": timeout, "task_id": kwargs.get("task_id"),
+                                      "task_id_supplied": "task_id" in kwargs})
+                time.sleep(0.03)
+                return type("Response", (), {"text": response("Too late")})()
+
+        provider = SlowFirstProvider()
+        pipeline = SpecialistPipeline(provider, timeout=10, max_total_seconds=0.01)
+        result = pipeline.run("Check deadline", task_id="deadline")
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(len(provider.requests), 1)
+        self.assertLessEqual(provider.requests[0]["timeout"], 0.01)
+        self.assertEqual(result.results[0].error_code, "pipeline_timeout")
+        self.assertEqual([item.status for item in result.results[1:]], ["skipped", "skipped"])
+
+    def test_pipeline_total_deadline_must_be_finite_and_bounded(self):
+        for value in (0, -1, 181, float("inf"), float("nan"), True):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                SpecialistPipeline(FakeProvider(), max_total_seconds=value)
+
     def test_provider_without_task_tracking_does_not_receive_task_id(self):
         provider = FakeProvider()
         provider.supports_task_tracking = False

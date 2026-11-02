@@ -275,3 +275,10 @@ Limites que permanecem: não existe sandbox de código/arquivos porque não há 
 - Structured claims are now filtered before final synthesis whenever source records are present: only claims with a reference ID supplied in the request are passed as explicitly source-linked claims; unreferenced claims are withheld and counted.
 - The Reviewer is instructed to flag factual statements without supplied source IDs in review items. Source linkage still does not establish source reliability or truth; summaries/items are untrusted analysis.
 - CI on the previous evidence-claims contract and browser fixture (commit `373a55e803269ad9489d6ea4b26ce228e7738965`) passed: 190 unit tests in Python 3.11, 190 in 3.12, and all 5 browser E2E tests. This new deterministic withholding policy is not yet validated by CI.
+
+
+## Bounded delegation update — pending CI
+
+- Specialist pipeline now has a global 90-second deadline (constructor accepts 1–180 seconds), passes each provider the remaining time, and turns an overrun into `pipeline_timeout`. Later specialists are marked skipped and no final synthesis is invoked after an overrun.
+- The transport/provider must respect its timeout; this is not a forced process kill. Per-stage call remains bounded by existing provider timeout and the global deadline.
+- New tests verify timeout bounds and that a slow first stage prevents later stage calls. CI for this delta is pending.
