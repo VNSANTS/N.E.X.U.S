@@ -226,6 +226,26 @@ class BrowserUITests(unittest.TestCase):
         expect(self.page.locator("#content")).to_contain_text("browser-research · v1.0.0")
         self.assertEqual(self.page_errors, [])
 
+    def test_tampered_skill_proposal_cannot_be_approved_in_ui(self):
+        self.login()
+        skill_id = self.app.skills.propose(
+            "tampered-skill", "1.0.0", "Skill integrity UI test",
+            "Original instructions that the owner must review.")
+        with self.engine.db() as connection:
+            connection.execute("UPDATE runtime_skills SET instructions=? WHERE id=?",
+                               ("Changed after proposal", skill_id))
+
+        self.page.locator('[data-view="skills"]').click()
+        expect(self.page.locator("#content")).to_contain_text("tampered-skill")
+        expect(self.page.locator("#content")).to_contain_text("integridade inválida")
+        approve = self.page.get_by_role("button", name="Aprovar habilidade")
+        expect(approve).to_be_disabled()
+        with self.engine.db() as connection:
+            status = connection.execute("SELECT status FROM runtime_skills WHERE id=?",
+                                         (skill_id,)).fetchone()["status"]
+        self.assertEqual(status, "proposed")
+        self.assertEqual(self.page_errors, [])
+
     def test_agents_view_displays_only_specialist_execution_metadata(self):
         self.login()
         with self.engine.db() as connection:

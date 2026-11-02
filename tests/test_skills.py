@@ -48,6 +48,21 @@ class SkillRegistryTests(unittest.TestCase):
         with self.assertRaises(KeyError):
             self.skills.reject(pending, owner_id="owner", confirmed=True)
 
+    def test_tampered_proposal_cannot_be_approved(self):
+        skill_id = self.skills.propose(
+            "research-brief", "1.0.0", "Research source evidence", "Original instructions.")
+        with self.engine.db() as c:
+            c.execute("UPDATE runtime_skills SET instructions=? WHERE id=?",
+                      ("Tampered instructions", skill_id))
+        proposal = self.skills.proposals()[0]
+        self.assertFalse(proposal["integrity_ok"])
+        with self.assertRaisesRegex(ValueError, "skill integrity validation failed"):
+            self.skills.approve(skill_id, owner_id="owner", approved=True)
+        with self.engine.db() as c:
+            status = c.execute("SELECT status FROM runtime_skills WHERE id=?",
+                               (skill_id,)).fetchone()["status"]
+        self.assertEqual(status, "proposed")
+
     def test_proposal_list_limit_is_strictly_bounded(self):
         for limit in (0, -1, 51, True, 1.5, "10"):
             with self.subTest(limit=limit), self.assertRaises(ValueError):

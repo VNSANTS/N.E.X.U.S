@@ -332,3 +332,11 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - The Agentes UI renders roster and specialist LLM activity metadata. The UI uses DOM text nodes, not HTML insertion.
 - PR #3 remains open, based on `nexus/review-nov-02`; no merge into `main`.
 - Next priority: durable specialist-stage checkpoint/resume and carefully bounded same-trust-lane fallback; keep sandboxed code execution blocked until an actual isolation runtime is validated.
+
+
+## Skills integrity at approval boundary (2026-11-02, CI pending)
+
+- `SkillRegistry.approve` re-fetches the proposal under `BEGIN IMMEDIATE`, recomputes the SHA-256, and refuses approval when instructions differ from the original proposal.
+- `GET /api/v1/skills/proposals` returns an `integrity_ok` flag. The UI displays it and disables approval when false.
+- Added registry/API/Playwright tests for tampered proposals remaining pending and the approval button being disabled.
+- CI pending.

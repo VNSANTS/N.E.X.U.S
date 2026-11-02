@@ -140,11 +140,34 @@ class APITests(unittest.TestCase):
         self.assertEqual([row["id"] for row in proposals["body"]], [skill_id])
         self.assertEqual(proposals["body"][0]["instructions"],
                          "Use cited sources and mark uncertainty.")
+        self.assertTrue(proposals["body"][0]["integrity_ok"])
 
         approved = self.request(f"/api/v1/skills/{skill_id}/approve", "POST",
                                 {"confirm": True}, self.owner)
         self.assertTrue(approved["status"].startswith("200"), approved)
         self.assertEqual(self.request("/api/v1/skills/proposals", token=self.owner)["body"], [])
+
+    def test_tampered_skill_proposal_is_blocked_by_api_approval(self):
+        created = self.request("/api/v1/skills", "POST", {
+            "name": "tamper-check",
+            "version": "1.0.0",
+            "description": "A proposal for integrity testing",
+            "instructions": "Original instructions for review.",
+        }, self.owner)
+        self.assertTrue(created["status"].startswith("201"), created)
+        skill_id = created["body"]["id"]
+        with self.engine.db() as c:
+            c.execute("UPDATE runtime_skills SET instructions=? WHERE id=?",
+                      ("Altered after proposal", skill_id))
+
+        proposals = self.request("/api/v1/skills/proposals", token=self.owner)
+        self.assertFalse(proposals["body"][0]["integrity_ok"])
+        approval = self.request(f"/api/v1/skills/{skill_id}/approve", "POST",
+                                {"confirm": True}, self.owner)
+        self.assertTrue(approval["status"].startswith("400"), approval)
+        remaining = self.request("/api/v1/skills/proposals", token=self.owner)["body"]
+        self.assertEqual(remaining[0]["status"], "proposed")
+        self.assertFalse(remaining[0]["integrity_ok"])
 
     def test_skill_proposal_can_be_rejected_only_with_explicit_confirmation(self):
         created = self.request("/api/v1/skills", "POST", {

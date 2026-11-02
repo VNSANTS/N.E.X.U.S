@@ -161,3 +161,6 @@ Na síntese, claims `unsupported` e `conflicting` são removidas de forma determ
 
 
 The Agents screen uses the sanitized `GET /api/v1/agents/activity` route rather than the general activity feed. The server returns at most 100 specialist LLM events for the authenticated owner and filters event details through an allowlist. It does not return prompts, model response text, retrieved context, tool arguments or tool results. Individual tool-call activity has not yet been added to this screen.
+
+
+A aprovação de uma proposta revalida o SHA-256 das instruções sob transação de escrita. Se o conteúdo tiver sido alterado depois da criação, o endpoint falha com erro de integridade e mantém a proposta como pendente. A listagem de propostas informa `integrity_ok`; a interface desabilita a aprovação quando o valor é falso.

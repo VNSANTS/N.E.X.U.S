@@ -41,14 +41,25 @@ class SkillRegistry:
         return sid
 
     def approve(self, skill_id, *, owner_id, approved):
-        if approved is not True: raise PermissionError("explicit approval required")
+        if approved is not True:
+            raise PermissionError("explicit approval required")
         with self.engine.db() as c:
             c.execute("BEGIN IMMEDIATE")
-            changed=c.execute("UPDATE runtime_skills SET status='approved',updated_at=? WHERE id=? AND status='proposed'",
-                              (now(),skill_id))
-            if not changed.rowcount: raise KeyError(skill_id)
+            row = c.execute(
+                "SELECT status,instructions,content_hash FROM runtime_skills WHERE id=?",
+                (skill_id,),
+            ).fetchone()
+            if not row or row["status"] != "proposed":
+                raise KeyError(skill_id)
+            digest = hashlib.sha256(row["instructions"].encode("utf-8")).hexdigest()
+            if digest != row["content_hash"]:
+                raise ValueError("skill integrity validation failed")
+            c.execute(
+                "UPDATE runtime_skills SET status='approved',updated_at=? WHERE id=? AND status='proposed'",
+                (now(), skill_id),
+            )
             c.execute("INSERT INTO runtime_skill_events VALUES(?,?,?,?,?)",
-                      (uid("ske"),skill_id,"approved",owner_id,now()))
+                      (uid("ske"), skill_id, "approved", owner_id, now()))
 
     def proposals(self, limit=20):
         """Return bounded owner-reviewable metadata for proposed text-only skills."""
@@ -56,12 +67,18 @@ class SkillRegistry:
             raise ValueError("skill proposal limit must be between 1 and 50")
         with self.engine.db() as c:
             rows = c.execute(
-                "SELECT id,name,version,description,instructions,status,created_at "
+                "SELECT id,name,version,description,instructions,status,content_hash,created_at "
                 "FROM runtime_skills WHERE status='proposed' "
                 "ORDER BY created_at ASC,id ASC LIMIT ?",
                 (limit,),
             ).fetchall()
-        return [dict(row) for row in rows]
+        result = []
+        for row in rows:
+            item = dict(row)
+            digest = hashlib.sha256(item["instructions"].encode("utf-8")).hexdigest()
+            item["integrity_ok"] = digest == item.pop("content_hash")
+            result.append(item)
+        return result
 
     def reject(self, skill_id, *, owner_id, confirmed):
         if confirmed is not True:

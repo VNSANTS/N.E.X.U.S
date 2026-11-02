@@ -69,8 +69,9 @@ async function skillsView(){
       review.append(node('summary','row-title','Revisar instruções completas'));
       review.append(node('pre','',proposal.instructions));
       item.append(review);
+      item.append(stateBadge(proposal.integrity_ok===false?'integridade inválida':'integridade válida'));
       const actions=node('div','form-actions');
-      actions.append(button('Aprovar habilidade',async()=>{
+      const approveButton=button('Aprovar habilidade',async()=>{
         if(!confirm('Aprovar '+proposal.name+' v'+proposal.version+'? Leia as instruções completas antes de confirmar.'))return;
         try{
           await api('/skills/'+encodeURIComponent(proposal.id)+'/approve',{
@@ -79,7 +80,9 @@ async function skillsView(){
           toast('Skill aprovada. Ela poderá ser carregada quando for relevante.');
           await skillsView();
         }catch(err){toast(err.message)}
-      },'primary-button'));
+      },'primary-button');
+      approveButton.disabled=proposal.integrity_ok===false;
+      actions.append(approveButton);
       actions.append(button('Rejeitar proposta',async()=>{
         if(!confirm('Rejeitar e retirar '+proposal.name+' v'+proposal.version+' da fila de aprovação?'))return;
         try{
@@ -91,6 +94,9 @@ async function skillsView(){
         }catch(err){toast(err.message)}
       },'danger-button'));
       item.append(actions);
+      if(proposal.integrity_ok===false){
+        item.append(node('div','error-box','O conteúdo foi alterado depois da proposta e não pode ser aprovado.'));
+      }
       pendingCard.append(item);
     }
   }

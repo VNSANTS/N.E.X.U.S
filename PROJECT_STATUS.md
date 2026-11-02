@@ -343,3 +343,11 @@ Limites que permanecem: não existe sandbox de código/arquivos porque não há 
 - Added authenticated `GET /api/v1/agents/activity`, returning at most 60 `agent.llm_*` events for the current user only. The server parses and filters event details through a strict allowlist; prompt text, model output, tool results and unrelated activity are not returned.
 - Added API tests for authentication, cross-user isolation and metadata redaction. Browser rendering uses DOM/textContent helpers, not HTML injection.
 - CI pending.
+
+
+## Skills approval integrity — pending CI
+
+- Approval now re-reads proposed instructions and stored SHA-256 inside the write transaction before changing status.
+- A changed proposal fails closed and remains `proposed`; the proposals endpoint returns an `integrity_ok` boolean for the owner UI.
+- The Skills page displays the integrity state and disables approval when the hash does not match.
+- Added unit/API/Playwright tests for tampering and explicit approval. CI pending.
