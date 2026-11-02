@@ -20,7 +20,7 @@ class ContextRetriever:
     def _terms(query):
         if not isinstance(query, str):
             raise TypeError("query must be a string")
-        return list(dict.fromkeys(w for w in re.findall(r"[\\w-]{3,}", query.casefold()) if w))[:8]
+        return list(dict.fromkeys(w for w in re.findall(r"[\w-]{3,}", query.casefold()) if w))[:8]
 
     @staticmethod
     def _score(text, terms, title=""):
