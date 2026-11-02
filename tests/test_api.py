@@ -293,12 +293,26 @@ class APITests(unittest.TestCase):
         self.app.tools._audit("different-owner-id", "tool.completed", "private.tool", {
             "permission": "READ", "risk": "READ", "decision": "allowed",
         })
+        job_id = self.app.queue.enqueue(
+            "learning.stats", {"private_payload": "PRIVATE JOB PAYLOAD"},
+            owner_id=owner_user["id"],
+        )
+        claimed = self.app.queue.claim(owner_id=owner_user["id"])
+        self.assertEqual(claimed["id"], job_id)
+        self.app.queue.complete(
+            job_id, {"private_result": "PRIVATE JOB RESULT"},
+            lease_token=claimed["lease_token"],
+        )
+        self.app.queue.enqueue(
+            "learning.stats", {"private_payload": "OTHER USER JOB"},
+            owner_id="different-owner-id",
+        )
 
         unauthenticated = self.request("/api/v1/agents/activity")
         self.assertTrue(unauthenticated["status"].startswith("401"))
         response = self.request("/api/v1/agents/activity", token=self.owner)
         self.assertTrue(response["status"].startswith("200"), response)
-        self.assertEqual(len(response["body"]), 2)
+        self.assertEqual(len(response["body"]), 5)
         by_event = {event["event"]: event for event in response["body"]}
         event = by_event["agent.llm_call_completed"]
         self.assertEqual(event["details"]["agent_id"], "reviewer")
@@ -310,12 +324,22 @@ class APITests(unittest.TestCase):
         self.assertEqual(tool_event["details"]["duration_ms"], 17)
         self.assertNotIn("arguments", tool_event["details"])
         self.assertNotIn("result", tool_event["details"])
+        job_events = [event for event in response["body"] if event["event"].startswith("job.")]
+        self.assertEqual({event["event"] for event in job_events},
+                         {"job.queued", "job.claimed", "job.completed"})
+        completed_job = next(event for event in job_events if event["event"] == "job.completed")
+        self.assertEqual(completed_job["details"]["kind"], "learning.stats")
+        self.assertEqual(completed_job["details"]["state"], "completed")
+        self.assertEqual(completed_job["details"]["job_id"], job_id)
         serialized = json.dumps(response["body"])
         self.assertNotIn("PRIVATE PROMPT", serialized)
         self.assertNotIn("PRIVATE MODEL RESPONSE", serialized)
         self.assertNotIn("PRIVATE TOOL DATA", serialized)
         self.assertNotIn("PRIVATE TOOL ARGUMENT", serialized)
         self.assertNotIn("PRIVATE TOOL RESULT", serialized)
+        self.assertNotIn("PRIVATE JOB PAYLOAD", serialized)
+        self.assertNotIn("PRIVATE JOB RESULT", serialized)
+        self.assertNotIn("OTHER USER JOB", serialized)
         self.assertNotIn("other-user-model", serialized)
         self.assertNotIn("private.tool", serialized)
 

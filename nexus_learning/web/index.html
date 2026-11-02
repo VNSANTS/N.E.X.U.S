@@ -193,12 +193,13 @@ async function agentsView(){
   const history=card('Execuções recentes',
     'Metadados permitidos. Prompts, respostas internas e resultados de ferramentas não são exibidos.');
   const toolEvents=new Set(['tool.started','tool.completed','tool.failed','tool.denied']);
+  const jobEvents=new Set(['job.queued','job.claimed','job.completed','job.failed','job.requeued','job.cancelled']);
   const events=(activity||[]).filter(x=>
     x && typeof x.event==='string' &&
-    (x.event.startsWith('agent.llm_') || toolEvents.has(x.event))
+    (x.event.startsWith('agent.llm_') || toolEvents.has(x.event) || jobEvents.has(x.event))
   );
   if(!events.length){
-    empty(history,'Ainda não há execuções de especialistas registradas.');
+    empty(history,'Ainda não há eventos de agentes, ferramentas ou jobs registrados.');
   }else{
     const list=node('div','list');
     const names={architect:'Architect',analyst:'Analyst',reviewer:'Reviewer'};
@@ -215,7 +216,9 @@ async function agentsView(){
       const details=event.details&&typeof event.details==='object'&&!Array.isArray(event.details)
         ?event.details:{};
       const isTool=event.event.startsWith('tool.');
-      const stage=isTool?event.event.slice('tool.'.length):event.event.slice('agent.llm_'.length);
+      const isJob=event.event.startsWith('job.');
+      const stage=isTool?event.event.slice('tool.'.length)
+        :isJob?event.event.slice('job.'.length):event.event.slice('agent.llm_'.length);
       const agent=names[details.agent_id]||details.agent_id||'N.E.X.U.S.';
       const toolLabels={
         started:'execução iniciada',
@@ -223,10 +226,19 @@ async function agentsView(){
         failed:'execução falhou',
         denied:'ação negada pela política'
       };
+      const jobLabels={
+        queued:'enfileirada',
+        claimed:'iniciada',
+        completed:'concluída',
+        failed:'falhou',
+        requeued:'reagendada',
+        cancelled:'cancelada'
+      };
       const row=node('div','list-row');
       const main=node('div','row-main');
       const title=isTool
         ?'Ferramenta '+(details.tool||'desconhecida')+': '+(toolLabels[stage]||stage)
+        :isJob?'Tarefa '+(details.kind||'N.E.X.U.S')+': '+(jobLabels[stage]||stage)
         :agent+': '+(labels[stage]||stage.replaceAll('_',' '));
       main.append(node('div','row-title',title));
       const meta=[];
@@ -242,6 +254,10 @@ async function agentsView(){
       if(details.permission)meta.push('permissão: '+details.permission);
       if(details.risk)meta.push('risco: '+details.risk);
       if(details.decision)meta.push('decisão: '+details.decision);
+      if(details.kind)meta.push('tipo: '+details.kind);
+      if(details.state)meta.push('estado: '+details.state);
+      if(Number.isFinite(details.attempt))meta.push('tentativa '+details.attempt);
+      if(details.job_id)meta.push('job '+String(details.job_id).slice(-8));
       if(details.task_id)meta.push('tarefa '+String(details.task_id).slice(-8));
       if(details.separate_review_model===true)meta.push('modelo distinto do Analyst');
       else if(details.separate_review_model===false)meta.push('mesmo modelo do Analyst');

@@ -277,6 +277,15 @@ class BrowserUITests(unittest.TestCase):
             "duration_ms": 17, "arguments": "PRIVATE TOOL ARGUMENT MUST NOT RENDER",
             "result": "PRIVATE TOOL RESULT MUST NOT RENDER",
         })
+        job_id = self.app.queue.enqueue(
+            "learning.stats", {"private_payload": "PRIVATE WORKER PAYLOAD MUST NOT RENDER"},
+            owner_id=owner_id,
+        )
+        claimed = self.app.queue.claim(owner_id=owner_id)
+        self.app.queue.complete(
+            job_id, {"private_result": "PRIVATE WORKER RESULT MUST NOT RENDER"},
+            lease_token=claimed["lease_token"],
+        )
 
         self.page.locator('[data-view="agents"]').click()
         expect(self.page.locator("#viewTitle")).to_have_text("Agentes")
@@ -290,6 +299,13 @@ class BrowserUITests(unittest.TestCase):
         expect(self.page.locator("#content")).to_contain_text("model_timeout")
         expect(self.page.locator("#content")).to_contain_text("Ferramenta knowledge.claims: execução concluída")
         expect(self.page.locator("#content")).to_contain_text("permissão: READ")
+        expect(self.page.locator("#content")).to_contain_text("Tarefa learning.stats: concluída")
+        expect(self.page.locator("#content")).to_contain_text("estado: completed")
+        expect(self.page.locator("#content")).to_contain_text("tentativa 1")
+        self.assertNotIn("PRIVATE WORKER PAYLOAD MUST NOT RENDER",
+                         self.page.locator("#content").inner_text())
+        self.assertNotIn("PRIVATE WORKER RESULT MUST NOT RENDER",
+                         self.page.locator("#content").inner_text())
         self.assertNotIn("PRIVATE TOOL ARGUMENT MUST NOT RENDER",
                          self.page.locator("#content").inner_text())
         self.assertNotIn("PRIVATE TOOL RESULT MUST NOT RENDER",

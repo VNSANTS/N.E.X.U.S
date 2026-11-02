@@ -651,7 +651,52 @@ class NexusAPI:
                     "details": safe_details,
                     "created_at": row["created_at"],
                 })
-            return self._json(start_response, "200 OK", result)
+
+            # Worker events join only through the authenticated job owner. Never
+            # select or serialize worker_jobs.payload or worker_jobs.result.
+            with self.engine.db() as c:
+                job_rows = c.execute(
+                    "SELECT e.event,e.details,e.created_at,j.id AS job_id,j.kind "
+                    "FROM worker_job_events e JOIN worker_jobs j ON j.id=e.job_id "
+                    "WHERE j.owner_id=? AND e.event IN "
+                    "('job.queued','job.claimed','job.completed','job.failed','job.requeued','job.cancelled') "
+                    "ORDER BY e.rowid DESC LIMIT 100",
+                    (user["id"],),
+                ).fetchall()
+            for row in job_rows:
+                try:
+                    details = json.loads(row["details"])
+                except (TypeError, ValueError):
+                    details = {}
+                if not isinstance(details, dict):
+                    details = {}
+                event_states = {
+                    "job.queued": "queued",
+                    "job.claimed": "running",
+                    "job.completed": "completed",
+                    "job.failed": "failed",
+                    "job.requeued": "queued",
+                    "job.cancelled": "cancelled",
+                }
+                safe_details = {
+                    "job_id": str(row["job_id"])[:80],
+                    "kind": str(row["kind"])[:64],
+                    "state": event_states.get(row["event"], "unknown"),
+                }
+                attempt = details.get("attempt")
+                if isinstance(attempt, int) and not isinstance(attempt, bool) and 0 <= attempt <= 1_000_000:
+                    safe_details["attempt"] = attempt
+                for key, limit in (("error_code", 64), ("reason", 48)):
+                    value = details.get(key)
+                    if isinstance(value, str):
+                        safe_details[key] = value[:limit]
+                result.append({
+                    "event": row["event"],
+                    "details": safe_details,
+                    "created_at": row["created_at"],
+                })
+            result.sort(key=lambda item: item["created_at"], reverse=True)
+            return self._json(start_response, "200 OK", result[:200])
         if route == ["agents"] and method == "GET":
             return self._json(start_response, "200 OK", self.agents.roster())
         if route == ["activity"] and method == "GET":
