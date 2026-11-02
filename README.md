@@ -4,7 +4,7 @@
 
 Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesquisar, organizar conhecimento, utilizar ferramentas, coordenar agentes e executar tarefas autorizadas, mantendo o usuário no controle.
 
-> **Estado atual:** aplicação local em Python/SQLite com API WSGI autenticada, conversas persistidas, recuperação contextual, UI web conectada, ferramentas READ em allowlist e worker local resiliente. MockProvider é o padrão offline; adapters opcionais existem para Ollama, Gemini, OpenAI, Anthropic, Groq e OpenRouter. Um pipeline sequencial Architect→Analyst→Reviewer pode ser habilitado explicitamente para tarefas ADVANCED/RESEARCH; fica desabilitado por padrão e não usa ferramentas. Por padrão os papéis compartilham o modelo principal; configurações locais opcionais por papel estão em implementação na branch de revisão e não devem ser consideradas validadas até o CI. O MVP não é cloud nem colaboração multi-modelo geral. Consulte [PROJECT_STATUS.md](PROJECT_STATUS.md) e [docs/LOCAL_API.md](docs/LOCAL_API.md).
+> **Estado atual:** aplicação local em Python/SQLite com API WSGI autenticada, conversas persistidas, recuperação contextual, UI web conectada, ferramentas READ em allowlist e worker local resiliente. MockProvider é o padrão offline; adapters opcionais existem para Ollama, Gemini, OpenAI, Anthropic, Groq e OpenRouter. Um pipeline sequencial Architect→Analyst→Reviewer pode ser habilitado explicitamente para tarefas ADVANCED/RESEARCH; fica desabilitado por padrão e não usa ferramentas. Por padrão os papéis compartilham o modelo principal; a branch `nexus/remote-continuation` adiciona configurações locais opcionais por papel e o CI do roteamento passou (187 testes unitários em Python 3.11/3.12 e browser E2E). A auditoria estruturada de referências de evidência ainda está em validação. O MVP não é cloud nem colaboração multi-modelo geral. Consulte [PROJECT_STATUS.md](PROJECT_STATUS.md) e [docs/LOCAL_API.md](docs/LOCAL_API.md).
 
 ## Visão do projeto
 
@@ -28,6 +28,7 @@ Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesq
 | Documento | Conteúdo |
 |---|---|
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | Estado atual, próximo marco e riscos |
+| [docs/EVIDENCE_AUDIT.md](docs/EVIDENCE_AUDIT.md) | Formato de claims, referências e limites da auditoria |
 | [ROADMAP.md](ROADMAP.md) | Fases e critérios para avançar |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Arquitetura conceitual |
 | [docs/UNIVERSAL_TOOL_CALLING.md](docs/UNIVERSAL_TOOL_CALLING.md) | Contrato, limites e ativação de chamadas nativas de ferramentas |

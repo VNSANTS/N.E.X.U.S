@@ -113,3 +113,12 @@ NEXUS_AGENT_MODELS={"architect":"ollama:qwen2.5:0.5b","analyst":"gemini:<model-i
 Papéis aceitos: `architect`, `analyst` e `reviewer`. O formato de cada valor é `provider:model`; modelos não configurados continuam usando o provider principal. O `ProviderManager` exige credenciais presentes, opt-in remoto e allowlist para cada provider remoto. Chamadas remotas entram no preflight de orçamento e cada geração continua fazendo sua própria reserva. Se o orçamento não autorizar o conjunto remoto, o pipeline é bloqueado antes da primeira chamada.
 
 A configuração não faz descoberta de modelos nem uma chamada de saúde automática: informe apenas IDs conhecidos/verificados. Nesta etapa, falha de um modelo de especialista encerra a pipeline em vez de repetir uma chamada potencialmente faturável. Fallback entre modelos, mesmo dentro do mesmo trust lane, ainda é pendência. Os especialistas continuam sequenciais, sem ferramentas próprias e sem execução de código.
+
+
+## Auditoria estruturada de evidências dos especialistas
+
+O pipeline pode transportar claims tipadas em cada deliverable: texto da afirmação e `evidence_ids`. Quando fontes são fornecidas, o runtime atribui IDs locais `S1`–`S3` e rejeita IDs que não existam no catálogo recebido ou que estejam duplicados. O estado resultante é apenas `source_linked` ou `unreferenced`; não existe pontuação numérica automática de confiança nem declaração de que a fonte prova a afirmação.
+
+As fontes são dados não confiáveis. Um ID válido só indica que o modelo referenciou um item que foi incluído no contexto. Não garante qualidade, atualidade, independência ou veracidade. A revisão semântica do Reviewer continua sendo uma etapa de modelo, não uma verificação factual independente.
+
+O orçamento configurado usa preços estimados globais, não tarifários por modelo. Em uma execução com vários providers remotos, configure os preços por milhão de tokens de forma conservadora, considerando o modelo mais caro selecionado; o preflight é uma estimativa e não substitui limites de faturamento do provedor.

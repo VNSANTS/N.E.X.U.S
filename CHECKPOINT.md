@@ -1,5 +1,15 @@
 # Development Checkpoint
 
+## Continuidade remota — CI e auditoria de evidências (2026-11-02)
+
+- Branch de trabalho: `nexus/remote-continuation`; PR #3 continua aberto e direcionado a `nexus/review-nov-02`, não à `main`.
+- Commit `d11adc710e149dd17b94294de76b89d798c8c571`: GitHub Actions passou com 187 testes unitários em Python 3.11 e 3.12; browser E2E Playwright/Chromium também passou. Este resultado é anterior às novas alterações de evidência.
+- P1-04: `NEXUS_AGENT_MODELS` permite configurar provider:model por Architect, Analyst e Reviewer. ProviderManager mantém opt-ins/allowlists/credenciais; o preflight inclui apenas chamadas remotas e cada chamada remota exige sua reserva individual. Sem descoberta automática de capacidade/disponibilidade ou fallback same-lane.
+- P1-05: busca autenticada de Skills agora usa `QUERY_STRING`; o bug de `UnboundLocalError` causado por imports locais de `parse_qs` foi corrigido e o CI passou.
+- P1-06 em implementação: o pipeline recebe até três fontes, atribui IDs S1–S3 e valida determinísticamente que cada claim referencie apenas IDs fornecidos. Claims sem referência ficam `unreferenced`; IDs fabricados/duplicados são rejeitados. Isso comprova apenas ligação a uma fonte fornecida, não a verdade/confiabilidade da fonte. A nova etapa ainda aguarda CI.
+- Próxima validação: suíte CI completa, incluindo browser E2E, para as alterações de evidence claims e preflight.
+
+
 ## Último snapshot publicado — 2026-11-02
 
 - Branch remota de referência: `nexus/review-nov-02`; commit `16991c3aaf030f2ff9ef9233b61253c100a82538`. A branch não foi mesclada em `main`.

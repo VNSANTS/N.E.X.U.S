@@ -11,6 +11,14 @@
 - **Not production-ready:** no cloud deployment/TLS, remote worker, multi-user isolation, safe code-execution sandbox, automated backup/restore or completed operational monitoring. Do not expose the local API to the public internet.
 - **Secrets:** `.env`, local databases and logs were excluded from Git. The published tree passed a pattern scan for common credential formats; that scan is not a guarantee that every secret format is absent.
 
+## Active remote continuation — 2026-11-02
+
+- Working branch: `nexus/remote-continuation`; PR #3 targets `nexus/review-nov-02`, not `main`.
+- The per-specialist provider/model map (`NEXUS_AGENT_MODELS`) and query-string skill discovery fix are implemented. Commit `d11adc710e149dd17b94294de76b89d798c8c571` passed GitHub Actions: 187 unit tests on Python 3.11 and 3.12, plus Playwright/Chromium browser E2E.
+- Model routing still has no automatic model capability/health discovery and no fallback after an ambiguous provider failure. Remote providers still require opt-in, allowlist, credentials and budget.
+- Structured evidence claims are being added after that passing commit. They link claims to source IDs from the current request; this proves only that the source ID was supplied, not that the citation is accurate or the claim is true. CI for this new evidence layer is pending.
+- No real provider inference, Tavily search or paid API call is part of this remote work. The local app is still loopback-only and not deployed.
+
 The entries below are historical development snapshots. They must not override this current remote summary.
 
 ## Historical snapshot — earlier continuation (2026-11-02)

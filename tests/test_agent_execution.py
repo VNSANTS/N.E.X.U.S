@@ -5,7 +5,7 @@ from nexus_learning.agent_execution import SpecialistPipeline
 
 
 def response(summary, *items):
-    return json.dumps({"summary": summary, "items": list(items)})
+    return json.dumps({"summary": summary, "items": list(items), "claims": []})
 
 
 class FakeProvider:
@@ -92,6 +92,44 @@ class SpecialistPipelineTests(unittest.TestCase):
              ("analyst", "gemini", "analyst-model"),
              ("reviewer", "anthropic", "reviewer-model")],
         )
+
+    def test_source_claims_are_linked_only_to_supplied_source_ids(self):
+        analyst = json.dumps({"summary": "Analysis", "items": ["source comparison"],
+                              "claims": [{"text": "A source-linked claim", "evidence_ids": ["S1"]}]})
+        provider = FakeProvider(outputs=[response("Plan"), analyst, response("Review")])
+        result = SpecialistPipeline(provider).run("Compare claims", {
+            "sources": [{"url": "https://example.test/a", "title": "Source A",
+                         "excerpt": "Source data"}],
+        })
+        self.assertEqual(result.status, "completed")
+        analyst_prompt = provider.requests[1]["messages"][1]["content"]
+        self.assertIn('"id":"S1"', analyst_prompt)
+        claim = result.results[1].claims[0]
+        self.assertEqual(claim.evidence_ids, ("S1",))
+        self.assertEqual(claim.link_status, "source_linked")
+        reviewer_prompt = provider.requests[2]["messages"][1]["content"]
+        self.assertIn('"link_status":"source_linked"', reviewer_prompt)
+
+    def test_unknown_or_fabricated_source_identifier_fails_closed(self):
+        bad = json.dumps({"summary": "Analysis", "items": [],
+                          "claims": [{"text": "Unsupported", "evidence_ids": ["S99"]}]})
+        provider = FakeProvider(outputs=[response("Plan"), bad, response("Review")])
+        result = SpecialistPipeline(provider).run("Compare claims", {
+            "sources": [{"url": "https://example.test/a", "title": "Source A",
+                         "excerpt": "Source data"}],
+        })
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.results[1].error_code, "invalid_output")
+        self.assertEqual(result.results[2].status, "skipped")
+
+    def test_unreferenced_claims_are_labelled_without_fake_confidence(self):
+        output = json.dumps({"summary": "Analysis", "items": [],
+                             "claims": [{"text": "Unverified statement", "evidence_ids": []}]})
+        provider = FakeProvider(outputs=[response("Plan"), output, response("Review")])
+        result = SpecialistPipeline(provider).run("Analyze", {"sources": []})
+        claim = result.results[1].claims[0]
+        self.assertEqual(claim.link_status, "unreferenced")
+        self.assertFalse(hasattr(claim, "confidence"))
 
     def test_unknown_agent_provider_override_is_rejected(self):
         with self.assertRaises(ValueError):

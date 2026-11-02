@@ -38,7 +38,7 @@ class SpecialistAwareProvider(RecordingProvider):
         if len(self.calls) <= 3:
             import json
             agent = ("architect", "analyst", "reviewer")[len(self.calls) - 1]
-            return ModelResponse(json.dumps({"summary": agent + " result", "items": []}),
+            return ModelResponse(json.dumps({"summary": agent + " result", "items": [], "claims": []}),
                                  self.provider_name, self.model)
         return ModelResponse(self.response, self.provider_name, self.model)
 
@@ -207,7 +207,7 @@ class APITests(unittest.TestCase):
                 self.calls = 0
             def generate(self, messages, *, max_tokens=800, timeout=30):
                 self.calls += 1
-                return ModelResponse(json.dumps({"summary": self.summary, "items": []}),
+                return ModelResponse(json.dumps({"summary": self.summary, "items": [], "claims": []}),
                                      self.provider_name, self.model)
 
         main = RecordingProvider()

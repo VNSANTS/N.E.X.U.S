@@ -4,7 +4,7 @@ Este plano organiza o backlog restante por dependência. Os status são delibera
 
 ## Próxima tarefa
 
-Retomar em **P1-04 — validar e completar modelos independentes por especialista** na branch remota de continuação. Não reexecutar etapas concluídas; executar CI antes de marcar como concluída.
+Retomar em **P1-06 — auditoria estruturada de evidências**. P1-04 agora tem seleção independente por papel e CI aprovado; ainda faltam descoberta de capacidade/disponibilidade e fallback same-lane.
 
 ## Plano ordenado
 
@@ -15,9 +15,9 @@ Retomar em **P1-04 — validar e completar modelos independentes por especialist
 | P1-01 | P1 | Conversa real, memória contextual limitada, histórico e fluxo de pesquisa com confirmação | P0-01 | IMPLEMENTADO localmente; providers externos dependem de configuração/autorização |
 | P1-02 | P1 | Model routing manual/automático com disponibilidade, privacidade e orçamento | P1-01 | IMPLEMENTADO; catálogo manual e budget remoto fechado por padrão |
 | P1-03 | P1 | Tool calling nativo bounded em Ollama/OpenAI-compatible/Gemini/Anthropic; schemas READ-only, continuidade preservada e sensíveis bloqueadas | P1-01 | IMPLEMENTADO COM MOCKS; sem teste de rede; capacidade por modelo exige allowlist manual |
-| P1-04 | P1 | Configurar provider/modelo por especialista; verificar adapter/capacidade, permitir fallback no mesmo trust lane, aplicar orçamento e manter provider padrão quando não configurado | P1-02 | EM IMPLEMENTAÇÃO REMOTA: mapa explícito por papel, validação ProviderManager e preflight agregado adicionados; falta CI, fallback same-lane e confirmação de disponibilidade/capacidade do modelo |
-| P1-05 | P1 | Skills versionadas, proposta/aprovação, integridade, descoberta/carregamento sob demanda e injeção limitada no chat real | P0-01 | IMPLEMENTADO EM TESTES UNIT/API: registry, aprovação, integridade e injeção síncrona/SSE; E2E e conflitos de instruções pendentes |
-| P1-06 | P1 | Evidências: deliverable tipado separa afirmações/evidências, referências válidas, confiança limitada; Reviewer recusa claims sem fonte quando requerida | P1-01 | PARCIAL: reviewer verifica citações existentes; auditoria estruturada pendente |
+| P1-04 | P1 | Configurar provider/modelo por especialista; verificar adapter/capacidade, permitir fallback no mesmo trust lane, aplicar orçamento e manter provider padrão quando não configurado | P1-02 | PARCIAL VALIDADO: mapa explícito por papel, ProviderManager e preflight agregado; CI Python 3.11/3.12 + browser E2E passou em d11adc7; falta descoberta de capacidade/disponibilidade e fallback same-lane |
+| P1-05 | P1 | Skills versionadas, proposta/aprovação, integridade, descoberta/carregamento sob demanda e injeção limitada no chat real | P0-01 | IMPLEMENTADO E CI VALIDADO: registry, aprovação, integridade, injeção síncrona/SSE e busca GET por query string; faltam E2E dedicado e testes de conflitos de instruções |
+| P1-06 | P1 | Evidências: deliverable tipado separa afirmações/evidências, referências válidas, confiança limitada; Reviewer recusa claims sem fonte quando requerida | P1-01 | EM IMPLEMENTAÇÃO: claims tipadas com IDs S1–S3 e validação determinística de referência; não inferem verdade/confiança; CI pendente |
 | P2-01 | P2 | Delegação rastreável e isolada entre especialistas, limites de chamadas/tempo/budget, falha e retomada sem ciclos | P1-04 | PARCIAL: Architect→Analyst→Reviewer sequencial, sem seleção independente; limites e logs existentes |
 | P2-02 | P2 | Revisão independente com contexto reduzido e proveniência, sem autoaprovação | P1-06 | PENDENTE |
 | P2-03 | P2 | Execução de código/arquivos em sandbox real por tarefa, privilégio mínimo, mounts allowlisted, sem segredos e com limites | P0-01 | BLOQUEADA: ambiente atual não oferece sandbox isolada validada; sem executor/execução simulada |
