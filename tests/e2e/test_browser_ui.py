@@ -179,6 +179,48 @@ class BrowserUITests(unittest.TestCase):
         self.assertEqual(events.count("agent.llm_call_completed"), 3)
         self.assertEqual(self.page_errors, [])
 
+    def test_agents_view_displays_only_specialist_execution_metadata(self):
+        self.login()
+        with self.engine.db() as connection:
+            owner_id = connection.execute(
+                "SELECT id FROM api_users WHERE username=?",
+                ("browser-owner",),
+            ).fetchone()["id"]
+        self.app.agents.record(owner_id, "agent.llm_call_completed", {
+            "agent_id": "reviewer",
+            "provider": "gemini",
+            "model": "review-model",
+            "status": "completed",
+            "duration_ms": 42,
+            "task_id": "task-87654321",
+            "separate_review_model": True,
+            "prompt": "PRIVATE PROMPT MUST NOT RENDER",
+            "response_text": "PRIVATE INTERNAL RESPONSE MUST NOT RENDER",
+        })
+        self.app.agents.record(owner_id, "agent.llm_call_failed", {
+            "agent_id": "analyst",
+            "provider": "ollama",
+            "model": "analysis-model",
+            "status": "failed",
+            "error_code": "model_timeout",
+            "duration_ms": 1000,
+        })
+
+        self.page.locator('[data-view="agents"]').click()
+        expect(self.page.locator("#viewTitle")).to_have_text("Agentes")
+        expect(self.page.locator("#content")).to_contain_text("Papéis registrados")
+        expect(self.page.locator("#content")).to_contain_text("Execuções recentes")
+        expect(self.page.locator("#content")).to_contain_text("Reviewer: Chamada concluída")
+        expect(self.page.locator("#content")).to_contain_text("gemini / review-model")
+        expect(self.page.locator("#content")).to_contain_text("42 ms")
+        expect(self.page.locator("#content")).to_contain_text("modelo distinto do Analyst")
+        expect(self.page.locator("#content")).to_contain_text("Analyst: Chamada falhou")
+        expect(self.page.locator("#content")).to_contain_text("model_timeout")
+        self.assertNotIn("PRIVATE PROMPT MUST NOT RENDER", self.page.locator("#content").inner_text())
+        self.assertNotIn("PRIVATE INTERNAL RESPONSE MUST NOT RENDER",
+                         self.page.locator("#content").inner_text())
+        self.assertEqual(self.page_errors, [])
+
     def test_mobile_sidebar_opens_and_closes_after_navigation(self):
         self.login()
         self.page.set_viewport_size({"width": 390, "height": 844})
