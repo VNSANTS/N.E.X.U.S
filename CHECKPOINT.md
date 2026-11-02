@@ -252,3 +252,12 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - If a stage returns after the global deadline, it is reported as `pipeline_timeout`; remaining specialists are marked skipped and final synthesis is not called.
 - Tests cover an overlong first stage and reject invalid/unbounded deadline settings.
 - Timeout is cooperative through provider/HTTP timeout; no false claim of forcibly stopping a non-cooperative external provider.
+
+
+## P2-01 — deadline and stage-stop validation (2026-11-02)
+
+- Commit `029389e9a7ff3781ca0ec00770e2f7eaf1585927` passed full GitHub Actions: Python 3.11: 195 unit tests; Python 3.12: 195 unit tests; Playwright/Chromium: 5/5.
+- Specialist stages now share a 90-second global deadline by default (maximum configurable constructor bound 180s). Each call receives remaining time no greater than the per-call timeout.
+- Overrun becomes `pipeline_timeout`; later stages are skipped and the final synthesis is not called. This relies on the provider respecting its timeout parameter.
+- Still pending: durable stage checkpoint/resume, same-trust-lane fallback after safe pre-call failure, parallel work only after isolation/budget correctness.
+- Next task: P2-02 independent review and provenance.

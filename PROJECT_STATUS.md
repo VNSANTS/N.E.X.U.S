@@ -282,3 +282,11 @@ Limites que permanecem: não existe sandbox de código/arquivos porque não há 
 - Specialist pipeline now has a global 90-second deadline (constructor accepts 1–180 seconds), passes each provider the remaining time, and turns an overrun into `pipeline_timeout`. Later specialists are marked skipped and no final synthesis is invoked after an overrun.
 - The transport/provider must respect its timeout; this is not a forced process kill. Per-stage call remains bounded by existing provider timeout and the global deadline.
 - New tests verify timeout bounds and that a slow first stage prevents later stage calls. CI for this delta is pending.
+
+
+## Specialist execution deadline — validated by CI
+
+- Global specialist pipeline deadline: 90 seconds default, constructor maximum 180 seconds. Each specialist gets the remaining time, capped by the existing per-call timeout.
+- A stage that returns after the deadline is converted to `pipeline_timeout`; later specialists are skipped and final synthesis does not run.
+- Latest CI commit `029389e9a7ff3781ca0ec00770e2f7eaf1585927`: 195 unit tests passed on Python 3.11 and 195 on Python 3.12; 5/5 Playwright/Chromium E2E tests passed; compilation succeeded.
+- This timeout is cooperative through the provider transport's timeout parameter, not a hard process kill. Durable stage resume and same-trust-lane fallback remain unfinished.
