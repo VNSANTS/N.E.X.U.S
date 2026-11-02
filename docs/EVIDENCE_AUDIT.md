@@ -65,3 +65,10 @@ The parser requires one-to-one coverage and rejects duplicated/missing/out-of-ra
 Before final synthesis, Analyst claims marked `unsupported` or `conflicting` are withheld deterministically, even if source-link filtering is disabled. Claims marked `uncertain` remain labelled with their review status/note. The final model is instructed not to restate rejected claims as facts.
 
 A distinct Reviewer provider/model is recorded in metadata as `separate_review_model`; using a second model is not independent verification, source validation, human review, or approval of actions.
+
+
+## Reviewer assessment validation
+
+Latest CI commit `0ff391c0fd4642d6d1792c310b91d9a01ece1db5` passed 203 unit tests in Python 3.11 and Python 3.12 plus 5/5 browser E2E tests. The API preflight placeholder uses a fixed zero-based claim index for its single-claim worst-case example. Tests verify that an Analyst claim assessed `unsupported` is omitted from the final synthesis payload.
+
+This is a validated software gate, not semantic proof. A model can still misjudge support; the final response may paraphrase unsupported text outside structured claim fields. Human review is required for consequential conclusions.

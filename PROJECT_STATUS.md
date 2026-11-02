@@ -323,3 +323,13 @@ Limites que permanecem: não existe sandbox de código/arquivos porque não há 
 - Bounded each specialist response to a 160-character summary, up to two 100-character items, and at most one 50-character claim. Reviewer notes are capped at 60 characters.
 - The smaller schema reduces the worst-case preflight prompt footprint; default specialist input budget remains unchanged. This preserves conservative request bounds rather than inflating provider context limits.
 - CI is pending.
+
+
+## P2-02 structured Reviewer — validated by CI
+
+- Reviewer returns a typed assessment for each Analyst claim: `supported`, `unsupported`, `uncertain` or `conflicting`, with a zero-based index and note capped at 60 characters.
+- Parser enforces exact one-to-one coverage, rejects duplicate/missing/out-of-range indexes and invalid statuses, and rejects `supported` when the Analyst claim has no supplied source ID.
+- The Reviewer cannot create new factual claims in this stage. The synthesis serializer deterministically withholds `unsupported` and `conflicting` Analyst claims even when source-link filtering is disabled; uncertain claims remain labelled.
+- The distinct Reviewer model marker is metadata only. A second model opinion is not independent factual verification, human review or action approval.
+- GitHub Actions head `0ff391c0fd4642d6d1792c310b91d9a01ece1db5`: 203 unit tests passed on Python 3.11 and 203 passed on Python 3.12 (5 optional E2E tests skipped in each standard discovery run); Playwright/Chromium passed 5/5. Compile step passed in both unit-test jobs.
+- Fixed an undefined index in the API preflight placeholder and updated the API integration assertion to verify that a rejected claim is absent from final synthesis.

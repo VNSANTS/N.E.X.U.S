@@ -298,3 +298,16 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Worst-case preflight placeholders were aligned to the accepted schema, retaining the default 12,000-character specialist input limit and 24,000-character API pipeline limit.
 - Updated synthesis test to assert the structured review assessment/note metadata.
 - CI pending.
+
+
+## P2-02 — typed Reviewer assessments validated (2026-11-02)
+
+- CI head: `0ff391c0fd4642d6d1792c310b91d9a01ece1db5`.
+- Python 3.11: 203 tests passed; 5 optional E2E skipped by standard discovery.
+- Python 3.12: 203 tests passed; 5 optional E2E skipped by standard discovery.
+- Playwright/Chromium browser E2E: 5/5 passed.
+- Reviewer produces one bounded typed finding per Analyst claim; the parser enforces complete one-to-one index coverage and rejects fabricated/missing findings.
+- Unsupported/conflicting claims are removed before final synthesis; uncertain claims remain visibly labelled. Supported is rejected if no evidence ID was supplied.
+- The API preflight placeholder now uses fixed claim index zero; the integration test confirms that a Reviewer-rejected statement is not included in final synthesis.
+- This is structural review metadata and an LLM opinion, not independent verification or human approval.
+- Next: re-evaluate the sandbox blocker and continue any secure, non-destructive work. No cloud deployment or privileged execution is authorized.
