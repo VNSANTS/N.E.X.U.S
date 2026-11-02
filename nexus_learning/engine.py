@@ -93,7 +93,17 @@ class LearningEngine:
 
     @staticmethod
     def _metadata(value):
-        return json.dumps(value or {}, ensure_ascii=False, sort_keys=True)
+        if value is None:
+            value = {}
+        if not isinstance(value, dict):
+            raise ValueError("metadata must be an object")
+        try:
+            encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, allow_nan=False)
+        except (TypeError, ValueError):
+            raise ValueError("metadata must contain finite JSON-compatible values") from None
+        if len(encoded.encode("utf-8")) > 8192:
+            raise ValueError("metadata exceeds 8 KiB")
+        return encoded
 
     def _audit(self, c, event, kind, entity_id, details=None):
         c.execute("INSERT INTO audit_log VALUES(?,?,?,?,?,?)",
@@ -102,18 +112,27 @@ class LearningEngine:
     def add_memory(self, kind, title, body, metadata=None):
         if kind not in MEMORY_TYPES:
             raise ValueError("invalid memory kind")
+        if not isinstance(title, str) or not isinstance(body, str):
+            raise ValueError("title and body must be text")
         if not title.strip() or not body.strip():
             raise ValueError("title and body cannot be empty")
+        if len(title) > 500 or len(body) > 12_000:
+            raise ValueError("memory title or body exceeds the allowed size")
+        metadata_json = self._metadata(metadata)
         mid, stamp = uid("mem"), now()
         with self.db() as c:
             c.execute("INSERT INTO memories VALUES(?,?,?,?,?,?, 'active',?)",
-                      (mid, kind, title.strip(), body.strip(), stamp, stamp, self._metadata(metadata)))
+                      (mid, kind, title.strip(), body.strip(), stamp, stamp, metadata_json))
             self._audit(c, "memory.created", "memory", mid, {"kind": kind})
         return mid
 
     def search_memories(self, query="", memory_type=None, limit=50):
+        if not isinstance(query, str):
+            raise ValueError("query must be text")
         if memory_type is not None and memory_type not in MEMORY_TYPES:
             raise ValueError("invalid memory type")
+        if isinstance(limit, bool) or not isinstance(limit, int):
+            raise ValueError("limit must be an integer")
         sql, args = "SELECT * FROM memories WHERE status='active'", []
         if memory_type:
             sql += " AND kind=?"
