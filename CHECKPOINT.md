@@ -382,4 +382,4 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Temporary files are integrity-checked before atomic replacement; symlink paths are rejected. Backup files are treated as sensitive and not committed.
 - Added tests for snapshot consistency, overwrite behavior, safety-copy behavior, corrupt backup rejection, path validation and symlink rejection.
 - Added `docs/DATABASE_BACKUP.md`; restore requires stopping API/worker first.
-- CI pending. P3-01 remains partial until versioned migrations and a restore drill are implemented.
+- CI head `0fd07dc420241a32fcc3f347cefe39eff8eaa553`: 226 unit tests passed on Python 3.11 and 226 on Python 3.12 (8 optional E2E skipped in standard discovery); Playwright/Chromium passed 8/8. P3-01 remains partial until versioned migrations and a restore drill are implemented.

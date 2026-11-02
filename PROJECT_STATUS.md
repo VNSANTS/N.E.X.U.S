@@ -375,4 +375,4 @@ A dedicated design contract now exists at `docs/SPECIALIST_CHECKPOINTS.md`. It d
 - Symbolic-link database paths are rejected. The restore source is validated before destination mutation; the staged restored database is checked again before atomic replacement.
 - Added unit tests for backup, overwrite refusal/consent, safety backup, invalid snapshots, same-path rejection, missing source and symlink rejection.
 - Added `docs/DATABASE_BACKUP.md` with Windows commands and operational guidance. Stop API/worker before restoring over the live database.
-- CI pending. This does not complete P3-01: versioned schema migrations and an operational restore drill remain.
+- GitHub Actions head `0fd07dc420241a32fcc3f347cefe39eff8eaa553`: 226 unit tests passed on Python 3.11 and 226 on Python 3.12 (8 optional E2E skipped in standard discovery); Playwright/Chromium passed 8/8. This does not complete P3-01: versioned schema migrations and an operational restore drill remain.
