@@ -2,6 +2,7 @@
 from nexus_learning.engine import LearningEngine
 from nexus_learning.provider_budget import BudgetedProvider, ProviderBudget, ProviderBudgetExceededError
 from nexus_learning.providers.base import ModelResponse
+from nexus_learning.providers.errors import ProviderConfigurationError
 
 class FakeProvider:
     provider_name='gemini'; model='model-x'
@@ -49,14 +50,14 @@ class ProviderBudgetTests(unittest.TestCase):
         with self.engine.db() as c:
             c.execute("UPDATE provider_budget_settings SET output_usd_per_million=0 WHERE id=1")
         self.assertFalse(self.budget.can_reserve(self.inner, 10, 10))
-        with self.assertRaises(Exception):
+        with self.assertRaises(ProviderConfigurationError):
             self.provider.generate([{"role": "user", "content": "hello"}])
         self.assertEqual(self.inner.calls, 0)
 
     def test_negative_or_boolean_token_reservations_are_rejected(self):
         self.config()
         for values in ((-1, 1), (1, -1), (True, 1), (1, False)):
-            with self.assertRaises(Exception):
+            with self.assertRaises(ProviderConfigurationError):
                 self.budget._reserve(self.inner, values[0], values[1], "invalid")
         self.assertEqual(self.budget.usage()["today"], [])
 
