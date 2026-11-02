@@ -234,3 +234,13 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - New pending change: synthesis serialization deterministically withholds `unreferenced` specialist claims whenever a source catalogue is present, preserving a per-agent withheld count. The final synthesis prompt states that `source_linked` is a traceable reference, not a proof, and that summaries/items remain untrusted analysis.
 - Reviewer receives explicit instructions to call out factual claims without supplied source IDs. The filtering is structural; semantic support and truth still require review.
 - New unit coverage: linked claims retained, unreferenced claims withheld, no-source claims remain visibly unreferenced, invalid result types rejected. CI pending for this delta.
+
+
+## P1-06 — withholding policy validated (2026-11-02)
+
+- Latest CI head: `18347368767042b78cfa86e0617550928a8152c0`.
+- GitHub Actions passed: 193 unit tests in Python 3.11, 193 in Python 3.12, and 5/5 Playwright/Chromium browser E2E tests. Compile step passed in both Python versions.
+- With a source catalogue present, final synthesis now deterministically receives only `source_linked` specialist claims; unreferenced claims are withheld and counted per agent. The Reviewer is prompted to flag factual statements without a supplied source ID. Summary/item fields remain untrusted analysis.
+- Without sources, claims remain labelled `unreferenced` and are explicitly described to final synthesis as analysis, not verified facts.
+- This is structural reference hygiene, not semantic validation. It does not prove the source is reliable or that the claim is true.
+- Next: P2-01 bounded delegation with explicit stage records, resumability/cancellation semantics and no cycles. Do not introduce parallel execution until isolation and budget accounting are sound.

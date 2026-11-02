@@ -14,10 +14,11 @@
 ## Active remote continuation — 2026-11-02
 
 - Working branch: `nexus/remote-continuation`; PR #3 targets `nexus/review-nov-02`, not `main`.
-- The per-specialist provider/model map (`NEXUS_AGENT_MODELS`) and query-string skill discovery fix are implemented. Commit `d11adc710e149dd17b94294de76b89d798c8c571` passed GitHub Actions: 187 unit tests on Python 3.11 and 3.12, plus Playwright/Chromium browser E2E.
-- Model routing still has no automatic model capability/health discovery and no fallback after an ambiguous provider failure. Remote providers still require opt-in, allowlist, credentials and budget.
-- Structured evidence claims are being added after that passing commit. They link claims to source IDs from the current request; this proves only that the source ID was supplied, not that the citation is accurate or the claim is true. CI for this new evidence layer is pending.
-- No real provider inference, Tavily search or paid API call is part of this remote work. The local app is still loopback-only and not deployed.
+- `NEXUS_AGENT_MODELS` supports independent provider/model configuration for Architect, Analyst and Reviewer. ProviderManager preserves remote opt-in, allowlist, credential and budget controls. No automatic model capability/health discovery or fallback after ambiguous provider failure exists yet.
+- `GET /api/v1/skills?query=...` now filters approved skills from the URL query string; its regression test passed.
+- Structured evidence claims are bounded and source IDs are validated. When sources are supplied, unreferenced claims are now removed deterministically before final synthesis and counted per agent. The Reviewer and final synthesis are instructed to flag unsupported assertions. A source ID proves only that the reference existed in supplied context, not that the source is accurate or the claim is true.
+- Latest CI head `18347368767042b78cfa86e0617550928a8152c0`: 193 unit tests passed on Python 3.11, 193 passed on Python 3.12, and 5/5 Playwright/Chromium browser E2E tests passed. Compilation succeeded in both unit-test jobs.
+- No real provider inference, Tavily search or paid API call is part of this remote work. The local app is still loopback-only and not deployed; switching off the PC does not make the app itself cloud-accessible.
 
 The entries below are historical development snapshots. They must not override this current remote summary.
 
