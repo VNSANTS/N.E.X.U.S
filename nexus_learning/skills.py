@@ -50,6 +50,19 @@ class SkillRegistry:
             c.execute("INSERT INTO runtime_skill_events VALUES(?,?,?,?,?)",
                       (uid("ske"),skill_id,"approved",owner_id,now()))
 
+    def proposals(self, limit=20):
+        """Return bounded owner-reviewable metadata for proposed text-only skills."""
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 50:
+            raise ValueError("skill proposal limit must be between 1 and 50")
+        with self.engine.db() as c:
+            rows = c.execute(
+                "SELECT id,name,version,description,instructions,status,created_at "
+                "FROM runtime_skills WHERE status='proposed' "
+                "ORDER BY created_at ASC,id ASC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
     def discover(self, query="", limit=20):
         if not isinstance(query, str) or len(query) > 300:
             raise ValueError("invalid skill query")

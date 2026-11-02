@@ -112,6 +112,7 @@ class BrowserUITests(unittest.TestCase):
             "research": "Pesquisas e fontes",
             "memories": "Memórias",
             "claims": "Conhecimento",
+            "skills": "Skills",
             "agents": "Agentes",
             "tasks": "Tarefas",
             "jobs": "Fila do worker",
@@ -177,6 +178,34 @@ class BrowserUITests(unittest.TestCase):
                 "SELECT event FROM api_activity WHERE event LIKE 'agent.llm_call_%'").fetchall()]
         self.assertEqual(events.count("agent.llm_call_started"), 3)
         self.assertEqual(events.count("agent.llm_call_completed"), 3)
+        self.assertEqual(self.page_errors, [])
+
+    def test_skills_view_reviews_and_approves_text_only_proposals(self):
+        self.login()
+        self.page.locator('[data-view="skills"]').click()
+        expect(self.page.locator("#viewTitle")).to_have_text("Skills")
+        expect(self.page.locator("#content")).to_contain_text("não podem conceder ferramentas")
+
+        self.page.get_by_placeholder("ex.: research-brief").fill("browser-research")
+        self.page.get_by_placeholder("1.0.0").fill("1.0.0")
+        self.page.get_by_placeholder("Descreva quando esta habilidade é útil").fill(
+            "Ajuda a preparar resumos de pesquisa com fontes."
+        )
+        instruction_text = "Liste fontes, indique incerteza e nunca execute ações."
+        self.page.get_by_placeholder("Escreva instruções textuais para esta habilidade...").fill(
+            instruction_text
+        )
+        self.page.get_by_role("button", name="Propor habilidade").click()
+        expect(self.page.locator("#content")).to_contain_text("browser-research")
+        expect(self.page.locator("#content")).to_contain_text("Propostas aguardando aprovação")
+
+        self.page.get_by_text("Revisar instruções completas").click()
+        expect(self.page.locator("#content")).to_contain_text(instruction_text)
+
+        self.page.once("dialog", lambda dialog: dialog.accept())
+        self.page.get_by_role("button", name="Aprovar habilidade").click()
+        expect(self.page.locator("#content")).to_contain_text("Nenhuma proposta aguardando revisão.")
+        expect(self.page.locator("#content")).to_contain_text("browser-research · v1.0.0")
         self.assertEqual(self.page_errors, [])
 
     def test_agents_view_displays_only_specialist_execution_metadata(self):

@@ -18,6 +18,23 @@ class SkillRegistryTests(unittest.TestCase):
     def test_skill_cannot_grant_tools_or_execute_content(self):
         with self.assertRaises(ValueError):
             self.skills.propose("unsafe-skill","1.0.0","Unsafe","run arbitrary command",tools=("system.exec",))
+    def test_proposals_list_only_pending_skills_with_reviewable_instructions(self):
+        pending = self.skills.propose(
+            "research-brief", "1.0.0", "Research source evidence", "Use cited sources.")
+        approved = self.skills.propose(
+            "code-review", "1.0.0", "Review software code", "Inspect regressions.")
+        self.skills.approve(approved, owner_id="owner", approved=True)
+        rows = self.skills.proposals()
+        self.assertEqual([row["id"] for row in rows], [pending])
+        self.assertEqual(rows[0]["status"], "proposed")
+        self.assertEqual(rows[0]["instructions"], "Use cited sources.")
+        self.assertNotIn("tool_allowlist", rows[0])
+
+    def test_proposal_list_limit_is_strictly_bounded(self):
+        for limit in (0, -1, 51, True, 1.5, "10"):
+            with self.subTest(limit=limit), self.assertRaises(ValueError):
+                self.skills.proposals(limit=limit)
+
     def test_discovery_treats_sql_like_wildcards_as_literal_text(self):
         skill = self.skills.propose(
             "research-brief", "1.0.0", "Research source evidence", "Use cited sources.")

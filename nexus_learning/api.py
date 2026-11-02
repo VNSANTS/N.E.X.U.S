@@ -408,6 +408,8 @@ class NexusAPI:
         if parts[:2] != ["api", "v1"]:
             return self._json(start_response, "404 Not Found", {"error": "not found"})
         route = parts[2:]
+        if route == ["skills", "proposals"] and method == "GET":
+            return self._json(start_response, "200 OK", self.skills.proposals(limit=20))
         if route == ["skills"] and method == "GET":
             raw_query = environ.get("QUERY_STRING", "")
             if len(raw_query) > 1024:
@@ -602,49 +604,6 @@ class NexusAPI:
         if len(route) == 3 and route[0] == "tools" and route[2] == "execute" and method == "POST":
             result = self.tools.execute(route[1], data.get("arguments"), owner_id=user["id"])
             return self._json(start_response, "200 OK", {"result": result})
-        if route == ["agents", "activity"] and method == "GET":
-            # Strict metadata allowlist: never expose prompts, model outputs,
-            # tool results, or unrelated account activity to the specialist view.
-            with self.engine.db() as c:
-                rows = c.execute(
-                    "SELECT event,details,created_at FROM api_activity "
-                    "WHERE user_id=? AND event LIKE 'agent.llm_%' "
-                    "ORDER BY rowid DESC LIMIT 60",
-                    (user["id"],),
-                ).fetchall()
-            allowed = {
-                "agent_id", "provider", "model", "separate_review_model", "status",
-                "duration_ms", "input_chars", "output_chars", "error_code",
-                "reason", "task_id",
-            }
-            events = []
-            for row in rows:
-                event = row["event"]
-                if not isinstance(event, str) or not event.startswith("agent.llm_"):
-                    continue
-                try:
-                    raw = json.loads(row["details"])
-                except (TypeError, ValueError):
-                    continue
-                if not isinstance(raw, dict):
-                    continue
-                details = {}
-                for key in allowed:
-                    value = raw.get(key)
-                    if key == "separate_review_model":
-                        if isinstance(value, bool):
-                            details[key] = value
-                    elif key in {"duration_ms", "input_chars", "output_chars"}:
-                        if isinstance(value, int) and not isinstance(value, bool):
-                            details[key] = max(0, min(value, 10_000_000))
-                    elif isinstance(value, str):
-                        details[key] = value[:128]
-                events.append({
-                    "event": event,
-                    "details": details,
-                    "created_at": str(row["created_at"])[:64],
-                })
-            return self._json(start_response, "200 OK", events)
         if route == ["agents"] and method == "GET":
             return self._json(start_response, "200 OK", self.agents.roster())
         if route == ["activity"] and method == "GET":

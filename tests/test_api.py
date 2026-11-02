@@ -122,6 +122,30 @@ class APITests(unittest.TestCase):
         self.assertTrue(any("untrusted procedural suggestions" in message["content"]
                             for message in self.provider.messages))
 
+    def test_skill_proposals_are_owner_authenticated_and_approved_explicitly(self):
+        created = self.request("/api/v1/skills", "POST", {
+            "name": "research-brief",
+            "version": "1.0.0",
+            "description": "Research source evidence",
+            "instructions": "Use cited sources and mark uncertainty.",
+        }, self.owner)
+        self.assertTrue(created["status"].startswith("201"), created)
+        skill_id = created["body"]["id"]
+
+        unauthenticated = self.request("/api/v1/skills/proposals")
+        self.assertTrue(unauthenticated["status"].startswith("401"))
+
+        proposals = self.request("/api/v1/skills/proposals", token=self.owner)
+        self.assertTrue(proposals["status"].startswith("200"), proposals)
+        self.assertEqual([row["id"] for row in proposals["body"]], [skill_id])
+        self.assertEqual(proposals["body"][0]["instructions"],
+                         "Use cited sources and mark uncertainty.")
+
+        approved = self.request(f"/api/v1/skills/{skill_id}/approve", "POST",
+                                {"confirm": True}, self.owner)
+        self.assertTrue(approved["status"].startswith("200"), approved)
+        self.assertEqual(self.request("/api/v1/skills/proposals", token=self.owner)["body"], [])
+
     def test_skill_discovery_endpoint_reads_query_string(self):
         research = self.app.skills.propose(
             "research-brief", "1.0.0", "Research source evidence", "Compare sourced evidence.")
