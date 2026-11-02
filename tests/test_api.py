@@ -209,10 +209,9 @@ class APITests(unittest.TestCase):
             "response": "PRIVATE MODEL RESPONSE MUST NOT BE RETURNED",
             "tool_result": {"secret": "PRIVATE TOOL DATA"},
         })
-        self.app.auth.create_user("second", "another secure password")
-        second_token = self.app.auth.login("second", "another secure password")["access_token"]
-        second_user = self.app.auth.user_for_token(second_token)
-        self.app.agents.record(second_user["id"], "agent.llm_call_completed", {
+        # Simulate an activity row owned by another local identity without
+        # creating a second login account (the product supports one local owner).
+        self.app.agents.record("different-owner-id", "agent.llm_call_completed", {
             "agent_id": "analyst", "provider": "ollama", "model": "other-user-model",
         })
 
