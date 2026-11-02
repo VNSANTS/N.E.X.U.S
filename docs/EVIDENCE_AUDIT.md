@@ -31,8 +31,8 @@ Não há confiança numérica gerada automaticamente. Para fortalecer a auditori
 ## Limites atuais
 
 - Máximo de três fontes por pipeline; IDs limitados a `S1`–`S3`.
-- Até cinco claims por especialista.
-- Cada claim tem até 280 caracteres e até cinco IDs de evidência.
+- Até duas claims por especialista.
+- Cada claim tem até 60 caracteres e até três IDs de evidência.
 - Apenas Analyst e Reviewer recebem o catálogo de fontes.
 - Claims estruturadas são passadas ao modelo de síntese como dados não confiáveis.
 - Nenhum especialista recebe ferramentas ou permissão para executar ações.

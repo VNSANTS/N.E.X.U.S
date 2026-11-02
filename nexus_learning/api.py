@@ -195,9 +195,9 @@ class NexusAPI:
         # calls consume the configured remote budget; local calls do not.
         placeholder = [{"agent_id": agent, "summary": "\x00" * 250,
                         "items": ["\x00" * 150] * 3,
-                        "claims": [{"text": "\x00" * 280,
+                        "claims": [{"text": "\x00" * 60,
                                     "evidence_ids": ["S1", "S2", "S3"],
-                                    "link_status": "source_linked"} for _ in range(5)]}
+                                    "link_status": "source_linked"} for _ in range(2)]}
                        for agent in ("architect", "analyst", "reviewer")]
         final_messages = [dict(message) for message in messages]
         if not final_messages or final_messages[-1].get("role") != "user":
