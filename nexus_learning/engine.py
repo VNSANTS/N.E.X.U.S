@@ -167,6 +167,12 @@ class LearningEngine:
         if state == "validated" and confidence is None:
             raise ValueError("validated claims require explicit confidence")
         with self.db() as c:
+            if not c.execute("SELECT 1 FROM claims WHERE id=?", (claim_id,)).fetchone():
+                raise KeyError(claim_id)
+            if state == "validated" and not c.execute(
+                "SELECT 1 FROM claim_sources WHERE claim_id=? LIMIT 1", (claim_id,)
+            ).fetchone():
+                raise ValueError("validated claims require at least one source")
             cur = c.execute("UPDATE claims SET state=?,rationale=?,confidence=?,updated_at=? WHERE id=?",
                             (state, rationale.strip(), confidence, now(), claim_id))
             if cur.rowcount != 1:

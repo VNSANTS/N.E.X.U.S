@@ -3,6 +3,7 @@
 This module retrieves metadata only. It does not download full papers or validate claims.
 """
 import json
+from html.parser import HTMLParser
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -11,6 +12,17 @@ import urllib.request
 API_BASE = "https://api.crossref.org/works"
 DEFAULT_TIMEOUT = 12
 MAX_RESULTS = 20
+MAX_RESPONSE_BYTES = 5_000_000
+
+
+class _AbstractText(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts = []
+
+    def handle_data(self, data):
+        if data.strip():
+            self.parts.append(data.strip())
 
 
 class CrossrefError(RuntimeError):
@@ -40,12 +52,20 @@ class CrossrefClient:
         date_parts = item.get("published-print", {}).get("date-parts") or item.get("published-online", {}).get("date-parts") or item.get("created", {}).get("date-parts") or []
         date = date_parts[0] if date_parts else []
         year = date[0] if date else None
+        publication_date = "-".join(str(part).zfill(2) if index else str(part)
+                                     for index, part in enumerate(date)) or None
         doi = item.get("DOI", "")
         url = item.get("URL") or (f"https://doi.org/{doi}" if doi else "")
+        abstract_parser = _AbstractText()
+        abstract = item.get("abstract")
+        abstract_parser.feed(abstract[:40_000] if isinstance(abstract, str) else "")
         return {
             "title": title,
             "authors": authors,
             "year": year,
+            "publication_date": publication_date,
+            # Abstracts may be copyrighted; callers must keep only a short, attributed excerpt.
+            "abstract": " ".join(abstract_parser.parts)[:4000],
             "doi": doi,
             "url": url,
             "container_title": cls._first(item.get("container-title")),
@@ -75,7 +95,7 @@ class CrossrefClient:
         )
         try:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                payload = json.loads(response.read().decode("utf-8"))
+                payload = json.loads(response.read(MAX_RESPONSE_BYTES).decode("utf-8"))
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             raise CrossrefError(f"Crossref request failed: {exc}") from exc
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:

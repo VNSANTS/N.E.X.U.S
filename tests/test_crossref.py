@@ -16,8 +16,8 @@ class FakeResponse:
     def __exit__(self, *args):
         return False
 
-    def read(self):
-        return self.payload
+    def read(self, size=-1):
+        return self.payload[:size]
 
 
 class CrossrefClientTests(unittest.TestCase):

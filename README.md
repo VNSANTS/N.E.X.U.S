@@ -4,7 +4,7 @@
 
 Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesquisar, organizar conhecimento, utilizar ferramentas, coordenar agentes e executar tarefas autorizadas, mantendo o usuário no controle.
 
-> **Estado atual:** base de planejamento e documentação. O runtime ainda não foi implementado nem validado neste repositório.
+> **Estado atual:** aplicação local em Python/SQLite com API WSGI autenticada, sessões e conversas persistidas, recuperação contextual lexical, UI web conectada, ferramentas READ em allowlist e worker local de tarefas seguras. MockProvider é o padrão offline; adapters opcionais estão disponíveis para Gemini, Groq e OpenRouter mediante configuração explícita. Ainda não é uma implantação cloud nem um assistente com colaboração autônoma geral entre modelos. Consulte [PROJECT_STATUS.md](PROJECT_STATUS.md) e [docs/LOCAL_API.md](docs/LOCAL_API.md).
 
 ## Visão do projeto
 
@@ -45,7 +45,7 @@ Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesq
 
 ## Próximo passo
 
-Validar no PC a cópia local do OpenJarvis comparando-a com o commit auditado, executar um subconjunto pequeno de testes offline e medir recursos. Depois, fechar provedor, autenticação e hospedagem antes de implementar o MVP.
+Executar testes manuais da UI/API local; decidir provider/modelo e políticas de retenção antes de enviar dados reais. Planejar identidade, TLS e banco de produção antes de qualquer exposição remota. O checkout OpenJarvis continua separado e não é dependência do app.
 
 ## Ambiente de desenvolvimento
 
@@ -81,6 +81,15 @@ python -m nexus_learning task-add "Estudar memória" --relevance 0.9 --uncertain
 python -m nexus_learning task-list
 python -m unittest discover -s tests -v
 ```
+
+## Executar a aplicação local
+
+```powershell
+python -m unittest discover -s tests -v
+python -m nexus_learning --db nexus_learning.db serve --host 127.0.0.1 --port 8765
+```
+
+Na primeira execução, crie um usuário e uma senha forte no prompt local. Acesse `http://127.0.0.1:8765/`. O servidor é loopback-only. Para provider externo, revise `docs/LOCAL_API.md` e `.env.example`; não use credenciais no repositório. O worker seguro roda separadamente com `python -m nexus_learning --db nexus_learning.db worker --poll 1`.
 
 O banco padrão é `nexus_learning.db` no diretório atual. Não coloque dados sensíveis no banco de teste nem envie o arquivo do banco ao GitHub.
 

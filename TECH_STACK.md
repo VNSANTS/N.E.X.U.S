@@ -4,17 +4,17 @@ Candidate choices only; the OpenJarvis audit may change them.
 
 | Area | Candidate | Decision criteria |
 |---|---|---|
-| Backend | Python + FastAPI | Existing code compatibility, async support, typed API |
+| Backend/API | Python standard library WSGI (local MVP) | Zero dependency, direct integration with current synchronous runtime; replace/extend for hosted async concurrency only with explicit need |
 | Orchestration | Python modules initially | Simplicity and testability |
 | Model gateway | Provider adapters; evaluate gateway libraries | Multiple providers, cost and fallback |
 | Local model | Ollama adapter | Optional development/fallback |
 | Database | SQLite initially; PostgreSQL for hosted concurrency | Reliability and migration |
 | Semantic retrieval | Add only when measured need exists | Avoid premature complexity |
-| Frontend | Reuse existing UI if viable; otherwise evaluate React | Reuse and mobile usability |
+| Frontend | Static responsive HTML/CSS/JS for local MVP; evaluate framework only when needed | Keep local install light and API-connected |
 | Realtime | WebSockets or server-sent events | Task progress |
 | Voice | Replaceable speech-to-text/text-to-speech adapters | Cost, latency, privacy, language |
 | Jobs | Lightweight scheduler/worker | Durable execution and retries |
-| Tests | pytest plus API/integration tests | Repeatability |
+| Tests | unittest plus WSGI/API integration tests | Repeatability without extra runtime dependency |
 | Packaging | venv, pinned dependencies; containers if useful | Reproducibility on constrained PC |
 
 ## Provider strategy

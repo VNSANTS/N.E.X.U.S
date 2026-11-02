@@ -20,3 +20,14 @@ venv/
 htmlcov/
 *.db-wal
 *.db-shm
+
+# Local logs, backups, and temporary artifacts
+*.log
+*.log.*
+*.bak
+*.backup
+*.tmp
+*.temp
+logs/
+tmp/
+temp/

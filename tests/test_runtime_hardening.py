@@ -5,6 +5,14 @@ from pathlib import Path
 
 from nexus_learning import LearningEngine
 from nexus_learning.providers.base import ModelResponse
+from nexus_learning.providers.errors import (
+    ProviderAuthenticationError,
+    ProviderConfigurationError,
+    ProviderRateLimitError,
+    ProviderResponseError,
+    ProviderTimeoutError,
+    ProviderUnavailableError,
+)
 from nexus_learning.runtime import TaskRuntime
 
 
@@ -79,6 +87,44 @@ class RuntimeHardeningTests(unittest.TestCase):
             TaskRuntime(self.engine, object(), max_input_chars=0)
         with self.assertRaises(ValueError):
             TaskRuntime(self.engine, object(), max_output_chars=-1)
+
+    def test_provider_errors_have_stable_safe_codes(self):
+        cases = (
+            (ProviderConfigurationError(), "provider_configuration_invalid", False),
+            (ProviderAuthenticationError(), "provider_authentication_failed", False),
+            (ProviderRateLimitError(retry_after=2.5), "provider_rate_limited", True),
+            (ProviderTimeoutError(), "provider_timeout", True),
+            (ProviderUnavailableError(), "provider_unavailable", True),
+            (ProviderResponseError(), "provider_response_invalid", False),
+        )
+        for error, code, retryable in cases:
+            with self.subTest(code=code):
+                self.assertEqual(error.code, code)
+                self.assertEqual(error.retryable, retryable)
+                self.assertNotIn("sk-", error.safe_summary)
+
+    def test_typed_provider_failure_persists_only_safe_diagnostics(self):
+        class RateLimitedProvider:
+            def generate(self, messages, *, max_tokens=800, timeout=30):
+                raise ProviderRateLimitError(retry_after=2.5)
+
+        runtime = TaskRuntime(self.engine, RateLimitedProvider())
+        task = runtime.run(runtime.submit("Test rate limit"))
+        self.assertEqual(task["state"], "failed")
+        self.assertEqual(
+            task["error"],
+            "provider_rate_limited: Provider rate limit exceeded.",
+        )
+        details = json.loads(task["events"][-1]["details"])
+        self.assertEqual(details["error_code"], "provider_rate_limited")
+        self.assertTrue(details["retryable"])
+        self.assertEqual(details["retry_after"], 2.5)
+
+    def test_rate_limit_retry_after_must_be_finite_and_non_negative(self):
+        for value in (-1, float("inf"), float("nan"), True, 10 ** 10000):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    ProviderRateLimitError(retry_after=value)
 
 
 if __name__ == "__main__":

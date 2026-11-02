@@ -23,6 +23,9 @@ class LearningEngineTests(unittest.TestCase):
         self.assertFalse(self.engine.archive_memory(mid))
 
     def test_claim_requires_source_and_explicit_review(self):
+        unsourced = self.engine.propose_claim("Unsourced claim")
+        with self.assertRaises(ValueError):
+            self.engine.review_claim(unsourced, "validated", "No supporting source", .8)
         source = self.engine.add_source("https://example.org", "Example")
         claim = self.engine.propose_claim("Example claim", [source], {source: "Evidence excerpt"})
         self.assertEqual(self.engine.get_claim(claim)["sources"][0]["excerpt"], "Evidence excerpt")

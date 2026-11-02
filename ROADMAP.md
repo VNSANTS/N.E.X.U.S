@@ -82,3 +82,27 @@ O núcleo agora tem pesquisa/arquivamento de memórias, consulta e revisão de a
 - [ ] API HTTPS e autenticação.
 - [ ] Worker de PC com conexão de saída, leases, cancelamento e sincronização.
 - [ ] Interface web e implantação gratuita dentro das cotas disponíveis.
+
+## Continuity - ALL FOR ONE / initial routing (2026-11-01)
+
+- Audit confirmed that chat provider selection remains manually persisted; automatic model routing is not yet connected to chat runtime.
+- Added `nexus_learning/model_router.py`: pure deterministic policy for SIMPLE, STANDARD, ADVANCED and RESEARCH; filters availability, capability, context, cost and latency metadata; fallback stays within local/remote trust boundary.
+- Fail-closed behavior: remote candidates require explicit remote permission and budget authorization; unavailable, disallowed, malformed or insufficient-context candidates are rejected.
+- This policy is not yet wired into runtime provider choice. Model latency, price and capability metadata need a trusted catalog or reviewed configuration before automatic routing. Manual Ollama/Qwen selection remains unchanged.
+- Product-agent roles remain sequential and deterministic, not independent LLM agents. Research, knowledge and memory infrastructure exist, but chat does not delegate model tool calls. No Gemini generation or Tavily search was run during this work.
+- Initial integrity audit found numerous existing local changes; all preserved. `.env` and local database remain Git-ignored. No commit/push. Codex profiles passed static validation, but subagent startup failed because the local OAuth token had been invalidated after the user's logout; no global settings were changed.
+- Verification: `python -m compileall -q nexus_learning tests` passed; `python -m unittest discover -s tests -v` passed with 97 tests, including 9 router tests; `git diff --check` passed.
+
+## Continuity status (2026-11-01)
+
+Completed in this slice: runtime-bound automatic/manual model router; fail-closed remote budget preflight; same-lane fallback; confirmed Tavily research in chat with source persistence/citations/history; PolicyEngine-gated sensitive tool; citation reviewer; contextual memory remains injected.
+
+Still ahead: provider-native tool calling and tool-result cycles, browser-level confirmation/source E2E, truly independent/budgeted LLM specialist agents, and isolated self-improvement proposals with verification.
+
+
+## Provider validation checkpoint - 2026-11-01
+
+- Gemini/OpenAI adapters and manual selection paths are covered with network mocks; OpenAI automatic routing is covered with an explicitly authorized test budget.
+- Added a regression fix so an explicit NEXUS_REMOTE_PROVIDERS allowlist is enforced by provider_from_env, matching ProviderManager. Empty allowlist denies remote providers; missing variable retains compatibility with existing global-opt-in configurations.
+- No real provider calls, credentials access, or credit usage occurred. Remote budgets and defaults were not changed.
+- Verification: compileall passed; the full suite passed with 119 tests; git diff --check passed with an existing line-ending warning for README.md.

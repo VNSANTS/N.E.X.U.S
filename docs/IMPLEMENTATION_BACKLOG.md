@@ -1,6 +1,6 @@
 # N.E.X.U.S. — Backlog técnico de implementação
 
-**Data da revisão:** 2026-10-31  
+**Data da revisão:** 2026-11-01
 **Escopo:** revisão somente do repositório N.E.X.U.S.; não inclui Nexus Finance nem outros projetos.
 
 Este documento é o plano operacional derivado do código e da documentação existentes. Ele separa o que está no repositório do que ainda depende de escolhas, credenciais ou execução no computador.
@@ -30,7 +30,15 @@ Este documento é o plano operacional derivado do código e da documentação ex
 - Adicionados testes de regressão para banco em memória, reentrada da mesma tarefa, vazamento de mensagem sensível e limites inválidos.
 - Corrigido o filtro de paths do workflow; agora ele observa o arquivo de workflow real. Adicionadas permissões mínimas, timeout e compilação antes da suíte de testes.
 
-**Estado de validação desta revisão:** as alterações foram gravadas no GitHub. A execução de CI disparada por estas mudanças precisa ser conferida antes de declarar os novos testes aprovados. Não foi possível executar o checkout local neste ambiente.
+**Estado registrado na revisão de 2026-10-31:** as alterações daquela revisão foram gravadas no GitHub, e a execução local ainda não tinha sido feita. Esta atualização registra testes locais posteriores; CI desta mudança não foi executada.
+
+### Verificação e hardening local — 2026-11-01
+
+- Auditoria independente encontrou que argumentos truthy não booleanos (`approved="false"` ou `1`) podiam autorizar ações `SENSITIVE`, e `allow_reversible="false"` habilitava escrita reversível.
+- Corrigido `PolicyEngine` para aceitar aprovação somente com `True` literal e rejeitar configuração reversível que não seja boolean.
+- Teste de regressão adicionado em `tests/test_runtime.py`; reprodução pré-correção falhou e a regressão passou após a correção.
+- Neste PC: `compileall` passou; os 28 testes `unittest` passaram em Python 3.13.17; CLI offline, ingestão/busca de Markdown e persistência SQLite temporária passaram.
+- Esta validação é local; não representa CI. O adaptador remoto continua bloqueado pela escolha de provedor e requisitos de custo/privacidade.
 
 ## 3. Próximo marco recomendado — primeira conversa com IA real
 
@@ -130,3 +138,58 @@ Nenhuma chave, cartão, domínio ou serviço pago deve ser presumido. A meta de 
 8. Só então iniciar UI, worker e sincronização.
 
 **Regra de conclusão:** nenhuma etapa é considerada concluída por existir documentação. Exigir código, teste executado e evidência de funcionamento.
+
+## Atualização de continuidade — 2026-11-01
+
+Concluído nesta sessão: comparação técnica baseada em documentação oficial (`docs/PROVIDER_EVALUATION_2026-11-01.md`), auditoria da memória/runtime/perfis (`docs/RUNTIME_MEMORY_AND_MULTIAGENT_AUDIT.md`) e taxonomia provider-neutral de falhas (`nexus_learning/providers/errors.py`) com persistência de diagnósticos seguros.
+
+### Próximas tarefas em ordem
+
+1. **Decisão humana:** escolher modelo/provider após benchmark pt-BR com conteúdo fictício; definir privacidade, retenção, custo máximo e fonte de segredo. Não codificar adapter real antes disso.
+2. **Adapter:** implementar somente um adapter atrás de `ModelProvider`, configuração validada e testes simulados de sucesso, erros, timeout e resposta inválida. Sem fallback automático; projetar cancelamento real do transporte antes de prometer cancelabilidade.
+3. **Sessões e API:** modelar sessão/mensagens, identidade única, isolamento, retenção e cancelamento; então construir API HTTPS autenticada.
+4. **Ferramentas e supervisão:** registry allowlisted, permissões no runtime, aprovação explícita, budgets e auditoria antes de delegação multiagente de produto.
+5. **Worker:** fila durável, lease, idempotência, retry limitado, heartbeat e conexão de saída, após API/auth.
+6. **Interface e sync:** UI web pequena consumindo a API; sincronização versionada e minimizada após política de dados, backup/restore e conflitos definidos.
+7. **Operação:** métricas e logs redigidos, limites/alertas, recuperação e testes de isolamento antes de execução autônoma.
+
+No checkpoint de auditoria anterior à implementação da API, o runtime ainda não recuperava memória nem mantinha sessões. Essas duas capacidades agora têm integração lexical/contextual local; continuam pendentes semântica avançada, consentimento/retenção para cloud e sincronização. Saídas de modelo permanecem mensagens, nunca fatos automáticos. O carregamento real dos seis perfis Codex ainda precisa ser verificado após confiança explícita da raiz e reabertura da CLI; não alterar configuração global automaticamente.
+
+### Estado após implementação local integrada — 2026-11-01
+
+API local/auth, sessões e histórico, recuperação lexical limitada, tools READ, agentes determinísticos supervisionados, provider adapters opt-in e job queue persistente foram implementados. O runtime agora recebe histórico/contexto limitado; histórico de sessão e mensagens têm tabelas próprias. Memórias continuam sendo salvas explicitamente pelo usuário, e claims continuam exigindo revisão humana. Ver `docs/LOCAL_API.md`.
+
+Próximas fatias após esta base: (a) executar e revisar manualmente a UI com dados fictícios; (b) decidir retenção, exportação/exclusão e política de identidade antes de qualquer remote exposure; (c) benchmark e decisão do provider; (d) adicionar cancelamento real com transporte suportado e chat assíncrono usando a queue; (e) adicionar testes de limites de concorrência e recuperação de processo; (f) selecionar hosting/TLS e banco somente após orçamento e requisitos de acesso remoto. Não migrar para cloud até fechar essas dependências humanas.
+
+## Continuidade ? progresso das miss?es de autonomia/integra??es (2026-11-01)
+
+Conclu?do no checkout local: ciclo de aprendizagem persistente; worker local recorrente; painel de intelig?ncia; pap?is internos estruturados; recupera??o Crossref; adaptadores Gemini/Tavily/Crossref/GitHub; snapshots GitHub read-only; embeddings opcionais; or?amento fail-closed por dia/tarefa; pesquisa e extra??o com proveni?ncia; documenta??o e testes simulados.
+
+Pend?ncias para avan?ar sem falsa declara??o de prontid?o:
+1. Configurar `.env` localmente com chaves autorizadas e selecionar Gemini sem enviar valores ao chat.
+2. Rever pre?o/modelo Gemini no momento e configurar limites pequenos em UI; realizar teste real somente conforme aprova??o de gasto.
+3. Configurar Tavily e habilitar explicitamente pesquisa global e por t?pico; fazer chamadas b?sicas primeiro devido a cr?ditos.
+4. Adicionar indexa??o/reindexa??o sem?ntica em background apenas ap?s decis?o de or?amento; atualmente ? acionada por mem?ria espec?fica.
+5. Evoluir detec??o de contradi??es e atualidade al?m de heur?sticas.
+6. Testar sincroniza??o real GitHub/Crossref em repos/assuntos escolhidos; nenhum token necess?rio para reposit?rio p?blico.
+7. Revisar threat model, backups e isolamento multiusu?rio antes de qualquer exposi??o remota; API continua loopback/user ?nico.
+8. Executar a su?te completa ap?s as ?ltimas altera??es e validar inicializa??o sem chaves e com MockProvider.
+
+## Continuity - ALL FOR ONE / initial routing (2026-11-01)
+
+- Audit confirmed that chat provider selection remains manually persisted; automatic model routing is not yet connected to chat runtime.
+- Added `nexus_learning/model_router.py`: pure deterministic policy for SIMPLE, STANDARD, ADVANCED and RESEARCH; filters availability, capability, context, cost and latency metadata; fallback stays within local/remote trust boundary.
+- Fail-closed behavior: remote candidates require explicit remote permission and budget authorization; unavailable, disallowed, malformed or insufficient-context candidates are rejected.
+- This policy is not yet wired into runtime provider choice. Model latency, price and capability metadata need a trusted catalog or reviewed configuration before automatic routing. Manual Ollama/Qwen selection remains unchanged.
+- Product-agent roles remain sequential and deterministic, not independent LLM agents. Research, knowledge and memory infrastructure exist, but chat does not delegate model tool calls. No Gemini generation or Tavily search was run during this work.
+- Initial integrity audit found numerous existing local changes; all preserved. `.env` and local database remain Git-ignored. No commit/push. Codex profiles passed static validation, but subagent startup failed because the local OAuth token had been invalidated after the user's logout; no global settings were changed.
+- Verification: `python -m compileall -q nexus_learning tests` passed; `python -m unittest discover -s tests -v` passed with 97 tests, including 9 router tests; `git diff --check` passed.
+
+## Added from the routing/research continuation (2026-11-01)
+
+1. Implement native provider tool-call contracts and tool-result continuation (Ollama/OpenAI-compatible adapters only where capability is confirmed); require explicit human confirmation before cost-bearing research.
+2. Add browser-driven E2E for confirmation rejection/acceptance, streaming, source-link rendering, and authenticated research history.
+3. Evolve deterministic product-agent steps into separately budgeted specialist calls with typed envelopes, permission scope, timeout, concurrency caps, and independent reviewer; do not imply current roles are independent LLM agents.
+4. Design isolated self-improvement proposals: separate workspace, explicit changed-file manifest, bounded test command allowlist, and promotion only after review.
+5. Improve citation quality beyond reference-index validation; compare claims to excerpts and disclose unresolved contradiction/date gaps.
+6. Add concurrency tests for multiple confirmed Tavily requests sharing the daily cap; verify reservation remains atomic.

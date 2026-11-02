@@ -18,8 +18,10 @@ class PolicyEngine:
     """Fail-closed policy. Model output never grants its own permissions."""
 
     def __init__(self, allowed_tools=(), allow_reversible=False):
+        if not isinstance(allow_reversible, bool):
+            raise ValueError("allow_reversible must be a boolean")
         self.allowed_tools = frozenset(allowed_tools)
-        self.allow_reversible = bool(allow_reversible)
+        self.allow_reversible = allow_reversible
 
     def evaluate(self, tool_name, permission, approved=False):
         if not tool_name or tool_name not in self.allowed_tools:
@@ -29,13 +31,13 @@ class PolicyEngine:
         if permission == READ:
             return Decision(True, False, "Allowlisted read action")
         if permission == WRITE_REVERSIBLE:
-            if approved:
+            if approved is True:
                 return Decision(True, False, "Explicit approval received")
             if self.allow_reversible:
                 return Decision(True, False, "Reversible writes enabled by configuration")
             return Decision(False, True, "Approval required for reversible write")
         if permission == SENSITIVE:
-            if approved:
+            if approved is True:
                 return Decision(True, False, "Explicit action-specific approval received")
             return Decision(False, True, "Specific approval required for sensitive action")
         return Decision(False, False, "Denied")

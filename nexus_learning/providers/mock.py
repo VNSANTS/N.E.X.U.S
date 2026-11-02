@@ -3,6 +3,9 @@ from .base import ModelResponse
 
 
 class MockProvider:
+    provider_name = "mock"
+    model = "offline-mock"
+
     def __init__(self, response="N.E.X.U.S está pronto para receber a próxima etapa."):
         self.response = response
 

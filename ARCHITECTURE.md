@@ -228,6 +228,18 @@ Ficam fora do MVP: voz, wake word, execução contínua, tarefas agendadas, agen
 
 Esta arquitetura é uma proposta de projeto. Nenhum dos componentes descritos deve ser considerado implementado até existir código e testes verificáveis.
 
+---
+
+## Fatia local implementada — API, memória e worker
+
+Em 2026-11-01 foi adicionada uma implementação local que concretiza parte do desenho sem pressupor hosting. `nexus_learning.api.NexusAPI` expõe WSGI em loopback; usa password hashing e bearer tokens próprios, sessões/histórico e links de ownership para runtime tasks. SQLite recebe tabelas novas por `CREATE TABLE IF NOT EXISTS`, sem reescrever as tabelas anteriores.
+
+Antes da geração, `ContextRetriever` recupera itens ativos por busca lexical e afirmações somente no estado `validated` que tenham fonte. Contexto e histórico têm limites de tamanho; conteúdo recuperado é tratado como dado não confiável. Respostas do modelo são persistidas como mensagens, sem criar memória ou afirmação automaticamente.
+
+`ProductSupervisor` executa delegação determinística e sequencial a recuperação de memória e classificação de pedido, com atividade estruturada; não realiza chamadas ocultas a modelos especialistas. `ToolRegistry` contém apenas operações READ. `TaskQueue` fornece jobs locais allowlisted com lease/fencing e retries limitados; chat permanece síncrono. Adapters remotos existem, mas MockProvider continua padrão e opt-in remoto é necessário.
+
+O servidor de desenvolvimento não tem TLS, exposição remota, multiusuário cloud ou cancelamento de uma chamada de modelo em curso. A topologia cloud + PC e os controles sensíveis continuam como arquitetura futura. Procedimentos, endpoints e limites operacionais estão em `docs/LOCAL_API.md`.
+
 
 ---
 
@@ -309,3 +321,51 @@ O modelo local é uma ferramenta de apoio ao aprendizado, não um mecanismo de r
 
 ## Referência para o motor de aprendizado
 A proposta detalhada de memória, atenção, avaliação, consolidação e validação inspiradas na neurociência está em [`docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md`](docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md). Ela complementa esta arquitetura híbrida e não altera o status de implementação: os módulos continuam sendo propostas até serem codificados e testados.
+
+## Ciclo contínuo e fronteira de integrações (2026-11-01)
+
+```mermaid
+flowchart LR
+  UI[UI autenticada] --> API[API loopback]
+  API --> DB[(SQLite local)]
+  API --> Q[Fila persistente]
+  W[Worker local ativo] --> Q
+  Q --> C[Ciclo limitado em fases]
+  C --> R[ResearchService]
+  R --> CR[Crossref público]
+  R --> TV[Tavily opcional e aprovado]
+  R --> DB
+  C --> G[ModelProvider com orçamento]
+  G --> GE[Gemini opcional]
+  G --> DB
+  API --> GH[GitHub REST somente leitura]
+  GH --> DB
+  DB --> MEM[Memórias, fontes, afirmações e candidatos de revisão]
+```
+
+O ciclo persiste checkpoint/eventos por fase; jobs usam chave idempotente e recuperação limitada. Falha de provider externa gera evento seguro, sem body de erro/credencial; falha de pesquisa parcial preserva fontes que responderam. Conteúdo da web/commits entra com marcação de dado não confiável. O analista LLM produz achado candidato e não pode aprovar facts, claims, ferramentas ou ações.
+
+`BudgetedProvider` coloca uma reserva transacional antes de cada geração/embedding, aplica teto diário e por tarefa e fecha acesso remoto quando não há orçamento. O orçamento é parametrizado por preço atual informado pelo proprietário. Tavily e GitHub têm ledger de requisições separado; ciclos só chamam Tavily com credencial, dupla autorização global e consentimento explícito no tópico. As conexões são iniciadas pelo processo local e o servidor continua limitado a loopback.
+
+Os papéis internos são sequenciais e determinísticos, com contrato, allowlist de contexto/ferramenta e registro em SQLite; não são sete agentes LLM paralelos. `GeminiProvider` é o único adapter atual com embedding. Indexação vetorial e extração Tavily podem ser executadas como ferramentas explícitas. Ver `docs/CONTINUOUS_LEARNING.md` e `docs/INTEGRATIONS.md` para detalhes e limitações.
+
+## Continuity - ALL FOR ONE / initial routing (2026-11-01)
+
+- Audit confirmed that chat provider selection remains manually persisted; automatic model routing is not yet connected to chat runtime.
+- Added `nexus_learning/model_router.py`: pure deterministic policy for SIMPLE, STANDARD, ADVANCED and RESEARCH; filters availability, capability, context, cost and latency metadata; fallback stays within local/remote trust boundary.
+- Fail-closed behavior: remote candidates require explicit remote permission and budget authorization; unavailable, disallowed, malformed or insufficient-context candidates are rejected.
+- This policy is not yet wired into runtime provider choice. Model latency, price and capability metadata need a trusted catalog or reviewed configuration before automatic routing. Manual Ollama/Qwen selection remains unchanged.
+- Product-agent roles remain sequential and deterministic, not independent LLM agents. Research, knowledge and memory infrastructure exist, but chat does not delegate model tool calls. No Gemini generation or Tavily search was run during this work.
+- Initial integrity audit found numerous existing local changes; all preserved. `.env` and local database remain Git-ignored. No commit/push. Codex profiles passed static validation, but subagent startup failed because the local OAuth token had been invalidated after the user's logout; no global settings were changed.
+- Verification: `python -m compileall -q nexus_learning tests` passed; `python -m unittest discover -s tests -v` passed with 97 tests, including 9 router tests; `git diff --check` passed.
+
+## Chat routing and web research continuation (2026-11-01)
+
+The chat boundary now resolves configured model candidates in `nexus_learning/routing.py` before calling `TaskRuntime`. Manual provider selection remains compatible. Automatic routing checks live availability and model discovery, configured capability/context metadata, remote opt-in, and `ProviderBudget`; fallback cannot cross local/remote trust lanes. Streaming fallback is allowed only before the first response chunk.
+
+Research is coordinated before generation: `ModelRouter` classifies a limited set of current/research intents, the API requires per-request confirmation, and `ToolRegistry` invokes the sensitive Tavily tool only after that approval. Results are persisted with source provenance, placed in a clearly untrusted system-context block, and citations are reviewed before response persistence. This does not yet implement provider-native function calling, model-requested tool continuations, or separate LLM-based specialist agents.
+
+
+## Provider integration update - 2026-11-01
+
+Gemini and OpenAI remain adapters behind ModelProvider; shared transport handles bounded requests, normalized provider errors, and SSE parsing. ProviderManager owns explicit manual selection and redacted status. ModelRoutingService continues to validate candidates and budget before selecting remote inference. The environment-based CLI/worker provider loader now also applies the explicit remote allowlist. This adds a permission check without changing automatic routing defaults or budget settings. Tool calling is not implemented by these adapters; internet research remains a separately authorized integration. Mock tests validate the integration surfaces without network calls. Current model availability and account-specific cost remain external configuration checks.

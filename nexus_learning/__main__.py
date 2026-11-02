@@ -14,6 +14,12 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("init")
     sub.add_parser("stats")
+    p = sub.add_parser("serve", help="Run the local authenticated web app and API")
+    p.add_argument("--host", choices=["127.0.0.1"], default="127.0.0.1")
+    p.add_argument("--port", type=int, default=8765)
+    p = sub.add_parser("worker", help="Run the local allowlisted worker")
+    p.add_argument("--poll", type=float, default=1.0)
+    p.add_argument("--once", action="store_true")
     p = sub.add_parser("memory-add")
     p.add_argument("kind", choices=["episodic", "semantic", "procedural"])
     p.add_argument("title")
@@ -54,6 +60,12 @@ def main():
     p.add_argument("--limit", type=int, default=10)
     p.add_argument("--mailto", default=None, help="Optional contact email for Crossref polite pool")
     args = parser.parse_args()
+    if args.command == "serve":
+        from .serve import serve
+        argv = ["--host", args.host, "--port", str(args.port)]
+        argv.extend(["--db", args.db])
+        serve(argv)
+        return
     engine = LearningEngine(args.db)
     ingestor = DocumentIngestor(engine) if args.command in {"ingest-file", "document-search"} else None
 
@@ -61,6 +73,34 @@ def main():
         result = {"initialized": True, "database": args.db}
     elif args.command == "stats":
         result = engine.stats()
+    elif args.command == "worker":
+        from .worker import LocalWorker, TaskQueue
+        from .learning_cycles import LearningCycleService
+        from .envfile import load_local_env
+        import os
+        load_local_env()
+        queue = TaskQueue(engine)
+        from .discovery import build_research_service
+        from .providers.adapters import provider_from_env
+        from .provider_budget import BudgetedProvider, ProviderBudget
+        tavily_enabled = os.environ.get("NEXUS_TAVILY_ENABLED", "false").lower() == "true"
+        selected_provider = provider_from_env()
+        if getattr(selected_provider, "provider_name", "") in {"gemini", "groq", "openrouter"}:
+            selected_provider = BudgetedProvider(selected_provider, ProviderBudget(engine))
+        cycles = LearningCycleService(
+            engine, queue,
+            research_enabled=os.environ.get("NEXUS_RESEARCH_ENABLED", "false").strip().lower() == "true",
+            research_service=build_research_service(engine, tavily_enabled=tavily_enabled),
+            provider=selected_provider)
+        worker = LocalWorker(queue, cycles=cycles)
+        if args.once:
+            result = {"processed": worker.run_once()}
+        else:
+            try:
+                worker.run_forever(poll_seconds=max(.1, min(args.poll, 60)))
+            except KeyboardInterrupt:
+                worker.stop()
+            return
     elif args.command == "memory-add":
         result = {"id": engine.add_memory(args.kind, args.title, args.content)}
     elif args.command == "memory-list":

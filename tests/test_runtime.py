@@ -27,6 +27,17 @@ class PolicyTests(unittest.TestCase):
         decision = PolicyEngine(allowed_tools={"x"}).evaluate("x", "ROOT")
         self.assertFalse(decision.allowed)
 
+    def test_truthy_non_boolean_values_never_grant_permissions(self):
+        policy = PolicyEngine(allowed_tools={"send", "save"})
+        for approval in ("false", "true", 1):
+            with self.subTest(approval=approval):
+                decision = policy.evaluate("send", SENSITIVE, approved=approval)
+                self.assertFalse(decision.allowed)
+                self.assertTrue(decision.requires_approval)
+
+        with self.assertRaises(ValueError):
+            PolicyEngine(allowed_tools={"save"}, allow_reversible="false")
+
 
 class RuntimeTests(unittest.TestCase):
     def setUp(self):
@@ -69,6 +80,23 @@ class RuntimeTests(unittest.TestCase):
         runtime.run(task_id)
         with self.assertRaises(ValueError):
             runtime.run(task_id)
+
+    def test_stream_disconnect_cancels_task_and_preserves_partial_result_out_of_history(self):
+        class StreamingProvider:
+            provider_name = "ollama"
+            model = "qwen-test"
+            def stream_generate(self, messages, *, max_tokens, timeout, cancel_event):
+                yield "partial"
+                while not cancel_event.is_set():
+                    yield "more"
+        runtime = TaskRuntime(self.engine, StreamingProvider())
+        task_id = runtime.submit("Stream test")
+        stream = runtime.run_stream(task_id)
+        self.assertEqual(next(stream), "partial")
+        stream.close()
+        task = runtime.get(task_id)
+        self.assertEqual(task["state"], "cancelled")
+        self.assertIsNone(task["result"])
 
 
 if __name__ == "__main__":

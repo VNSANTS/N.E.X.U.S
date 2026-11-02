@@ -1,0 +1,31 @@
+# Provider evaluation — 2026-11-01
+
+This is a technical comparison, not a provider selection. Facts below reflect official documentation checked on this date; quotas, prices, model availability and terms can change. No accounts, credentials or paid services were used. No provider adapter was implemented.
+
+## Comparison
+
+| Option | Model and capability evidence | Context / output | Cost and free access | Privacy and operation | Fit with `ModelProvider` |
+|---|---|---|---|---|---|
+| Google Gemini | Gemini 4 Argon documents adjustable thinking and tool/function capabilities. Vendor capability claims are not independent quality evidence. | 1,048,576 / 65,536 tokens for Argon. | $2/M input and $10/M output through 2026-11-30; scheduled price increase from 2026-12-01. Argon has no free tier; other model quotas vary by model/project. | Free-tier data may be used to improve products. Paid prompts are excluded from product improvement, but abuse monitoring can retain data up to 55 days; stateful interaction retention differs by tier. Brazil is listed as a supported region. | Requires a native Gemini adapter. Map stable request/response fields and provider errors; keep its thinking/tool features outside the initial text-only contract until explicitly designed. |
+| Groq | OpenAI-compatible API and hosted GPT-OSS models document reasoning, JSON and tool calling. GPT-OSS 120B and 20B are candidates; vendor multilingual claims do not establish comparative Brazilian Portuguese quality. | GPT-OSS 120B: 131,072 / 65,536 tokens. | GPT-OSS 120B: $0.15/M input, $0.60/M output; 20B: $0.075/M, $0.30/M. Free plan exists, but exact limits are model/account-specific; published Developer tier limits must not be mistaken for free limits. | Inference is not retained by default; reliability/abuse logs may retain data up to 30 days. ZDR is available subject to configuration/eligibility. Provider processing is in the US. | Likely lowest adapter effort due to OpenAI-compatible chat, but compatibility must be tested rather than assumed. Tool use is not needed for current runtime. |
+| OpenRouter | Gateway to many models/providers, not a model. Model reasoning, Portuguese ability, context, tools, availability and price vary by route. | Depends on selected model and upstream route. | Free `:free` routes: 20 RPM and 50 RPD; daily cap increases after purchasing credits. Paid rates are model/provider pass-through, plus platform fee on credit purchases. | Request content is sent to the selected upstream provider; retention/training policy varies. OpenRouter describes limited platform metadata logging and no prompt/completion logging by default, but upstream policy governs content. Automatic routing/fallback can change provider, privacy and cost. | OpenAI-compatible chat contract is convenient, but the gateway adds routing and policy variability. Disable automatic fallback/routing until explicitly selected and constrained. |
+
+## Evaluation against N.E.X.U.S. needs
+
+- **Reasoning and agents:** Gemini Argon and Groq GPT-OSS expose reasoning-oriented capabilities in vendor documentation. OpenRouter inherits the chosen model. None has been benchmarked by this project. Long reasoning does not grant runtime tools or permissions.
+- **Brazilian Portuguese:** no comparable official benchmark establishes a winner. Run a small controlled benchmark with fictional, non-sensitive prompts and human review before selection.
+- **Context:** Gemini Argon has the largest documented context in this comparison. Large context increases cost/latency exposure and is not a substitute for bounded memory retrieval.
+- **Free limits and availability:** quotas are mutable, tier/model dependent, and not an availability guarantee. Do not base unattended jobs on advertised free access alone.
+- **Privacy:** minimize prompt data regardless of provider. Confirm retention, training, region and deletion terms for the exact API/tier before sending personal memory.
+- **Autonomous tasks:** initially use one explicitly configured provider/model, strict timeout/token/cost limits, no provider fallback and no tools. Add retries only after idempotency and quota behavior are specified.
+- **Interchangeability:** the current `ModelProvider.generate(messages, max_tokens, timeout)` contract is a small synchronous text interface. An adapter can fit it, but cancellation, streaming, structured tool calls and normalized usage are not represented yet.
+
+## Recommendation for owner review
+
+Do not select a provider from published claims alone. Compare the exact eligible models using the same fictional pt-BR cases, measure response quality, latency and token use, inspect current free quotas, and decide acceptable retention/region. Then choose one model/provider and approve the credential source and cost ceiling. OpenRouter should be evaluated as a routing layer with one pinned upstream model/provider, rather than as an opaque automatic fallback. This is a recommendation for a decision process, not a provider choice.
+
+## Official sources
+
+- Gemini [models](https://ai.google.dev/gemini-api/docs/models), [latest model](https://ai.google.dev/gemini-api/docs/latest-model), [tokens](https://ai.google.dev/gemini-api/docs/tokens), [pricing](https://ai.google.dev/gemini-api/docs/pricing), [rate limits](https://ai.google.dev/gemini-api/docs/rate-limits), [data use and ZDR](https://ai.google.dev/gemini-api/docs/zdr), [interactions retention](https://ai.google.dev/gemini-api/docs/interactions-overview), [available regions](https://ai.google.dev/gemini-api/docs/available-regions).
+- Groq [models](https://console.groq.com/docs/models), [GPT-OSS 20B](https://console.groq.com/docs/model/openai/gpt-oss-20b), [rate limits](https://console.groq.com/docs/rate-limits), [data handling](https://console.groq.com/docs/your-data), [reasoning](https://console.groq.com/docs/reasoning), [errors](https://console.groq.com/docs/errors).
+- OpenRouter [pricing](https://openrouter.ai/pricing), [free models](https://openrouter.ai/collections/free-models), [privacy](https://openrouter.ai/privacy), [support](https://openrouter.ai/support), [chat API](https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request?explorer=true).
