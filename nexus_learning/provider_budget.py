@@ -76,7 +76,7 @@ class ProviderBudget:
         required=('daily_calls','daily_tokens','daily_usd','task_calls','task_tokens','task_usd')
         if not cfg['enabled'] or not all(cfg.get(key,0)>0 for key in required):
             return False
-        if cfg.get('input_usd_per_million',0)<=0 or cfg.get('output_usd_per_million',0)<0:
+        if cfg.get('input_usd_per_million',0)<=0 or cfg.get('output_usd_per_million',0)<=0:
             return False
         estimate=(input_tokens*cfg['input_usd_per_million']+
                   output_tokens*cfg['output_usd_per_million'])/1_000_000
@@ -92,10 +92,17 @@ class ProviderBudget:
                 and input_tokens+output_tokens<=cfg['task_tokens']
                 and estimate<=cfg['task_usd'])
     def _reserve(self,provider,input_tokens,output_tokens,task_id):
+        if any(isinstance(value,bool) or not isinstance(value,int) or value<0
+               for value in (input_tokens,output_tokens)):
+            raise ProviderConfigurationError()
         cfg=self.settings()
         if not cfg['enabled'] or not all(cfg[k]>0 for k in ('daily_usd','daily_calls','daily_tokens','task_usd','task_calls','task_tokens')):
             raise ProviderBudgetExceededError()
-        if cfg['input_usd_per_million']<=0: raise ProviderConfigurationError()
+        if (not math.isfinite(cfg['input_usd_per_million'])
+                or not math.isfinite(cfg['output_usd_per_million'])
+                or cfg['input_usd_per_million']<=0
+                or cfg['output_usd_per_million']<=0):
+            raise ProviderConfigurationError()
         estimate=(input_tokens*cfg['input_usd_per_million']+output_tokens*cfg['output_usd_per_million'])/1_000_000
         if estimate<=0: estimate=1e-12
         usage_id=uid('usage'); stamp=now(); day=datetime.now(timezone.utc).date().isoformat()+'%'
