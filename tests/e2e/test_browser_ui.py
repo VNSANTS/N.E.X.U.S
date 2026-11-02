@@ -40,7 +40,7 @@ class BrowserStreamProvider:
         from nexus_learning.providers.base import ModelResponse
         agent = ("architect", "analyst", "reviewer")[self.specialist_calls]
         self.specialist_calls += 1
-        return ModelResponse(json.dumps({"summary": agent + " plan", "items": []}),
+        return ModelResponse(json.dumps({"summary": agent + " plan", "items": [], "claims": []}),
                              self.provider_name, self.model)
 
     def stream_generate(self, messages, **kwargs):
