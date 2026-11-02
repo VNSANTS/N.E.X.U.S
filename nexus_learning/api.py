@@ -200,7 +200,7 @@ class NexusAPI:
                                     "link_status": "source_linked",
                                     "review_assessment": "conflicting",
                                     "review_note": "\x00" * 60}],
-                        "reviews": [{"claim_index": index, "assessment": "conflicting",
+                        "reviews": [{"claim_index": 0, "assessment": "conflicting",
                                      "note": "\x00" * 60}],
                         "unreferenced_claims_withheld": 1,
                         "claims_rejected_by_review": 1}

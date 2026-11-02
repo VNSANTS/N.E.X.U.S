@@ -257,7 +257,8 @@ class APITests(unittest.TestCase):
         self.assertIn("analyst", final_context)
         self.assertIn("reviewer", final_context)
         self.assertIn("unsupported", final_context)
-        self.assertIn("uncited observation", final_context)
+        self.assertIn("claims_rejected_by_review", final_context)
+        self.assertNotIn("uncited observation", final_context)
 
     def test_opt_in_specialists_skip_simple_conversation(self):
         import os
