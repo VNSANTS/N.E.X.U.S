@@ -209,3 +209,11 @@ Next: verify UI behavior in a local browser; implement provider-native tool call
 - A listagem da fila exige limite inteiro explícito entre 1 e 500; identificadores de proprietário vazios são rejeitados.
 - GitHub Actions passou no commit `9d1a7fd7ba7ef2edd9538b0f3f6cec3f79da16e5`: **140 testes** em Python 3.11 e **140 testes** em Python 3.12; compileall passou.
 - Isto fortalece o worker local existente. Ainda não existe protocolo de worker remoto/cloud; leases e fila local não equivalem a sincronização distribuída.
+
+
+### Segurança da sessão no navegador — 2026-11-02
+
+- O token de autenticação deixou de ser gravado em `sessionStorage`; permanece somente em memória JavaScript durante a sessão da página. Atualizar/reabrir a página exige novo login.
+- A rota de streaming agora trata HTTP 401 limpando o token em memória e retornando a interface ao login, alinhada ao helper da API.
+- Adicionados testes estáticos para impedir regressão de persistência do token e verificar o fluxo de expiração.
+- GitHub Actions passou no commit `3916ddc36d786108fb109ac91f4370c37c5d435a`: **142 testes** em Python 3.11 e **142 testes** em Python 3.12; compileall passou.
