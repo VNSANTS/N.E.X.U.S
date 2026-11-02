@@ -192,8 +192,10 @@ async function agentsView(){
 
   const history=card('Execuções recentes',
     'Metadados permitidos. Prompts, respostas internas e resultados de ferramentas não são exibidos.');
+  const toolEvents=new Set(['tool.started','tool.completed','tool.failed','tool.denied']);
   const events=(activity||[]).filter(x=>
-    x && typeof x.event==='string' && x.event.startsWith('agent.llm_')
+    x && typeof x.event==='string' &&
+    (x.event.startsWith('agent.llm_') || toolEvents.has(x.event))
   );
   if(!events.length){
     empty(history,'Ainda não há execuções de especialistas registradas.');
@@ -212,13 +214,21 @@ async function agentsView(){
     for(const event of events.slice(0,40)){
       const details=event.details&&typeof event.details==='object'&&!Array.isArray(event.details)
         ?event.details:{};
-      const stage=event.event.slice('agent.llm_'.length);
+      const isTool=event.event.startsWith('tool.');
+      const stage=isTool?event.event.slice('tool.'.length):event.event.slice('agent.llm_'.length);
       const agent=names[details.agent_id]||details.agent_id||'N.E.X.U.S.';
+      const toolLabels={
+        started:'execução iniciada',
+        completed:'execução concluída',
+        failed:'execução falhou',
+        denied:'ação negada pela política'
+      };
       const row=node('div','list-row');
       const main=node('div','row-main');
-      main.append(node('div','row-title',
-        agent+': '+(labels[stage]||stage.replaceAll('_',' '))
-      ));
+      const title=isTool
+        ?'Ferramenta '+(details.tool||'desconhecida')+': '+(toolLabels[stage]||stage)
+        :agent+': '+(labels[stage]||stage.replaceAll('_',' '));
+      main.append(node('div','row-title',title));
       const meta=[];
       if(details.provider||details.model)
         meta.push([details.provider,details.model].filter(Boolean).join(' / '));
@@ -226,7 +236,12 @@ async function agentsView(){
       if(Number.isFinite(details.input_chars))meta.push('entrada '+details.input_chars+' caracteres');
       if(Number.isFinite(details.output_chars))meta.push('saída '+details.output_chars+' caracteres');
       if(details.error_code)meta.push('erro: '+details.error_code);
+      if(details.error_type)meta.push('tipo: '+details.error_type);
       if(details.reason)meta.push('motivo: '+details.reason);
+      if(details.reason_code)meta.push('motivo: '+details.reason_code);
+      if(details.permission)meta.push('permissão: '+details.permission);
+      if(details.risk)meta.push('risco: '+details.risk);
+      if(details.decision)meta.push('decisão: '+details.decision);
       if(details.task_id)meta.push('tarefa '+String(details.task_id).slice(-8));
       if(details.separate_review_model===true)meta.push('modelo distinto do Analyst');
       else if(details.separate_review_model===false)meta.push('mesmo modelo do Analyst');

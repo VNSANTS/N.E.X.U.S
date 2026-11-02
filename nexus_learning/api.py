@@ -614,13 +614,16 @@ class NexusAPI:
             with self.engine.db() as c:
                 rows = c.execute(
                     "SELECT event,details,created_at FROM api_activity "
-                    "WHERE user_id=? AND event GLOB 'agent.llm_*' "
-                    "ORDER BY rowid DESC LIMIT 100",
+                    "WHERE user_id=? AND (event GLOB 'agent.llm_*' OR "
+                    "event IN ('tool.started','tool.completed','tool.failed','tool.denied')) "
+                    "ORDER BY rowid DESC LIMIT 150",
                     (user["id"],),
                 ).fetchall()
             string_limits = {
                 "agent_id": 64, "provider": 64, "model": 128, "status": 32,
                 "error_code": 64, "reason": 64, "task_id": 80,
+                "tool": 80, "permission": 32, "risk": 32,
+                "decision": 32, "reason_code": 48, "error_type": 64,
             }
             numeric_keys = {"duration_ms", "input_chars", "output_chars"}
             result = []

@@ -272,6 +272,11 @@ class BrowserUITests(unittest.TestCase):
             "error_code": "model_timeout",
             "duration_ms": 1000,
         })
+        self.app.tools._audit(owner_id, "tool.completed", "knowledge.claims", {
+            "permission": "READ", "risk": "READ", "decision": "allowed",
+            "duration_ms": 17, "arguments": "PRIVATE TOOL ARGUMENT MUST NOT RENDER",
+            "result": "PRIVATE TOOL RESULT MUST NOT RENDER",
+        })
 
         self.page.locator('[data-view="agents"]').click()
         expect(self.page.locator("#viewTitle")).to_have_text("Agentes")
@@ -283,6 +288,12 @@ class BrowserUITests(unittest.TestCase):
         expect(self.page.locator("#content")).to_contain_text("modelo distinto do Analyst")
         expect(self.page.locator("#content")).to_contain_text("Analyst: Chamada falhou")
         expect(self.page.locator("#content")).to_contain_text("model_timeout")
+        expect(self.page.locator("#content")).to_contain_text("Ferramenta knowledge.claims: execução concluída")
+        expect(self.page.locator("#content")).to_contain_text("permissão: READ")
+        self.assertNotIn("PRIVATE TOOL ARGUMENT MUST NOT RENDER",
+                         self.page.locator("#content").inner_text())
+        self.assertNotIn("PRIVATE TOOL RESULT MUST NOT RENDER",
+                         self.page.locator("#content").inner_text())
         self.assertNotIn("PRIVATE PROMPT MUST NOT RENDER", self.page.locator("#content").inner_text())
         self.assertNotIn("PRIVATE INTERNAL RESPONSE MUST NOT RENDER",
                          self.page.locator("#content").inner_text())

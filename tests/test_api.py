@@ -285,22 +285,39 @@ class APITests(unittest.TestCase):
         self.app.agents.record("different-owner-id", "agent.llm_call_completed", {
             "agent_id": "analyst", "provider": "ollama", "model": "other-user-model",
         })
+        self.app.tools._audit(owner_user["id"], "tool.completed", "knowledge.claims", {
+            "permission": "READ", "risk": "READ", "decision": "allowed",
+            "duration_ms": 17, "arguments": "PRIVATE TOOL ARGUMENT",
+            "result": "PRIVATE TOOL RESULT",
+        })
+        self.app.tools._audit("different-owner-id", "tool.completed", "private.tool", {
+            "permission": "READ", "risk": "READ", "decision": "allowed",
+        })
 
         unauthenticated = self.request("/api/v1/agents/activity")
         self.assertTrue(unauthenticated["status"].startswith("401"))
         response = self.request("/api/v1/agents/activity", token=self.owner)
         self.assertTrue(response["status"].startswith("200"), response)
-        self.assertEqual(len(response["body"]), 1)
-        event = response["body"][0]
-        self.assertEqual(event["event"], "agent.llm_call_completed")
+        self.assertEqual(len(response["body"]), 2)
+        by_event = {event["event"]: event for event in response["body"]}
+        event = by_event["agent.llm_call_completed"]
         self.assertEqual(event["details"]["agent_id"], "reviewer")
         self.assertEqual(event["details"]["provider"], "ollama")
         self.assertEqual(event["details"]["duration_ms"], 123)
+        tool_event = by_event["tool.completed"]
+        self.assertEqual(tool_event["details"]["tool"], "knowledge.claims")
+        self.assertEqual(tool_event["details"]["permission"], "READ")
+        self.assertEqual(tool_event["details"]["duration_ms"], 17)
+        self.assertNotIn("arguments", tool_event["details"])
+        self.assertNotIn("result", tool_event["details"])
         serialized = json.dumps(response["body"])
         self.assertNotIn("PRIVATE PROMPT", serialized)
         self.assertNotIn("PRIVATE MODEL RESPONSE", serialized)
         self.assertNotIn("PRIVATE TOOL DATA", serialized)
+        self.assertNotIn("PRIVATE TOOL ARGUMENT", serialized)
+        self.assertNotIn("PRIVATE TOOL RESULT", serialized)
         self.assertNotIn("other-user-model", serialized)
+        self.assertNotIn("private.tool", serialized)
 
     def test_opt_in_specialists_can_use_independent_provider_models(self):
         import os
