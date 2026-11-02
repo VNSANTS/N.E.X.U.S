@@ -201,3 +201,11 @@ Next: verify UI behavior in a local browser; implement provider-native tool call
 - Registro de ferramentas agora rejeita nomes/descrições/esquemas inválidos, classes de risco desconhecidas e permissões menos restritivas que o risco declarado.
 - GitHub Actions passou no commit `26c77c3d0e3b7140e9bde3c1569d3c42e5443f6b`: **138 testes** em Python 3.11 e **138 testes** em Python 3.12; compilação dos módulos Python também passou.
 - Os trabalhos continuam na branch de desenvolvimento. `main` permanece intacta; nenhum deploy, serviço remoto, provedor pago ou cobrança foi ativado.
+
+
+### Worker local — validação adicional (2026-11-02)
+
+- A fila local agora aceita somente payloads JSON-serializáveis finitos, exige objeto na entrada e no resultado, limita payload/result por bytes UTF-8 e rejeita valores NaN/infinito.
+- A listagem da fila exige limite inteiro explícito entre 1 e 500; identificadores de proprietário vazios são rejeitados.
+- GitHub Actions passou no commit `9d1a7fd7ba7ef2edd9538b0f3f6cec3f79da16e5`: **140 testes** em Python 3.11 e **140 testes** em Python 3.12; compileall passou.
+- Isto fortalece o worker local existente. Ainda não existe protocolo de worker remoto/cloud; leases e fila local não equivalem a sincronização distribuída.
