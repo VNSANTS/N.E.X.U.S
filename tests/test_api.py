@@ -131,7 +131,7 @@ class APITests(unittest.TestCase):
         self.app.skills.approve(review, owner_id="owner", approved=True)
 
         response = self.request("/api/v1/skills", token=self.owner, query="query=research")
-        self.assertTrue(response["status"].startswith("200"))
+        self.assertTrue(response["status"].startswith("200"), response)
         self.assertEqual([item["name"] for item in response["body"]], ["research-brief"])
 
     def test_chat_executes_allowlisted_model_tool_through_policy_and_returns_result(self):
@@ -245,7 +245,7 @@ class APITests(unittest.TestCase):
 
         self.assertTrue(reply["status"].startswith("200"), reply["body"])
         self.assertEqual([selected[name].calls for name in selected], [1, 1, 1])
-        self.assertEqual(len(main.messages), 3)  # runtime system, deliverables, final user turn
+        self.assertEqual(len(main.messages), 4)  # runtime system, skill/context, deliverables and final user turn
         final_context = json.dumps(main.messages, ensure_ascii=False)
         self.assertIn("architect", final_context)
         self.assertIn("analyst", final_context)
