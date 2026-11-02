@@ -102,9 +102,9 @@ class ProviderBudget:
                 FROM provider_usage WHERE created_at LIKE ?""",(today,)).fetchone()
         return (usage['calls']<cfg['daily_calls']
                 and usage['tokens']+input_tokens+output_tokens<=cfg['daily_tokens']
-                and usage['usd']+estimate<=cfg['daily_usd']
+                and (free_mode or usage['usd']+estimate<=cfg['daily_usd'])
                 and input_tokens+output_tokens<=cfg['task_tokens']
-                and estimate<=cfg['task_usd'])
+                and (free_mode or estimate<=cfg['task_usd']))
 
     def can_reserve_batch(self, provider, requests, *, task_id):
         """Read-only preflight for a bounded multi-call task; each call still reserves atomically."""
@@ -146,10 +146,10 @@ class ProviderBudget:
         count = len(requests)
         return (daily["calls"] + count <= cfg["daily_calls"]
                 and daily["tokens"] + input_tokens + output_tokens <= cfg["daily_tokens"]
-                and daily["usd"] + estimate <= cfg["daily_usd"]
+                and (free_mode or daily["usd"] + estimate <= cfg["daily_usd"])
                 and task["calls"] + count <= cfg["task_calls"]
                 and task["tokens"] + input_tokens + output_tokens <= cfg["task_tokens"]
-                and task["usd"] + estimate <= cfg["task_usd"])
+                and (free_mode or task["usd"] + estimate <= cfg["task_usd"]))
     def _reserve(self,provider,input_tokens,output_tokens,task_id):
         with self.engine.db() as c:
             c.execute('BEGIN IMMEDIATE')
@@ -173,8 +173,10 @@ class ProviderBudget:
             effective_task=task_id or usage_id
             daily=c.execute('SELECT COUNT(*) calls,COALESCE(SUM(input_tokens+output_tokens),0) tokens,COALESCE(SUM(COALESCE(actual_usd,estimated_usd)),0) usd FROM provider_usage WHERE created_at LIKE ?',(day,)).fetchone()
             task=c.execute('SELECT COUNT(*) calls,COALESCE(SUM(input_tokens+output_tokens),0) tokens,COALESCE(SUM(COALESCE(actual_usd,estimated_usd)),0) usd FROM provider_usage WHERE task_id=? AND created_at LIKE ?',(effective_task,day)).fetchone()
-            if (daily['calls']+1>cfg['daily_calls'] or daily['tokens']+input_tokens+output_tokens>cfg['daily_tokens'] or daily['usd']+estimate>cfg['daily_usd']
-                or task['calls']+1>cfg['task_calls'] or task['tokens']+input_tokens+output_tokens>cfg['task_tokens'] or task['usd']+estimate>cfg['task_usd']):
+            if (daily['calls']+1>cfg['daily_calls'] or daily['tokens']+input_tokens+output_tokens>cfg['daily_tokens']
+                or (not free_mode and daily['usd']+estimate>cfg['daily_usd'])
+                or task['calls']+1>cfg['task_calls'] or task['tokens']+input_tokens+output_tokens>cfg['task_tokens']
+                or (not free_mode and task['usd']+estimate>cfg['task_usd'])):
                 raise ProviderBudgetExceededError()
             c.execute("INSERT INTO provider_usage VALUES(?,?,?,?, 'reserved',?,?,?,NULL,?)",
                 (usage_id,effective_task,getattr(provider,'provider_name','unknown'),getattr(provider,'model','unknown'),input_tokens,output_tokens,estimate,stamp))
