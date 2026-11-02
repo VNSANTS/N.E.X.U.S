@@ -44,6 +44,22 @@ class ProviderBudgetTests(unittest.TestCase):
         self.assertEqual(count,0)
         self.provider.generate([{'role':'user','content':'hello'}],max_tokens=1,task_id='done')
         self.assertFalse(self.budget.can_reserve(self.inner,10,10))
+    def test_zero_output_price_fails_closed_even_if_legacy_settings_are_corrupt(self):
+        self.config()
+        with self.engine.db() as c:
+            c.execute("UPDATE provider_budget_settings SET output_usd_per_million=0 WHERE id=1")
+        self.assertFalse(self.budget.can_reserve(self.inner, 10, 10))
+        with self.assertRaises(Exception):
+            self.provider.generate([{"role": "user", "content": "hello"}])
+        self.assertEqual(self.inner.calls, 0)
+
+    def test_negative_or_boolean_token_reservations_are_rejected(self):
+        self.config()
+        for values in ((-1, 1), (1, -1), (True, 1), (1, False)):
+            with self.assertRaises(Exception):
+                self.budget._reserve(self.inner, values[0], values[1], "invalid")
+        self.assertEqual(self.budget.usage()["today"], [])
+
     def test_records_actual_usage_and_stops_at_daily_call_cap(self):
         self.config(daily_calls=1)
         self.provider.generate([{'role':'user','content':'hello'}])
