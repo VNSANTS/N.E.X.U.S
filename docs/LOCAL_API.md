@@ -140,3 +140,8 @@ Skill discovery uses literal case-insensitive text matching rather than SQL wild
 O Reviewer produz uma avaliação por claim do Analyst usando índice zero-based, status `supported`, `unsupported`, `uncertain` ou `conflicting` e nota de até 60 caracteres. A API valida cobertura 1:1; avaliações ausentes, duplicadas ou fora do intervalo falham. `supported` sem evidência fornecida é rejeitado. Reviewer não cria claims novas nesse estágio.
 
 Na síntese, claims `unsupported` e `conflicting` são removidas de forma determinística, mesmo sem exigir source filtering. Claims `uncertain` continuam identificadas. Eventos metadata-only indicam se o Reviewer usou provider/model diferente do Analyst. Essa diversidade não comprova veracidade e não substitui revisão humana.
+
+
+### Atividade dos agentes na interface
+
+`GET /api/v1/agents/activity` retorna no máximo 60 eventos `agent.llm_*` da conta autenticada. A resposta contém somente metadados permitidos: agente, provider/model, estado, duração, contagens de caracteres, código de erro, motivo, task ID e indicador de modelo distinto do Reviewer. Prompts, saídas dos modelos, resultados de ferramentas e eventos de outras contas são excluídos no servidor.

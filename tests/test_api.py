@@ -194,6 +194,44 @@ class APITests(unittest.TestCase):
         self.assertEqual(len(records), 6)
         self.assertNotIn("architect result", json.dumps(records))
 
+    def test_agent_activity_endpoint_is_authenticated_isolated_and_metadata_only(self):
+        owner_user = self.app.auth.user_for_token(self.owner)
+        self.app.agents.record(owner_user["id"], "agent.llm_call_completed", {
+            "agent_id": "reviewer",
+            "provider": "ollama",
+            "model": "review-model",
+            "status": "completed",
+            "duration_ms": 123,
+            "input_chars": 456,
+            "output_chars": 78,
+            "task_id": "task_private_12345678",
+            "prompt": "PRIVATE PROMPT MUST NOT BE RETURNED",
+            "response": "PRIVATE MODEL RESPONSE MUST NOT BE RETURNED",
+            "tool_result": {"secret": "PRIVATE TOOL DATA"},
+        })
+        self.app.auth.create_user("second", "another secure password")
+        second_token = self.app.auth.login("second", "another secure password")["access_token"]
+        second_user = self.app.auth.user_for_token(second_token)
+        self.app.agents.record(second_user["id"], "agent.llm_call_completed", {
+            "agent_id": "analyst", "provider": "ollama", "model": "other-user-model",
+        })
+
+        unauthenticated = self.request("/api/v1/agents/activity")
+        self.assertTrue(unauthenticated["status"].startswith("401"))
+        response = self.request("/api/v1/agents/activity", token=self.owner)
+        self.assertTrue(response["status"].startswith("200"), response)
+        self.assertEqual(len(response["body"]), 1)
+        event = response["body"][0]
+        self.assertEqual(event["event"], "agent.llm_call_completed")
+        self.assertEqual(event["details"]["agent_id"], "reviewer")
+        self.assertEqual(event["details"]["provider"], "ollama")
+        self.assertEqual(event["details"]["duration_ms"], 123)
+        serialized = json.dumps(response["body"])
+        self.assertNotIn("PRIVATE PROMPT", serialized)
+        self.assertNotIn("PRIVATE MODEL RESPONSE", serialized)
+        self.assertNotIn("PRIVATE TOOL DATA", serialized)
+        self.assertNotIn("other-user-model", serialized)
+
     def test_opt_in_specialists_can_use_independent_provider_models(self):
         import os
         from unittest.mock import patch

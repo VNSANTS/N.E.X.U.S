@@ -311,3 +311,12 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - The API preflight placeholder now uses fixed claim index zero; the integration test confirms that a Reviewer-rejected statement is not included in final synthesis.
 - This is structural review metadata and an LLM opinion, not independent verification or human approval.
 - Next: re-evaluate the sandbox blocker and continue any secure, non-destructive work. No cloud deployment or privileged execution is authorized.
+
+
+## P2-04 — specialist activity UI (2026-11-02, CI pending)
+
+- Added a dedicated authenticated metadata-only endpoint `GET /api/v1/agents/activity`; it returns only specialist LLM events belonging to the signed-in user and filters the detail payload on the server.
+- The Agentes page displays the role roster and up to 40 recent LLM stage events, with provider/model, stage, time, duration, character counts and safe failure metadata.
+- API test exercises unauthorized access, another user's event isolation, and redaction of injected prompt/response/tool-result fields.
+- Browser rendering uses node/textContent helpers; no dynamic HTML strings or arbitrary activity JSON are inserted.
+- CI pending.

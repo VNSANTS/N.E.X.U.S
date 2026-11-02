@@ -105,6 +105,78 @@ async function agentsView(){
   }
   content.append(roster,history);
 }
+async function agentsView(){
+  const [agents,activity]=await Promise.all([
+    safe('/agents'),
+    safe('/agents/activity')
+  ]);
+  content.className='content';
+  content.replaceChildren(heading(
+    'Agentes especialistas',
+    'Papéis configurados e metadados das execuções recentes.'
+  ));
+
+  const roster=card('Papéis registrados',
+    'Especializações disponíveis no supervisor local; não significa que estejam ativos em todas as conversas.');
+  listRows(roster,agents,
+    x=>x.id,
+    x=>[
+      x.role||'Sem descrição',
+      'etapas: '+(x.max_steps??'—'),
+      'ferramentas: '+((x.allowed_tools||[]).join(', ')||'nenhuma')
+    ].join(' · '),
+    20
+  );
+
+  const history=card('Execuções recentes',
+    'Metadados permitidos. Prompts, respostas internas e resultados de ferramentas não são exibidos.');
+  const events=(activity||[]).filter(x=>
+    x && typeof x.event==='string' && x.event.startsWith('agent.llm_')
+  );
+  if(!events.length){
+    empty(history,'Ainda não há execuções de especialistas registradas.');
+  }else{
+    const list=node('div','list');
+    const names={architect:'Architect',analyst:'Analyst',reviewer:'Reviewer'};
+    const labels={
+      call_started:'Chamada iniciada',
+      call_completed:'Chamada concluída',
+      call_failed:'Chamada falhou',
+      stage_failed:'Etapa falhou',
+      failed:'Pipeline falhou',
+      blocked:'Pipeline bloqueado',
+      pipeline_completed:'Pipeline concluído'
+    };
+    for(const event of events.slice(0,40)){
+      const details=event.details&&typeof event.details==='object'&&!Array.isArray(event.details)
+        ?event.details:{};
+      const stage=event.event.slice('agent.llm_'.length);
+      const agent=names[details.agent_id]||details.agent_id||'N.E.X.U.S.';
+      const row=node('div','list-row');
+      const main=node('div','row-main');
+      main.append(node('div','row-title',
+        agent+': '+(labels[stage]||stage.replaceAll('_',' '))
+      ));
+      const meta=[];
+      if(details.provider||details.model)
+        meta.push([details.provider,details.model].filter(Boolean).join(' / '));
+      if(Number.isFinite(details.duration_ms))meta.push(details.duration_ms+' ms');
+      if(Number.isFinite(details.input_chars))meta.push('entrada '+details.input_chars+' caracteres');
+      if(Number.isFinite(details.output_chars))meta.push('saída '+details.output_chars+' caracteres');
+      if(details.error_code)meta.push('erro: '+details.error_code);
+      if(details.reason)meta.push('motivo: '+details.reason);
+      if(details.task_id)meta.push('tarefa '+String(details.task_id).slice(-8));
+      if(details.separate_review_model===true)meta.push('modelo distinto do Analyst');
+      else if(details.separate_review_model===false)meta.push('mesmo modelo do Analyst');
+      if(event.created_at)meta.push(event.created_at);
+      if(meta.length)main.append(node('div','row-meta',meta.join(' · ')));
+      row.append(main,stateBadge(details.status||stage.replace('call_','')));
+      list.append(row);
+    }
+    history.append(list);
+  }
+  content.append(roster,history);
+}
 async function showView(name){activeView=name;$('#sidebar').classList.remove('open');document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));$('#crumb').textContent=groups[name]||'N.E.X.U.S.';$('#viewTitle').textContent=titles[name]||name;const chat=name==='conversation';content.classList.toggle('hidden',chat);$('#conversation').classList.toggle('hidden',!chat);if(chat){if(!sessionId){if(sessionRows.length)await openSession(sessionRows[0].id);else await createSession()}return}content.className='content';content.replaceChildren(node('div','loading','Carregando…'));try{if(name==='dashboard')await dashboard();else if(name==='learning')await learning();else if(name==='research')await researchView();else if(name==='memories')await memoriesView();else if(name==='claims')await knowledgeView();else if(name==='agents')await agentsView();else if(name==='tasks')await tableView('Tarefas','Histórico de execução do runtime.','/tasks',[{label:'ID',value:x=>x.id},{label:'Estado',value:x=>x.state},{label:'Criada',value:x=>x.created_at},{label:'Atualizada',value:x=>x.updated_at}]);else if(name==='jobs')await tableView('Fila do worker','Jobs persistentes, estado e tentativas.','/jobs',[{label:'Tipo',value:x=>x.kind},{label:'Estado',value:x=>x.state},{label:'Tentativas',value:x=>x.attempts},{label:'Próxima execução',value:x=>x.run_after},{label:'Criado',value:x=>x.created_at}],{action:button('Executar próxima tarefa',async()=>{try{await api('/jobs/run-once',{method:'POST',body:'{}'});showView('jobs')}catch(e){toast(e.message)}})});else if(name==='activity')await tableView('Atividade','Eventos auditáveis desta conta local.','/activity',[{label:'Evento',value:x=>x.event},{label:'Detalhes',value:x=>x.details},{label:'Data',value:x=>x.created_at}]);else if(name==='providers')await providers();else if(name==='integrations')await integrations();else if(name==='tools')await toolsView();else if(name==='settings')await settingsView();}catch(err){content.replaceChildren(node('div','error-box','Não foi possível carregar esta área: '+err.message))}}
 async function settingsView(){content.className='content';content.replaceChildren(heading('Configurações','Preferências locais desta interface.'));const c=card('Aparência');c.append(node('p','row-meta','A interface mantém o tema escolhido neste navegador. As configurações de credenciais são carregadas pelo backend a partir do ambiente local.'));const theme=button(document.documentElement.dataset.theme==='light'?'Usar tema escuro':'Usar tema claro',toggleTheme,'quiet-button');c.append(theme);content.append(c);const auth=card('Sessão e conectividade');auth.append(node('div','row-meta',`Usuário: ${currentUser?.username||'sessão local'} · API local autenticada.`));auth.append(node('div','callout info','Chaves Gemini e Tavily não são exibidas nesta tela. Configure-as localmente e reinicie o serviço para carregá-las.'));content.append(auth);const budget=await api('/usage/budget');const bc=card('Limites de utilização','O orçamento fail-closed controla chamadas remotas.');const f=node('form');const fields=[['enabled','Permitir chamadas remotas','checkbox'],['daily_calls','Chamadas por dia','number'],['daily_tokens','Tokens por dia','number'],['daily_usd','USD por dia','number'],['task_calls','Chamadas por tarefa','number'],['task_tokens','Tokens por tarefa','number'],['task_usd','USD por tarefa','number'],['input_usd_per_million','USD por milhão de tokens de entrada','number'],['output_usd_per_million','USD por milhão de tokens de saída','number']];fields.forEach(([key,label,type])=>{const l=node('label','field-block',label),i=node('input','field');i.name=key;i.type=type;if(type==='checkbox')i.checked=Boolean(budget.enabled);else{i.required=true;i.min='0';i.step='any';i.value=budget[key]??''}l.append(i);f.append(l)});const save=button('Salvar limites',async()=>{},'primary-button');f.append(save);f.onsubmit=async e=>{e.preventDefault();const fd=new FormData(f),n=k=>Number(fd.get(k));try{await api('/usage/budget',{method:'POST',body:JSON.stringify({confirm:true,enabled:fd.get('enabled')==='on',daily_calls:n('daily_calls'),daily_tokens:n('daily_tokens'),daily_usd:n('daily_usd'),task_calls:n('task_calls'),task_tokens:n('task_tokens'),task_usd:n('task_usd'),input_usd_per_million:n('input_usd_per_million'),output_usd_per_million:n('output_usd_per_million')})});toast('Limites atualizados');settingsView()}catch(err){toast(err.message)}};bc.append(f);content.append(bc)}
 async function memoriesView(){content.className='content';content.replaceChildren(heading('Memórias','Conhecimento pessoal persistido e usado para recuperação contextual.'));const formCard=card('Registrar memória explicitamente');const f=node('form');const kind=node('input','field');kind.placeholder='Tipo';kind.value='note';kind.required=true;const title=node('input','field');title.placeholder='Título';title.required=true;const body=node('textarea','field');body.placeholder='Conteúdo';body.required=true;const submit=button('Salvar memória',async()=>{},'primary-button');f.append(kind,title,body,submit);f.onsubmit=async e=>{e.preventDefault();try{await api('/memories',{method:'POST',body:JSON.stringify({confirm:true,kind:kind.value,title:title.value,body:body.value})});memoriesView()}catch(err){toast(err.message)}};formCard.append(f);content.append(formCard);const rows=await api('/memories');const c=card('Memórias ativas');(rows||[]).forEach(m=>{const r=node('div','list-row'),main=node('div','row-main');main.append(node('div','row-title',m.title),node('div','row-meta',`${m.kind} · ${m.body}`));const actions=node('div','heading-actions');actions.append(button('Indexar',async()=>{try{await api(`/memories/${encodeURIComponent(m.id)}/embed`,{method:'POST',body:JSON.stringify({confirm:true})});toast('Indexação concluída')}catch(err){toast(err.message)}}),button('Arquivar',async()=>{if(!confirm('Arquivar esta memória?'))return;try{await api(`/memories/${encodeURIComponent(m.id)}`,{method:'DELETE',body:JSON.stringify({confirm:true})});memoriesView()}catch(err){toast(err.message)}}));r.append(main,actions);c.append(r)});if(!rows.length)empty(c);content.append(c)}

@@ -333,3 +333,11 @@ Limites que permanecem: não existe sandbox de código/arquivos porque não há 
 - The distinct Reviewer model marker is metadata only. A second model opinion is not independent factual verification, human review or action approval.
 - GitHub Actions head `0ff391c0fd4642d6d1792c310b91d9a01ece1db5`: 203 unit tests passed on Python 3.11 and 203 passed on Python 3.12 (5 optional E2E tests skipped in each standard discovery run); Playwright/Chromium passed 5/5. Compile step passed in both unit-test jobs.
 - Fixed an undefined index in the API preflight placeholder and updated the API integration assertion to verify that a rejected claim is absent from final synthesis.
+
+
+## P2-04 — specialist activity UI (pending CI)
+
+- The Agentes view now presents the registered specialist roster plus recent model-pipeline events, including provider/model, stage, duration, input/output character counts, error/reason and whether Reviewer uses a distinct model.
+- Added authenticated `GET /api/v1/agents/activity`, returning at most 60 `agent.llm_*` events for the current user only. The server parses and filters event details through a strict allowlist; prompt text, model output, tool results and unrelated activity are not returned.
+- Added API tests for authentication, cross-user isolation and metadata redaction. Browser rendering uses DOM/textContent helpers, not HTML injection.
+- CI pending.
