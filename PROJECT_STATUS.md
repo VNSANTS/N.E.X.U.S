@@ -236,3 +236,10 @@ Gemini and OpenAI adapters use the existing provider contract and shared HTTP tr
 - Added unit tests for estimator behavior and malformed input.
 - Validation is pending GitHub Actions on this branch. No live provider calls, paid requests, deployment, or local-machine changes were performed.
 - Remaining hardening: task-aware preflight accounting, provider-specific tokenizers/usage normalization, robust tests for browser session lifecycle, and per-claim citation support validation.
+
+
+### Additional budget hardening — 2026-11-02
+
+- The remote-provider budget now rejects non-integer, boolean, or negative token reservations before writing usage records.
+- Routing preflight and the atomic reservation gate both fail closed when either configured model token price is zero or invalid, including legacy/corrupted settings.
+- Added regression tests for corrupted zero output pricing and invalid token reservations. GitHub Actions is being re-run against the final branch head; the earlier successful run covered the preceding code revision, not these last regression tests.
