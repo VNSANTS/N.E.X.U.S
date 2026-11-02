@@ -176,6 +176,19 @@ class APITests(unittest.TestCase):
         self.assertTrue(rejected["status"].startswith("400"))
         self.assertEqual(self.engine.get_claim(claim_id)["state"], "proposed")
 
+    def test_claim_review_rejects_malformed_fields_and_returns_evidence_quality(self):
+        source = self.engine.add_source("https://example.org/evidence", "Evidence")
+        claim = self.engine.propose_claim("A testable claim", [source], {source: "A quoted source excerpt"})
+        malformed = self.request(f"/api/v1/claims/{claim}/review", "POST",
+            {"state": "validated", "rationale": "Reviewed", "confidence": True, "confirm": True}, self.owner)
+        self.assertTrue(malformed["status"].startswith("400"))
+        reviewed = self.request(f"/api/v1/claims/{claim}/review", "POST",
+            {"state": "validated", "rationale": "Reviewed", "confidence": .85, "confirm": True}, self.owner)
+        self.assertTrue(reviewed["status"].startswith("200"), reviewed["body"])
+        detail = self.request(f"/api/v1/claims/{claim}", token=self.owner)
+        self.assertTrue(detail["body"]["evidence_quality"]["complete"])
+        self.assertIn("do not establish", detail["body"]["evidence_quality"]["limitation"])
+
     def test_jobs_are_owner_scoped_and_not_executable_cross_user(self):
         created = self.request("/api/v1/jobs", "POST", {"kind": "learning.stats",
                                                               "idempotency_key": "owner-job"}, self.owner)
