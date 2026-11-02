@@ -26,6 +26,20 @@ class TermuxLauncherTests(unittest.TestCase):
         self.assertNotIn('--host 0.0.0.0', api)
         self.assertNotIn('0.0.0.0', api)
 
+    def test_deployment_guide_documents_private_only_access_and_no_public_ingress(self):
+        guide = (ROOT / "docs" / "ANDROID_TERMUX.md").read_text(encoding="utf-8")
+        for required in (
+            "127.0.0.1:8765",
+            "Tailscale",
+            "SSH local forward",
+            "Do not port-forward",
+            "NEXUS_ENABLE_REMOTE_PROVIDER",
+            "Python 3.11",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, guide)
+        self.assertNotIn("0.0.0.0:8765", guide)
+
 
 if __name__ == "__main__":
     unittest.main()
