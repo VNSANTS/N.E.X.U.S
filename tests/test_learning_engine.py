@@ -22,6 +22,25 @@ class LearningEngineTests(unittest.TestCase):
         self.assertTrue(self.engine.archive_memory(mid))
         self.assertFalse(self.engine.archive_memory(mid))
 
+    def test_memory_metadata_must_be_bounded_finite_json_object(self):
+        with self.assertRaises(ValueError):
+            self.engine.add_memory("semantic", "Title", "Body", ["not", "an", "object"])
+        with self.assertRaises(ValueError):
+            self.engine.add_memory("semantic", "Title", "Body", {"score": float("nan")})
+        with self.assertRaises(ValueError):
+            self.engine.add_memory("semantic", "Title", "Body", {"large": "x" * 9000})
+        memory_id = self.engine.add_memory("semantic", "Title", "Body", {"origin": "user"})
+        self.assertEqual(self.engine.search_memories()[0]["id"], memory_id)
+
+    def test_memory_text_and_search_parameters_are_validated(self):
+        for title, body in ((None, "Body"), ("Title", None), ("x" * 501, "Body"), ("Title", "x" * 12001)):
+            with self.assertRaises(ValueError):
+                self.engine.add_memory("episodic", title, body)
+        with self.assertRaises(ValueError):
+            self.engine.search_memories(query=123)
+        with self.assertRaises(ValueError):
+            self.engine.search_memories(limit=True)
+
     def test_claim_requires_source_and_explicit_review(self):
         unsourced = self.engine.propose_claim("Unsourced claim")
         with self.assertRaises(ValueError):
