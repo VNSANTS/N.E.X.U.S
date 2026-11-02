@@ -263,3 +263,32 @@ class CheckpointStore:
                             (now(), task_id, owner_id, lease_token))
             if cur.rowcount != 1:
                 raise CheckpointConflict("lease is not valid")
+
+    def authorize_stage_retry(self, task_id, owner_id, lease_token, agent_id, *,
+                              confirm_ambiguous=False):
+        """Reset one failed stage only after explicit owner confirmation."""
+        if agent_id not in STAGES or not isinstance(confirm_ambiguous, bool):
+            raise CheckpointError("invalid retry request")
+        with self.engine.db() as c:
+            c.execute("BEGIN IMMEDIATE")
+            run = c.execute("""SELECT lease_token,lease_expires,attempt FROM agent_pipeline_runs
+                               WHERE task_id=? AND owner_id=?""", (task_id, owner_id)).fetchone()
+            if not run or run["lease_token"] != lease_token or (run["lease_expires"] or 0) <= time.time():
+                raise CheckpointConflict("lease is not valid")
+            stage = c.execute("""SELECT state FROM agent_pipeline_stages
+                                 WHERE task_id=? AND agent_id=?""", (task_id, agent_id)).fetchone()
+            if not stage or stage["state"] not in {"failed_known", "interrupted_unknown"}:
+                raise CheckpointConflict("stage is not eligible for explicit retry")
+            if stage["state"] == "interrupted_unknown" and not confirm_ambiguous:
+                raise CheckpointConflict("ambiguous provider outcome requires explicit retry confirmation")
+            attempt = int(run["attempt"]) + 1
+            c.execute("""INSERT INTO agent_pipeline_attempts(task_id,attempt,reason,created_at)
+                         VALUES(?,?,?,?)""",
+                      (task_id, attempt,
+                       "owner_confirmed_ambiguous_retry" if stage["state"] == "interrupted_unknown"
+                       else "owner_resumed_known_failure", now()))
+            c.execute("""UPDATE agent_pipeline_runs SET attempt=?,state='paused',updated_at=?
+                         WHERE task_id=? AND owner_id=?""", (attempt, now(), task_id, owner_id))
+            c.execute("""UPDATE agent_pipeline_stages SET state='pending',error_code=NULL,
+                         started_at=NULL,completed_at=NULL,deliverable_json=NULL
+                         WHERE task_id=? AND agent_id=?""", (task_id, agent_id))
