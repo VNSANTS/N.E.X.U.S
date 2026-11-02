@@ -604,6 +604,47 @@ class NexusAPI:
         if len(route) == 3 and route[0] == "tools" and route[2] == "execute" and method == "POST":
             result = self.tools.execute(route[1], data.get("arguments"), owner_id=user["id"])
             return self._json(start_response, "200 OK", {"result": result})
+        if route == ["agents", "activity"] and method == "GET":
+            # Return only bounded audit metadata. Never expose prompt, response,
+            # retrieved content, tool arguments/results, or arbitrary event payloads.
+            with self.engine.db() as c:
+                rows = c.execute(
+                    "SELECT event,details,created_at FROM api_activity "
+                    "WHERE user_id=? AND event GLOB 'agent.llm_*' "
+                    "ORDER BY rowid DESC LIMIT 100",
+                    (user["id"],),
+                ).fetchall()
+            string_limits = {
+                "agent_id": 64, "provider": 64, "model": 128, "status": 32,
+                "error_code": 64, "reason": 64, "task_id": 80,
+            }
+            numeric_keys = {"duration_ms", "input_chars", "output_chars"}
+            result = []
+            for row in rows:
+                try:
+                    details = json.loads(row["details"])
+                except (TypeError, ValueError):
+                    details = {}
+                if not isinstance(details, dict):
+                    details = {}
+                safe_details = {}
+                for key, limit in string_limits.items():
+                    value = details.get(key)
+                    if isinstance(value, str):
+                        safe_details[key] = value[:limit]
+                for key in numeric_keys:
+                    value = details.get(key)
+                    if (isinstance(value, int) and not isinstance(value, bool)
+                            and 0 <= value <= 1_000_000_000):
+                        safe_details[key] = value
+                if isinstance(details.get("separate_review_model"), bool):
+                    safe_details["separate_review_model"] = details["separate_review_model"]
+                result.append({
+                    "event": row["event"],
+                    "details": safe_details,
+                    "created_at": row["created_at"],
+                })
+            return self._json(start_response, "200 OK", result)
         if route == ["agents"] and method == "GET":
             return self._json(start_response, "200 OK", self.agents.roster())
         if route == ["activity"] and method == "GET":
