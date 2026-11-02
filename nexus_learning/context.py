@@ -26,9 +26,11 @@ class ContextRetriever:
     def _score(text, terms, title=""):
         body = (text or "").casefold()
         heading = (title or "").casefold()
-        matched = [term for term in terms if term in body]
+        body_matches = [term for term in terms if term in body]
         title_matches = [term for term in terms if term in heading]
-        return len(matched) + 2 * len(title_matches), matched
+        # Explain every lexical match, including title-only matches used for ranking.
+        matched = list(dict.fromkeys((*title_matches, *body_matches)))
+        return len(body_matches) + 2 * len(title_matches), matched
 
     def retrieve_detailed(self, query, *, include_semantic=True):
         terms = self._terms(query)
