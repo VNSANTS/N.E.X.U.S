@@ -497,7 +497,6 @@ class NexusAPI:
             return self._json(start_response, "200 OK", self.runtime.get(route[1]))
         if route == ["memories"] and method == "GET":
             q = environ.get("QUERY_STRING", "")
-            from urllib.parse import parse_qs
             params = parse_qs(q)
             query = params.get("q", [""])[0]
             if len(query) > 500:
@@ -540,7 +539,6 @@ class NexusAPI:
             self.agents.record(user["id"], "source.added", {"source_id": source_id})
             return self._json(start_response, "201 Created", {"id": source_id})
         if route == ["claims"] and method == "GET":
-            from urllib.parse import parse_qs
             state = parse_qs(environ.get("QUERY_STRING", "")).get("state", [None])[0]
             claims = self.engine.list_claims(state, limit=100)
             return self._json(start_response, "200 OK", claims)
@@ -802,13 +800,11 @@ class NexusAPI:
                     return self._json(start_response, "404 Not Found", {"error": "not found"})
                 return self._json(start_response, "200 OK", result)
         if route == ["learning", "findings"] and method == "GET":
-            from urllib.parse import parse_qs
             cycle_id = parse_qs(environ.get("QUERY_STRING", "")).get("cycle_id", [None])[0]
             return self._json(start_response, "200 OK", self.learning.findings(cycle_id=cycle_id))
         if route == ["learning", "research"] and method == "GET":
             return self._json(start_response, "200 OK", self.learning.research.list())
         if route == ["learning", "questions"] and method == "GET":
-            from urllib.parse import parse_qs
             status = parse_qs(environ.get("QUERY_STRING", "")).get("status", [None])[0]
             return self._json(start_response, "200 OK", self.learning.questions(user["id"], status))
         if len(route) == 4 and route[:2] == ["learning", "questions"] and route[3] == "answer" and method == "POST":
