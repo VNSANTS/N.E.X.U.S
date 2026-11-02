@@ -404,7 +404,14 @@ class NexusAPI:
         if len(route) == 3 and route[0] == "claims" and route[2] == "review" and method == "POST":
             if data.get("confirm") is not True:
                 raise PermissionError("explicit confirmation required")
-            self.engine.review_claim(route[1], data.get("state"), data.get("rationale", ""), data.get("confidence"))
+            if set(data) - {"confirm", "state", "rationale", "confidence"}:
+                raise ValueError("unexpected claim review fields")
+            if (not isinstance(data.get("state"), str)
+                    or not isinstance(data.get("rationale"), str)
+                    or ("confidence" in data and (isinstance(data["confidence"], bool)
+                        or not isinstance(data["confidence"], (int, float))))):
+                raise ValueError("invalid claim review fields")
+            self.engine.review_claim(route[1], data.get("state"), data.get("rationale"), data.get("confidence"))
             self.agents.record(user["id"], "claim.reviewed", {"claim_id": route[1], "state": data.get("state")})
             return self._json(start_response, "200 OK", {"id": route[1], "state": data.get("state")})
         if len(route) == 2 and route[0] == "claims" and method == "GET":
