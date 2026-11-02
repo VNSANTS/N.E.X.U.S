@@ -22,6 +22,8 @@ class ModelRouterTests(unittest.TestCase):
 
     def test_classifies_simple_standard_advanced_and_research(self):
         self.assertEqual(self.router.classify("Oi"), "SIMPLE")
+        self.assertEqual(self.router.classify("Faça um diagnóstico rápido do seu estado atual"), "STANDARD")
+        self.assertEqual(self.router.classify("Resuma meu estado atual"), "STANDARD")
         self.assertEqual(self.router.classify("Como está o tempo hoje na minha região?"), "RESEARCH")
         self.assertEqual(self.router.classify("Quais as notícias atuais sobre clima?"), "RESEARCH")
         self.assertEqual(self.router.classify("Explique como funciona uma bateria"), "STANDARD")
