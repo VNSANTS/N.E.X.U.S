@@ -65,6 +65,22 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(self.queue.get(job_id)["state"], "running")
         self.queue.complete(job_id, {}, lease_token=current["lease_token"])
 
+    def test_queue_rejects_non_json_and_non_finite_payloads_and_results(self):
+        with self.assertRaises(ValueError):
+            self.queue.enqueue("learning.stats", ["not", "an object"])
+        with self.assertRaises(ValueError):
+            self.queue.enqueue("learning.stats", {"value": float("nan")})
+        job_id = self.queue.enqueue("learning.stats")
+        claimed = self.queue.claim()
+        with self.assertRaises(ValueError):
+            self.queue.complete(job_id, {"value": float("inf")}, lease_token=claimed["lease_token"])
+        self.queue.complete(job_id, {"ok": True}, lease_token=claimed["lease_token"])
+
+    def test_list_limit_requires_a_bounded_integer(self):
+        for invalid in (True, 0, 501, "10"):
+            with self.subTest(limit=invalid), self.assertRaises(ValueError):
+                self.queue.list(limit=invalid)
+
     def test_jobs_are_scoped_to_authenticated_owner(self):
         one = self.queue.enqueue("learning.stats", owner_id="user-1")
         two = self.queue.enqueue("learning.stats", owner_id="user-2")

@@ -33,16 +33,23 @@ class TaskQueue:
             """)
 
     def enqueue(self, kind, payload=None, *, owner_id=None, priority=0, idempotency_key=None, run_after=None):
-        if kind not in {"memory.consolidate", "learning.stats", "learning.cycle_step"}:
+        if not isinstance(kind, str) or kind not in {"memory.consolidate", "learning.stats", "learning.cycle_step"}:
             raise ValueError("job kind is not allowlisted")
-        payload = payload or {}
-        if not isinstance(payload, dict) or len(json.dumps(payload)) > 8192:
+        if payload is None:
+            payload = {}
+        if not isinstance(payload, dict):
+            raise ValueError("payload must be a small JSON object")
+        try:
+            encoded_payload = json.dumps(payload, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
+        except (TypeError, ValueError, RecursionError):
+            raise ValueError("payload must contain finite JSON values") from None
+        if len(encoded_payload.encode("utf-8")) > 8192:
             raise ValueError("payload must be a small JSON object")
         if not isinstance(priority, int) or isinstance(priority, bool) or not -100 <= priority <= 100:
             raise ValueError("priority must be between -100 and 100")
         if idempotency_key is not None and (not isinstance(idempotency_key, str) or not idempotency_key or len(idempotency_key) > 128):
             raise ValueError("invalid idempotency key")
-        if owner_id is not None and (not isinstance(owner_id, str) or len(owner_id) > 128):
+        if owner_id is not None and (not isinstance(owner_id, str) or not owner_id.strip() or len(owner_id) > 128):
             raise ValueError("invalid owner id")
         if run_after is not None:
             try:
@@ -99,8 +106,13 @@ class TaskQueue:
             return result
 
     def complete(self, job_id, result, *, lease_token):
-        encoded = json.dumps(result, ensure_ascii=False)
-        if len(encoded) > 32_000:
+        if not isinstance(result, dict):
+            raise ValueError("job result must be a JSON object")
+        try:
+            encoded = json.dumps(result, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
+        except (TypeError, ValueError, RecursionError):
+            raise ValueError("job result must contain finite JSON values") from None
+        if len(encoded.encode("utf-8")) > 32_000:
             raise ValueError("job result too large")
         with self.engine.db() as c:
             cur = c.execute("UPDATE worker_jobs SET state='completed',result=?,lease_until=NULL,lease_token=NULL,updated_at=? WHERE id=? AND state='running' AND lease_token=?",
@@ -145,6 +157,8 @@ class TaskQueue:
             return dict(row) if row else None
 
     def list(self, limit=100, *, owner_id=None):
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 500:
+            raise ValueError("limit must be an integer between 1 and 500")
         with self.engine.db() as c:
             query = "SELECT id,owner_id,kind,payload,priority,idempotency_key,state,attempts,max_attempts,lease_until,run_after,result,error_code,created_at,updated_at FROM worker_jobs"
             args = []
@@ -152,7 +166,7 @@ class TaskQueue:
                 query += " WHERE owner_id=?"
                 args.append(owner_id)
             query += " ORDER BY created_at DESC LIMIT ?"
-            args.append(max(1, min(int(limit), 500)))
+            args.append(limit)
             return [dict(r) for r in c.execute(query, args).fetchall()]
 
     def events(self, job_id, *, owner_id=None):
