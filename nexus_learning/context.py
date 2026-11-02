@@ -72,6 +72,7 @@ class ContextRetriever:
             ranked.append({"kind": "validated_claim", "id": claim_id, "score": score,
                 "matched_terms": matched, "retrieval_method": "lexical",
                 "text": f"[validated claim {claim_id}, confidence {item['confidence']}; {source_text}] {item['claim']}"})
+        lexical_count = len(ranked)
         semantic_count = 0
         if self.semantic_index is not None:
             try:
@@ -99,7 +100,7 @@ class ContextRetriever:
             bounded.append({**item, "text": rendered})
             used += len(rendered)
         return {"items": bounded, "query_terms": terms,
-                "lexical_candidates": len(ranked) - semantic_count,
+                "lexical_candidates": lexical_count,
                 "semantic_candidates": semantic_count,
                 "used_semantic": any(x.get("retrieval_method") == "semantic" for x in bounded),
                 "truncated": truncated, "chars_used": used}
