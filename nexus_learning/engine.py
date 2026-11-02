@@ -2,6 +2,8 @@
 import json
 import sqlite3
 import uuid
+import math
+from urllib.parse import urlsplit
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -143,10 +145,19 @@ class LearningEngine:
         return sid
 
     def propose_claim(self, claim, source_ids=(), excerpts=None):
-        if not claim.strip():
+        if not isinstance(claim, str) or not claim.strip():
             raise ValueError("claim cannot be empty")
+        if not isinstance(source_ids, (list, tuple)):
+            raise ValueError("source_ids must be a list")
+        if excerpts is not None and not isinstance(excerpts, dict):
+            raise ValueError("excerpts must be an object")
         cid, stamp = uid("claim"), now()
         source_ids = list(dict.fromkeys(source_ids))
+        if not all(isinstance(sid, str) and sid for sid in source_ids):
+            raise ValueError("source IDs must be non-empty strings")
+        if excerpts and any(key not in source_ids or not isinstance(value, str)
+                            for key, value in excerpts.items()):
+            raise ValueError("excerpts must reference linked sources and contain text")
         with self.db() as c:
             for sid in source_ids:
                 if not c.execute("SELECT 1 FROM sources WHERE id=?", (sid,)).fetchone():
@@ -154,25 +165,68 @@ class LearningEngine:
             c.execute("INSERT INTO claims VALUES(?,?,'proposed',NULL,NULL,?,?)",
                       (cid, claim.strip(), stamp, stamp))
             for sid in source_ids:
+                excerpt = (excerpts or {}).get(sid)
                 c.execute("INSERT INTO claim_sources VALUES(?,?,?)",
-                          (cid, sid, (excerpts or {}).get(sid)))
+                          (cid, sid, excerpt.strip() if isinstance(excerpt, str) and excerpt.strip() else None))
             self._audit(c, "claim.proposed", "claim", cid, {"source_count": len(source_ids)})
         return cid
 
+    def assess_claim_evidence(self, claim_id):
+        """Return deterministic provenance/completeness checks, never semantic proof."""
+        with self.db() as c:
+            claim = c.execute("SELECT id FROM claims WHERE id=?", (claim_id,)).fetchone()
+            if not claim:
+                raise KeyError(claim_id)
+            rows = [dict(row) for row in c.execute("""
+                SELECT s.id,s.uri,s.title,cs.excerpt FROM claim_sources cs
+                JOIN sources s ON s.id=cs.source_id WHERE cs.claim_id=? ORDER BY s.id
+            """, (claim_id,)).fetchall()]
+        valid_sources, excerpt_count = 0, 0
+        domains, issues = set(), []
+        for source in rows:
+            try:
+                parsed = urlsplit(source["uri"])
+                valid_url = parsed.scheme in {"http", "https"} and bool(parsed.hostname)
+            except (TypeError, ValueError):
+                valid_url = False
+                parsed = None
+            if valid_url:
+                valid_sources += 1
+                domains.add((parsed.hostname or "").lower().removeprefix("www."))
+            else:
+                issues.append("source_url_not_http")
+            if isinstance(source.get("excerpt"), str) and source["excerpt"].strip():
+                excerpt_count += 1
+            else:
+                issues.append("missing_source_excerpt")
+        if not rows:
+            issues.append("no_linked_sources")
+        if rows and len(domains) < 2:
+            issues.append("single_domain")
+        complete = bool(rows) and valid_sources == len(rows) and excerpt_count == len(rows)
+        return {"claim_id": claim_id, "source_count": len(rows),
+                "valid_source_count": valid_sources, "excerpt_count": excerpt_count,
+                "distinct_domains": len(domains), "complete": complete,
+                "issues": sorted(set(issues)),
+                "limitation": "Completeness checks do not establish that an excerpt semantically supports the claim.",
+                "sources": rows}
+
     def review_claim(self, claim_id, state, rationale, confidence=None):
-        if state not in CLAIM_STATES or not rationale.strip():
+        if state not in CLAIM_STATES or not isinstance(rationale, str) or not rationale.strip():
             raise ValueError("invalid state or missing rationale")
-        if confidence is not None and not 0 <= confidence <= 1:
+        if confidence is not None and (isinstance(confidence, bool)
+                or not isinstance(confidence, (int, float)) or not math.isfinite(confidence)
+                or not 0 <= confidence <= 1):
             raise ValueError("confidence must be between 0 and 1")
         if state == "validated" and confidence is None:
             raise ValueError("validated claims require explicit confidence")
         with self.db() as c:
             if not c.execute("SELECT 1 FROM claims WHERE id=?", (claim_id,)).fetchone():
                 raise KeyError(claim_id)
-            if state == "validated" and not c.execute(
-                "SELECT 1 FROM claim_sources WHERE claim_id=? LIMIT 1", (claim_id,)
-            ).fetchone():
-                raise ValueError("validated claims require at least one source")
+            if state == "validated":
+                evidence = self.assess_claim_evidence(claim_id)
+                if not evidence["complete"]:
+                    raise ValueError("validated claims require HTTP(S) sources and a non-empty excerpt for every source")
             cur = c.execute("UPDATE claims SET state=?,rationale=?,confidence=?,updated_at=? WHERE id=?",
                             (state, rationale.strip(), confidence, now(), claim_id))
             if cur.rowcount != 1:
@@ -189,7 +243,8 @@ class LearningEngine:
             result["sources"] = [dict(r) for r in c.execute("""
               SELECT s.id,s.uri,s.title,cs.excerpt FROM claim_sources cs
               JOIN sources s ON s.id=cs.source_id WHERE cs.claim_id=?""", (claim_id,))]
-            return result
+        result["evidence_quality"] = self.assess_claim_evidence(claim_id)
+        return result
 
     def list_claims(self, state=None, limit=100):
         if state is not None and state not in CLAIM_STATES:
@@ -201,7 +256,8 @@ class LearningEngine:
         sql += " ORDER BY updated_at DESC LIMIT ?"
         args.append(max(1, min(int(limit), 500)))
         with self.db() as c:
-            return [dict(r) for r in c.execute(sql, args).fetchall()]
+            ids = [r["id"] for r in c.execute(sql, args).fetchall()]
+        return [self.get_claim(claim_id) for claim_id in ids]
 
     def add_task(self, title, relevance=0, uncertainty=0, impact=0,
                  novelty=0, cost=0, sensitivity=0):
