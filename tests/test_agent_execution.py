@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from nexus_learning.agent_execution import SpecialistPipeline
+from nexus_learning.agent_execution import (AgentResult, EvidenceClaim, SpecialistPipeline, synthesis_deliverables)
 
 
 def response(summary, *items):
@@ -131,6 +131,34 @@ class SpecialistPipelineTests(unittest.TestCase):
         claim = result.results[1].claims[0]
         self.assertEqual(claim.link_status, "unreferenced")
         self.assertFalse(hasattr(claim, "confidence"))
+
+    def test_synthesis_with_sources_withholds_claims_without_source_ids(self):
+        result = (
+            AgentResult("analyst", "completed", "Analysis", ("one item",),
+                        claims=(
+                            EvidenceClaim("linked claim", ("S1",), "source_linked"),
+                            EvidenceClaim("unreferenced claim", (), "unreferenced"),
+                        )),
+            AgentResult("reviewer", "completed", "Review", ("unsupported claim flagged",),
+                        claims=(EvidenceClaim("reviewed", ("S1",), "source_linked"),)),
+        )
+        delivered = synthesis_deliverables(result, require_source_links=True)
+        self.assertEqual(delivered[0]["claims"], [{
+            "text": "linked claim", "evidence_ids": ["S1"], "link_status": "source_linked"}])
+        self.assertEqual(delivered[0]["unreferenced_claims_withheld"], 1)
+        self.assertEqual(delivered[1]["unreferenced_claims_withheld"], 0)
+        self.assertIn("unsupported claim flagged", delivered[1]["items"])
+
+    def test_synthesis_without_sources_preserves_unreferenced_claims_as_labelled_analysis(self):
+        result = (AgentResult("analyst", "completed", "Analysis", claims=(
+            EvidenceClaim("unreferenced", (), "unreferenced"),)),)
+        delivered = synthesis_deliverables(result, require_source_links=False)
+        self.assertEqual(delivered[0]["claims"][0]["link_status"], "unreferenced")
+        self.assertEqual(delivered[0]["unreferenced_claims_withheld"], 0)
+
+    def test_synthesis_rejects_untyped_results(self):
+        with self.assertRaises(ValueError):
+            synthesis_deliverables(({"agent_id": "analyst"},), require_source_links=True)
 
     def test_unknown_agent_provider_override_is_rejected(self):
         with self.assertRaises(ValueError):

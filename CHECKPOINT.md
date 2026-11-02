@@ -226,3 +226,11 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Testes (resultado observado): API skill integration: passou; tests/test_skills.py 3 passaram; compileall passou.
 - Arquivos: AGENTS.md, NEXUS_EXECUTION_PLAN.md, tools/update_checkpoint.py, nexus_learning/api.py, tests/test_api.py, CHECKPOINT.md
 - Próxima tarefa: P1-04 modelos independentes por especialista; P1-06 auditoria de evidências
+
+
+## Evidence handoff policy — 2026-11-02
+
+- Previous green CI head: `373a55e803269ad9489d6ea4b26ce228e7738965`; 190 unit tests passed in Python 3.11 and 3.12; browser E2E: 5/5 passed.
+- New pending change: synthesis serialization deterministically withholds `unreferenced` specialist claims whenever a source catalogue is present, preserving a per-agent withheld count. The final synthesis prompt states that `source_linked` is a traceable reference, not a proof, and that summaries/items remain untrusted analysis.
+- Reviewer receives explicit instructions to call out factual claims without supplied source IDs. The filtering is structural; semantic support and truth still require review.
+- New unit coverage: linked claims retained, unreferenced claims withheld, no-source claims remain visibly unreferenced, invalid result types rejected. CI pending for this delta.

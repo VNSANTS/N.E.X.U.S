@@ -49,9 +49,39 @@ _SPECIALISTS = (
                 ("owner_context", "retrieved_memories")),
     _Specialist("analyst", "Analyze evidence, uncertainty, and alternatives concisely.",
                 ("sources", "architect_deliverable")),
-    _Specialist("reviewer", "Independently check the plan and analysis for unsupported claims and risks.",
-                ("sources", "architect_deliverable", "analyst_deliverable")),
+    _Specialist(
+        "reviewer",
+        "Independently check the plan and analysis for unsupported claims and risks. "
+        "When sources are supplied, identify factual statements that lack a supplied source ID "
+        "in your review items, and include only source-linked claims in your own claims array. "
+        "A source ID is a traceable reference, not proof that the source is reliable or the claim is true.",
+        ("sources", "architect_deliverable", "analyst_deliverable")),
 )
+
+def synthesis_deliverables(results, *, require_source_links=False):
+    """Serialize bounded results; with sources, withhold claims lacking a supplied source ID."""
+    output = []
+    for result in results:
+        if not isinstance(result, AgentResult):
+            raise ValueError("results must contain AgentResult values")
+        claims = []
+        withheld = 0
+        for claim in result.claims:
+            item = {"text": claim.text, "evidence_ids": list(claim.evidence_ids),
+                    "link_status": claim.link_status}
+            if require_source_links and claim.link_status != "source_linked":
+                withheld += 1
+            else:
+                claims.append(item)
+        output.append({
+            "agent_id": result.agent_id,
+            "summary": result.summary,
+            "items": list(result.items),
+            "claims": claims,
+            "unreferenced_claims_withheld": withheld,
+        })
+    return output
+
 
 _CONTEXT_KEYS = {"owner_context", "retrieved_memories", "sources"}
 _SAFE_ERRORS = {

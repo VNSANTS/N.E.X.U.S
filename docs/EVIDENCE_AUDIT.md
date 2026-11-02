@@ -40,3 +40,12 @@ Não há confiança numérica gerada automaticamente. Para fortalecer a auditori
 ## Próxima evolução
 
 Adicionar persistência de evidence records com hash, URL, título, data de recuperação, trecho exato e referência à claim; produzir um relatório de conflitos entre fontes e exigir revisão independente antes de promover afirmações ao conhecimento validado.
+
+
+## Política da síntese final
+
+Quando a execução inclui fontes, a camada de síntese remove deterministicamente claims marcadas como `unreferenced` antes de passar os resultados dos especialistas ao modelo final. Cada entrega informa quantas claims foram omitidas. Claims `source_linked` permanecem identificadas como não verificadas; a política proíbe tratá-las como verdade comprovada. Resumos e itens dos especialistas continuam sendo análise não confiável e não são promovidos automaticamente a fatos.
+
+Sem catálogo de fontes, claims permanecem visíveis como `unreferenced`, mas o contexto da síntese instrui explicitamente que não podem ser apresentadas como fatos verificados. O Reviewer recebe a instrução de apontar afirmações sem referência nos seus itens de revisão.
+
+Esta política é uma barreira de estrutura e instrução, não uma garantia de que o LLM final nunca vá parafrasear incorretamente uma afirmação. Para uso crítico, é necessária revisão independente/humana.

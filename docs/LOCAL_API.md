@@ -122,3 +122,6 @@ O pipeline pode transportar claims tipadas em cada deliverable: texto da afirma�
 As fontes são dados não confiáveis. Um ID válido só indica que o modelo referenciou um item que foi incluído no contexto. Não garante qualidade, atualidade, independência ou veracidade. A revisão semântica do Reviewer continua sendo uma etapa de modelo, não uma verificação factual independente.
 
 O orçamento configurado usa preços estimados globais, não tarifários por modelo. Em uma execução com vários providers remotos, configure os preços por milhão de tokens de forma conservadora, considerando o modelo mais caro selecionado; o preflight é uma estimativa e não substitui limites de faturamento do provedor.
+
+
+Na síntese final, quando o pipeline recebe fontes, a API omite as claims `unreferenced` de forma determinística e registra a quantidade omitida em cada deliverable. O texto do contexto diferencia `source_linked` de verificação factual: resumo e itens continuam não confiáveis; links não provam a verdade de uma afirmação. Sem fontes, claims ficam rotuladas como `unreferenced` e a síntese recebe instrução para não tratá-las como fatos.

@@ -267,3 +267,10 @@ O caminho SSE continua usando transporte streaming e cancelável; chamadas de fe
 Validação desta fatia: novos testes offline exercitam schemas, execução API autenticada, continuidade do modelo, negação de tool sensível, limites, resultados extensos, parsing Ollama/OpenAI-compatible, IDs exclusivos e preservação do SSE. Não foram realizadas chamadas reais a providers nem Tavily. Consulte docs/UNIVERSAL_TOOL_CALLING.md.
 
 Limites que permanecem: não existe sandbox de código/arquivos porque não há executor desse tipo; os papéis Architect/Analyst/Reviewer continuam sequenciais, usam o mesmo provider e não chamam ferramentas; Gemini/Anthropic ainda não têm protocolo nativo de tool calling; integração por streaming aguarda transporte cancelável e eventos de progresso da ferramenta em SSE.
+
+
+## Evidence policy update — latest remote CI
+
+- Structured claims are now filtered before final synthesis whenever source records are present: only claims with a reference ID supplied in the request are passed as explicitly source-linked claims; unreferenced claims are withheld and counted.
+- The Reviewer is instructed to flag factual statements without supplied source IDs in review items. Source linkage still does not establish source reliability or truth; summaries/items are untrusted analysis.
+- CI on the previous evidence-claims contract and browser fixture (commit `373a55e803269ad9489d6ea4b26ce228e7738965`) passed: 190 unit tests in Python 3.11, 190 in 3.12, and all 5 browser E2E tests. This new deterministic withholding policy is not yet validated by CI.
