@@ -51,6 +51,17 @@ class ContextRetrieverTests(unittest.TestCase):
         items = ContextRetriever(self.engine).retrieve("hidden topic")
         self.assertEqual(items, [])
 
+    def test_lexical_preview_does_not_call_semantic_provider(self):
+        self.engine.add_memory("semantic", "Local preview", "A safe local context")
+        class MustNotRun:
+            def search(self, *args, **kwargs):
+                raise AssertionError("lexical preview must not call semantic provider")
+        result = ContextRetriever(self.engine, semantic_index=MustNotRun()).retrieve_detailed(
+            "local preview", include_semantic=False)
+        self.assertFalse(result["used_semantic"])
+        self.assertEqual(result["semantic_candidates"], 0)
+        self.assertTrue(result["items"])
+
     def test_semantic_failure_does_not_block_lexical_fallback(self):
         self.engine.add_memory("semantic", "Database indexing", "SQLite query planning")
         result = ContextRetriever(self.engine, semantic_index=BrokenSemanticIndex()).retrieve_detailed("database")
