@@ -269,3 +269,14 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Discovery limit must be an integer 1–50; selection limit must keep max_skills within 0–10 and max_chars within 0–12000. Booleans and invalid bounds are rejected.
 - Added regression tests for wildcard search, invalid limits and SHA-256 integrity drift after approval.
 - Skills remain text-only, untrusted suggestions; this does not grant tools or execution privileges. CI pending.
+
+
+## P1-05 — Skills discovery and integrity hardening validated (2026-11-02)
+
+- CI head: `182f59ea06897a9e4eaafff1e1866597b51fe2aa`.
+- Python 3.11: 199 tests passed (5 opt-in E2E skipped by standard discovery).
+- Python 3.12: 199 tests passed (5 opt-in E2E skipped by standard discovery).
+- Browser E2E: 5/5 passed.
+- Skill search treats wildcard symbols as literal text; query/selection limits reject invalid values; tampered approved instructions fail the stored SHA-256 integrity check.
+- Remaining: skill-management UI and semantic instruction-conflict detection; no execution/permission capabilities are granted.
+- Next: P2-02 independent review/provenance.

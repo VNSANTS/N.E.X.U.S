@@ -298,3 +298,12 @@ Limites que permanecem: não existe sandbox de código/arquivos porque não há 
 - On-demand selection now validates `max_skills` (0–10) and `max_chars` (0–12000), rejecting booleans, negative or oversized values before retrieving instruction text.
 - Added tests for literal wildcard queries, invalid limits and detection of approved instruction content changed after its stored SHA-256 hash.
 - This update does not add tools or execution permissions to skills. CI for the delta is pending.
+
+
+## Skills hardening — validated by CI
+
+- Approved-skill discovery now uses literal case-insensitive matching, so `%` and `_` are not SQL wildcards.
+- Strict integer bounds now apply to discovery and on-demand selection; invalid booleans, negative values and oversized limits fail before loading.
+- A stored SHA-256 mismatch after approval is rejected.
+- CI head `182f59ea06897a9e4eaafff1e1866597b51fe2aa`: 199 unit tests passed on Python 3.11 and 199 on Python 3.12; 5/5 Playwright/Chromium browser E2E passed.
+- Skill administration UI and semantic conflict review remain pending. Skills are still untrusted text; no permissions/tools are granted.
