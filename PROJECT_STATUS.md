@@ -361,3 +361,8 @@ Limites que permanecem: não existe sandbox de código/arquivos porque não há 
 - API isolation/privacy tests and browser E2E explicitly inject private payloads and verify they are absent from the response and UI.
 - GitHub Actions head `9224957e2623c344223b9ad39bc4cd6423965127`: 216 unit tests passed on Python 3.11 and 216 on Python 3.12 (8 optional E2E skipped in standard discovery); Playwright/Chromium passed 8/8.
 - Remaining improvement: correlate worker and specialist events more completely by task/session, without exposing private payloads.
+
+
+## P2-01 checkpoint/resume design gate
+
+A dedicated design contract now exists at `docs/SPECIALIST_CHECKPOINTS.md`. It defines owner-scoped run/stage records, a bounded state machine, leases/fencing, explicit resume authorization, same-trust-lane enforcement, budget revalidation and an `interrupted_unknown` state to prevent automatic duplicate billing after ambiguous provider outcomes. This is documentation only; implementation remains pending.

@@ -363,3 +363,13 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Agentes view displays LLM, tool and worker events. API and browser tests confirm private prompts, model responses, tool arguments/results and job payload/results do not leak.
 - P2-04 validated for MVP. Better task/session correlation remains a follow-up.
 - Next: P2-01 durable specialist-stage checkpoints. Do not retry ambiguous provider calls automatically.
+
+
+## P2-01 — durable specialist checkpoint design (2026-11-02)
+
+- Added `docs/SPECIALIST_CHECKPOINTS.md` as an implementation contract, not an implementation claim.
+- Key safety decision: a stage left `running` after a crash is ambiguous and must become `interrupted_unknown`; never retry automatically because the provider may already have completed/billed the request.
+- Resume must be explicit, owner/session scoped, lease/fencing protected, and revalidate budget, provider allowlist, trust lane, limits and task age.
+- Only bounded typed deliverables are checkpointed; no hidden reasoning, secrets, raw exception text, tool payloads or unbounded provider responses.
+- Next implementation slices: schema/store and compare-and-swap first, then pipeline callbacks, explicit resume API, sync/SSE integration, and concurrency/privacy/billing tests.
+- No code implementation or resume capability is claimed yet.
