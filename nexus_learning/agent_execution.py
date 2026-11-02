@@ -61,10 +61,17 @@ class SpecialistPipeline:
     separate final-response request before preflighting the whole task.
     """
 
-    def __init__(self, provider, *, event_sink=None, timeout=30,
+    def __init__(self, provider, *, providers=None, event_sink=None, timeout=30,
                  max_tokens=320, max_input_chars=12000, max_output_chars=4000):
         if not callable(getattr(provider, "generate", None)):
             raise ValueError("provider must implement generate")
+        if providers is None:
+            providers = {}
+        allowed_agents = {specialist.agent_id for specialist in _SPECIALISTS}
+        if (not isinstance(providers, dict) or set(providers) - allowed_agents
+                or any(not callable(getattr(candidate, "generate", None))
+                       for candidate in providers.values())):
+            raise ValueError("providers must map known specialists to model providers")
         if (isinstance(timeout, bool) or not isinstance(timeout, (int, float))
                 or not math.isfinite(timeout) or not 0 < timeout <= 60):
             raise ValueError("timeout must be between 0 and 60 seconds")
@@ -76,11 +83,18 @@ class SpecialistPipeline:
         if event_sink is not None and not callable(event_sink):
             raise ValueError("event_sink must be callable")
         self.provider = provider
+        self.providers = dict(providers)
         self.event_sink = event_sink
         self.timeout = float(timeout)
         self.max_tokens = max_tokens
         self.max_input_chars = max_input_chars
         self.max_output_chars = max_output_chars
+
+    def provider_for(self, agent_id):
+        """Return the explicitly selected provider for one specialist or the default."""
+        if agent_id not in {specialist.agent_id for specialist in _SPECIALISTS}:
+            raise ValueError("unknown specialist")
+        return self.providers.get(agent_id, self.provider)
 
     def preflight_requests(self, task, context=None, *, final_response_messages=None,
                            final_max_tokens=800):
@@ -137,15 +151,19 @@ class SpecialistPipeline:
                 self._append_skipped(results, specialist.agent_id)
                 return PipelineResult(task_id, "failed", tuple(results))
 
+            selected_provider = self.provider_for(specialist.agent_id)
+            provider_name = str(getattr(selected_provider, "provider_name", "unknown"))[:64]
+            model_name = str(getattr(selected_provider, "model", "unknown"))[:128]
             self._emit({"event": "agent_call_started", "agent_id": specialist.agent_id,
+                        "provider": provider_name, "model": model_name,
                         "status": "running", "duration_ms": 0, "input_chars": input_chars,
                         "output_chars": 0})
             started = time.monotonic()
             try:
                 kwargs = {"max_tokens": self.max_tokens, "timeout": self.timeout}
-                if getattr(self.provider, "supports_task_tracking", False):
+                if getattr(selected_provider, "supports_task_tracking", False):
                     kwargs["task_id"] = task_id
-                response = self.provider.generate(messages, **kwargs)
+                response = selected_provider.generate(messages, **kwargs)
                 raw_text = getattr(response, "text", None)
                 result = self._parse_result(specialist.agent_id, raw_text)
             except _InvalidOutput:
@@ -159,6 +177,7 @@ class SpecialistPipeline:
                                       input_chars=input_chars)
             if result.status != "completed":
                 self._emit({"event": "agent_call_failed", "agent_id": specialist.agent_id,
+                            "provider": provider_name, "model": model_name,
                             "status": "failed", "duration_ms": result.duration_ms,
                             "input_chars": result.input_chars, "output_chars": result.output_chars,
                             "error_code": result.error_code})
@@ -174,6 +193,7 @@ class SpecialistPipeline:
                 {"summary": result.summary, "items": list(result.items)},
                 ensure_ascii=False, separators=(",", ":"))
             self._emit({"event": "agent_call_completed", "agent_id": specialist.agent_id,
+                        "provider": provider_name, "model": model_name,
                         "status": "completed", "duration_ms": result.duration_ms,
                         "input_chars": result.input_chars, "output_chars": result.output_chars})
         return PipelineResult(task_id, "completed", tuple(results))

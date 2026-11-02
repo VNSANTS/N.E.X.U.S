@@ -4,7 +4,7 @@
 
 Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesquisar, organizar conhecimento, utilizar ferramentas, coordenar agentes e executar tarefas autorizadas, mantendo o usuário no controle.
 
-> **Estado atual:** aplicação local em Python/SQLite com API WSGI autenticada, conversas persistidas, recuperação contextual, UI web conectada, ferramentas READ em allowlist e worker local resiliente. MockProvider é o padrão offline; adapters opcionais existem para Ollama, Gemini, OpenAI, Anthropic, Groq e OpenRouter. Um pipeline sequencial Architect→Analyst→Reviewer pode ser habilitado explicitamente para tarefas ADVANCED/RESEARCH; fica desabilitado por padrão, não usa ferramentas e seus papéis compartilham o provider/modelo escolhido. O MVP não é cloud nem colaboração multi-modelo geral. Consulte [PROJECT_STATUS.md](PROJECT_STATUS.md) e [docs/LOCAL_API.md](docs/LOCAL_API.md).
+> **Estado atual:** aplicação local em Python/SQLite com API WSGI autenticada, conversas persistidas, recuperação contextual, UI web conectada, ferramentas READ em allowlist e worker local resiliente. MockProvider é o padrão offline; adapters opcionais existem para Ollama, Gemini, OpenAI, Anthropic, Groq e OpenRouter. Um pipeline sequencial Architect→Analyst→Reviewer pode ser habilitado explicitamente para tarefas ADVANCED/RESEARCH; fica desabilitado por padrão e não usa ferramentas. Por padrão os papéis compartilham o modelo principal; configurações locais opcionais por papel estão em implementação na branch de revisão e não devem ser consideradas validadas até o CI. O MVP não é cloud nem colaboração multi-modelo geral. Consulte [PROJECT_STATUS.md](PROJECT_STATUS.md) e [docs/LOCAL_API.md](docs/LOCAL_API.md).
 
 ## Visão do projeto
 

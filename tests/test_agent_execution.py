@@ -61,6 +61,42 @@ class SpecialistPipelineTests(unittest.TestCase):
             self.assertNotIn("prompt", event)
             self.assertNotIn("response", event)
 
+    def test_each_specialist_can_use_an_independent_provider_and_model(self):
+        default_provider = FakeProvider()
+        architect = FakeProvider(outputs=[response("Architect result")])
+        analyst = FakeProvider(outputs=[response("Analyst result")])
+        reviewer = FakeProvider(outputs=[response("Reviewer result")])
+        for provider, name, model in (
+            (architect, "ollama", "architect-model"),
+            (analyst, "gemini", "analyst-model"),
+            (reviewer, "anthropic", "reviewer-model"),
+        ):
+            provider.provider_name = name
+            provider.model = model
+
+        events = []
+        pipeline = SpecialistPipeline(default_provider, providers={
+            "architect": architect, "analyst": analyst, "reviewer": reviewer,
+        }, event_sink=events.append)
+        result = pipeline.run("Compare three options", task_id="multi-provider")
+
+        self.assertEqual(result.status, "completed")
+        self.assertEqual(default_provider.requests, [])
+        self.assertEqual(len(architect.requests), 1)
+        self.assertEqual(len(analyst.requests), 1)
+        self.assertEqual(len(reviewer.requests), 1)
+        completed = [event for event in events if event["event"] == "agent_call_completed"]
+        self.assertEqual(
+            [(event["agent_id"], event["provider"], event["model"]) for event in completed],
+            [("architect", "ollama", "architect-model"),
+             ("analyst", "gemini", "analyst-model"),
+             ("reviewer", "anthropic", "reviewer-model")],
+        )
+
+    def test_unknown_agent_provider_override_is_rejected(self):
+        with self.assertRaises(ValueError):
+            SpecialistPipeline(FakeProvider(), providers={"orchestrator": FakeProvider()})
+
     def test_provider_without_task_tracking_does_not_receive_task_id(self):
         provider = FakeProvider()
         provider.supports_task_tracking = False

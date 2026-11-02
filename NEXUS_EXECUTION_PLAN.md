@@ -4,7 +4,7 @@ Este plano organiza o backlog restante por dependência. Os status são delibera
 
 ## Próxima tarefa
 
-Retomar em **P1-04 — modelos independentes por especialista**. Não reexecutar as etapas concluídas; executar verificações relevantes depois das mudanças.
+Retomar em **P1-04 — validar e completar modelos independentes por especialista** na branch remota de continuação. Não reexecutar etapas concluídas; executar CI antes de marcar como concluída.
 
 ## Plano ordenado
 
@@ -14,9 +14,9 @@ Retomar em **P1-04 — modelos independentes por especialista**. Não reexecutar
 | P0-02 | P0 | Worker durável: concorrência entre processos, lease/fencing, idempotência, retry e retomada testados | P0-01 | IMPLEMENTADO E TESTADO; operação remota não configurada |
 | P1-01 | P1 | Conversa real, memória contextual limitada, histórico e fluxo de pesquisa com confirmação | P0-01 | IMPLEMENTADO localmente; providers externos dependem de configuração/autorização |
 | P1-02 | P1 | Model routing manual/automático com disponibilidade, privacidade e orçamento | P1-01 | IMPLEMENTADO; catálogo manual e budget remoto fechado por padrão |
-| P1-03 | P1 | Tool calling nativo bounded em Ollama/OpenAI-compatible/Gemini/Anthropic; schemas READ-only, continuidade preservada e sensíveis bloqueadas | P1-01 | IMPLEMENTADO COM MOCKS; sem teste de rede |
-| P1-04 | P1 | Configurar provider/modelo por especialista; verificar adapter/capacidade, permitir fallback no mesmo trust lane, aplicar orçamento e manter provider padrão quando não configurado | P1-02 | PENDENTE |
-| P1-05 | P1 | Skills versionadas, proposta/aprovação, integridade, descoberta/carregamento sob demanda e injeção limitada no chat real | P0-01 | PARCIAL: registry/API/seleção/injeção implementados; cobertura E2E e conflitos de instruções pendentes |
+| P1-03 | P1 | Tool calling nativo bounded em Ollama/OpenAI-compatible/Gemini/Anthropic; schemas READ-only, continuidade preservada e sensíveis bloqueadas | P1-01 | IMPLEMENTADO COM MOCKS; sem teste de rede; capacidade por modelo exige allowlist manual |
+| P1-04 | P1 | Configurar provider/modelo por especialista; verificar adapter/capacidade, permitir fallback no mesmo trust lane, aplicar orçamento e manter provider padrão quando não configurado | P1-02 | EM IMPLEMENTAÇÃO REMOTA: mapa explícito por papel, validação ProviderManager e preflight agregado adicionados; falta CI, fallback same-lane e confirmação de disponibilidade/capacidade do modelo |
+| P1-05 | P1 | Skills versionadas, proposta/aprovação, integridade, descoberta/carregamento sob demanda e injeção limitada no chat real | P0-01 | IMPLEMENTADO EM TESTES UNIT/API: registry, aprovação, integridade e injeção síncrona/SSE; E2E e conflitos de instruções pendentes |
 | P1-06 | P1 | Evidências: deliverable tipado separa afirmações/evidências, referências válidas, confiança limitada; Reviewer recusa claims sem fonte quando requerida | P1-01 | PARCIAL: reviewer verifica citações existentes; auditoria estruturada pendente |
 | P2-01 | P2 | Delegação rastreável e isolada entre especialistas, limites de chamadas/tempo/budget, falha e retomada sem ciclos | P1-04 | PARCIAL: Architect→Analyst→Reviewer sequencial, sem seleção independente; limites e logs existentes |
 | P2-02 | P2 | Revisão independente com contexto reduzido e proveniência, sem autoaprovação | P1-06 | PENDENTE |

@@ -1,9 +1,19 @@
 # Project Status
 
-**Stage:** local authenticated application with persistent learning cycles and read-only integrations on Windows/Python 3.13.17. This checkout contains uncommitted local work; no changes were committed or pushed. No real provider or external research calls were made in this continuation.
-**Implementation:** Python/SQLite learning core, local WSGI API, browser UI, persistent session history, contextual retrieval, opt-in adapters and routing, confirmed research, fail-closed budget controls, and a local resilient worker are covered by offline tests. An opt-in LLM specialist pipeline now runs Architect → Analyst → Reviewer before advanced/research replies; it is tool-less, bounded, auditable and disabled by default. This remains a local MVP, not a production-ready or remotely hosted assistant.
+## Current remote snapshot — 2026-11-02
 
-## Current verified state - 2026-11-02 (continuation round)
+- **Published source:** branch `nexus/review-nov-02`, commit `16991c3aaf030f2ff9ef9233b61253c100a82538`. This is a review branch; it is not merged into `main`.
+- **Verified at publication:** local Codex reported 183 unit tests passing, 5 optional E2E tests skipped, `compileall` passing and `git diff --check` passing. GitHub Actions had not yet run for this commit.
+- **Application state:** authenticated local Python/SQLite WSGI app with browser UI, contextual memory, research confirmation, bounded worker, provider routing and allowlisted READ tool calling. It is not cloud-hosted and remains loopback-only; the PC can be off while the repository is reviewed, but the app itself is not remotely accessible.
+- **Providers:** native bounded tool-call adapters exist for Ollama, OpenAI-compatible providers, Gemini and Anthropic. Validation used mocks; no real provider generations or external searches were made in the published round. SSE deliberately withholds model tools while preserving cancellation.
+- **Skills:** registry/API, proposal and explicit approval, version/hash integrity checks, relevant on-demand loading and injection into synchronous and SSE chat are implemented. Skills remain untrusted text and cannot grant tools or permissions.
+- **Specialists:** Architect → Analyst → Reviewer pipeline is opt-in, sequential, bounded, tool-less and metadata-audited. In the published commit all specialists use the same selected provider/model. Independent model selection, structured evidence verification and stronger delegation are still pending in that published snapshot.
+- **Not production-ready:** no cloud deployment/TLS, remote worker, multi-user isolation, safe code-execution sandbox, automated backup/restore or completed operational monitoring. Do not expose the local API to the public internet.
+- **Secrets:** `.env`, local databases and logs were excluded from Git. The published tree passed a pattern scan for common credential formats; that scan is not a guarantee that every secret format is absent.
+
+The entries below are historical development snapshots. They must not override this current remote summary.
+
+## Historical snapshot — earlier continuation (2026-11-02)
 - Worker tests now cover competing independent processes, idempotent enqueue across processes, stale-token fencing, active lease renewal during long handlers, terminal expiry events, recovery after service reconstruction, and task/link transaction recovery.
 - Browser E2E uses Playwright in a temporary Python environment with a temporary Chromium install; 4 tests cover login failure/success, main navigation, streaming/history/new session, logout/relogin, mobile navigation, topic/cycle creation and declining external research confirmation.
 - E2E surfaced and fixed the learning page's shifted `listRows` arguments. Cycle answers now advance the idempotency generation, persist owner context into the checkpoint, and save consented memory atomically with the answer.

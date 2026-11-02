@@ -99,3 +99,17 @@ The UI makes this confirmation explicit and renders returned source URLs as exte
 ## Tool call capability gate
 
 Set NEXUS_TOOL_CALLING_MODELS in local .env only after verifying native tool support for the exact selected model. The API accepts comma-separated provider:model identifiers. The default is empty. Available schemas are READ-only (memory.search, knowledge.claims); sensitive research is not included. Remote continuations remain behind the provider budget and count as separate calls. Tool calls currently use the synchronous messages endpoint; the SSE route keeps streaming and cancellation and withholds tools until cancellable generation transport is available. Full details: docs/UNIVERSAL_TOOL_CALLING.md.
+
+
+## Modelos independentes para especialistas
+
+O estágio multiagente continua desativado por padrão. Para ativá-lo, configure `NEXUS_MULTIAGENT_ENABLED=true`. Opcionalmente, use `NEXUS_AGENT_MODELS` como objeto JSON com um provider/model por papel:
+
+```dotenv
+NEXUS_MULTIAGENT_ENABLED=true
+NEXUS_AGENT_MODELS={"architect":"ollama:qwen2.5:0.5b","analyst":"gemini:<model-id-verificado>","reviewer":"ollama:qwen2.5:0.5b"}
+```
+
+Papéis aceitos: `architect`, `analyst` e `reviewer`. O formato de cada valor é `provider:model`; modelos não configurados continuam usando o provider principal. O `ProviderManager` exige credenciais presentes, opt-in remoto e allowlist para cada provider remoto. Chamadas remotas entram no preflight de orçamento e cada geração continua fazendo sua própria reserva. Se o orçamento não autorizar o conjunto remoto, o pipeline é bloqueado antes da primeira chamada.
+
+A configuração não faz descoberta de modelos nem uma chamada de saúde automática: informe apenas IDs conhecidos/verificados. Nesta etapa, falha de um modelo de especialista encerra a pipeline em vez de repetir uma chamada potencialmente faturável. Fallback entre modelos, mesmo dentro do mesmo trust lane, ainda é pendência. Os especialistas continuam sequenciais, sem ferramentas próprias e sem execução de código.

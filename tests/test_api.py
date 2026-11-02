@@ -58,9 +58,9 @@ class APITests(unittest.TestCase):
     def tearDown(self):
         self.engine.close()
 
-    def request(self, path, method="GET", body=None, token=None, host="127.0.0.1"):
+    def request(self, path, method="GET", body=None, token=None, host="127.0.0.1", query=""):
         raw = b"" if body is None else json.dumps(body).encode()
-        environ = {"REQUEST_METHOD": method, "PATH_INFO": path, "QUERY_STRING": "",
+        environ = {"REQUEST_METHOD": method, "PATH_INFO": path, "QUERY_STRING": query,
                    "CONTENT_LENGTH": str(len(raw)), "CONTENT_TYPE": "application/json",
                    "wsgi.input": io.BytesIO(raw), "HTTP_HOST": host,
                    "HTTP_AUTHORIZATION": "Bearer " + token if token else "",
@@ -122,6 +122,18 @@ class APITests(unittest.TestCase):
         self.assertTrue(any("untrusted procedural suggestions" in message["content"]
                             for message in self.provider.messages))
 
+    def test_skill_discovery_endpoint_reads_query_string(self):
+        research = self.app.skills.propose(
+            "research-brief", "1.0.0", "Research source evidence", "Compare sourced evidence.")
+        review = self.app.skills.propose(
+            "code-review", "1.0.0", "Review software changes", "Check code regressions.")
+        self.app.skills.approve(research, owner_id="owner", approved=True)
+        self.app.skills.approve(review, owner_id="owner", approved=True)
+
+        response = self.request("/api/v1/skills", token=self.owner, query="query=research")
+        self.assertTrue(response["status"].startswith("200"))
+        self.assertEqual([item["name"] for item in response["body"]], ["research-brief"])
+
     def test_chat_executes_allowlisted_model_tool_through_policy_and_returns_result(self):
         import os
         from unittest.mock import patch
@@ -181,6 +193,63 @@ class APITests(unittest.TestCase):
                 "SELECT details FROM api_activity WHERE event LIKE 'agent.llm_call_%'").fetchall()]
         self.assertEqual(len(records), 6)
         self.assertNotIn("architect result", json.dumps(records))
+
+    def test_opt_in_specialists_can_use_independent_provider_models(self):
+        import os
+        from unittest.mock import patch
+        from nexus_learning.providers.base import ModelResponse
+
+        class StageProvider:
+            provider_name = "ollama"
+            def __init__(self, model, summary):
+                self.model = model
+                self.summary = summary
+                self.calls = 0
+            def generate(self, messages, *, max_tokens=800, timeout=30):
+                self.calls += 1
+                return ModelResponse(json.dumps({"summary": self.summary, "items": []}),
+                                     self.provider_name, self.model)
+
+        main = RecordingProvider()
+        main.provider_name = "ollama"
+        main.model = "main-model"
+        selected = {
+            "architect-model": StageProvider("architect-model", "architect"),
+            "analyst-model": StageProvider("analyst-model", "analyst"),
+            "reviewer-model": StageProvider("reviewer-model", "reviewer"),
+        }
+        self.app.provider_manager.injected_provider = main
+        with self.engine.db() as c:
+            c.execute("UPDATE provider_settings SET provider='ollama',model=? WHERE id=1",
+                      (main.model,))
+        original_build = self.app.provider_manager.build
+
+        def build(name, model=None):
+            if name == "ollama" and model == main.model:
+                return main
+            if name == "ollama" and model in selected:
+                return selected[model]
+            return original_build(name, model)
+
+        config = json.dumps({
+            "architect": "ollama:architect-model",
+            "analyst": "ollama:analyst-model",
+            "reviewer": "ollama:reviewer-model",
+        })
+        sid = self.request("/api/v1/sessions", "POST", {}, self.owner)["body"]["id"]
+        with patch.dict(os.environ, {"NEXUS_MULTIAGENT_ENABLED": "true",
+                                     "NEXUS_AGENT_MODELS": config}):
+            with patch.object(self.app.provider_manager, "build", side_effect=build):
+                reply = self.request(f"/api/v1/sessions/{sid}/messages", "POST",
+                                     {"content": "Analise e planeje uma melhoria"}, self.owner)
+
+        self.assertTrue(reply["status"].startswith("200"), reply["body"])
+        self.assertEqual([selected[name].calls for name in selected], [1, 1, 1])
+        self.assertEqual(len(main.messages), 3)  # runtime system, deliverables, final user turn
+        final_context = json.dumps(main.messages, ensure_ascii=False)
+        self.assertIn("architect", final_context)
+        self.assertIn("analyst", final_context)
+        self.assertIn("reviewer", final_context)
 
     def test_opt_in_specialists_skip_simple_conversation(self):
         import os

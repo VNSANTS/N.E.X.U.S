@@ -1,5 +1,14 @@
 # Development Checkpoint
 
+## Último snapshot publicado — 2026-11-02
+
+- Branch remota de referência: `nexus/review-nov-02`; commit `16991c3aaf030f2ff9ef9233b61253c100a82538`. A branch não foi mesclada em `main`.
+- Codex reportou 183 testes unitários aprovados, 5 E2E opcionais ignorados, `compileall` e `git diff --check` aprovados antes da publicação. CI remoto não havia sido executado.
+- Gemini e Anthropic já tinham tool calling nativo com preservação do turno original; Skills aprovadas eram carregadas sob demanda no chat síncrono/SSE.
+- Pendências comprovadas nesse commit: seleção de modelos independentes por especialista, auditoria estruturada de evidências, delegação mais forte, eventos na UI, CI remoto, sandbox real e implantação cloud.
+- O trabalho remoto subsequente está em `nexus/remote-continuation`; não o considere validado até CI/testes passarem. Ele adiciona mapa de provider/model por especialista com budget preflight, correção do query string de Skills e testes de regressão.
+- Os registros abaixo são checkpoints históricos e não devem ser usados isoladamente como estado atual.
+
 ## Continuidade - pipeline de especialistas (2026-11-02)
 
 - O checkout continua na branch `main`, HEAD `852131e52f454175c501e6f36bcea2c04a73e9e7`, sem commit/push nesta rodada. Alteracoes locais anteriores foram preservadas.
