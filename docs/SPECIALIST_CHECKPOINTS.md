@@ -1,7 +1,22 @@
 # Specialist pipeline checkpoints — design gate
 
-**Status:** design only; no persistence/resume implementation is claimed.  
+**Status:** checkpoint store foundation implemented; pipeline/API integration and end-to-end resume remain pending.  
 **Scope:** Architect → Analyst → Reviewer, before final response generation.
+
+
+## Implementation progress
+
+The first persistence slice now exists in `nexus_learning/checkpoint_store.py`:
+
+- owner- and session-scoped run records with context hash and provider fingerprint;
+- fixed Architect → Analyst → Reviewer stage rows;
+- bounded typed deliverable validation (no arbitrary keys or raw prompt/response fields);
+- SQLite `BEGIN IMMEDIATE` transitions and lease-token checks;
+- stale running stages become `interrupted_unknown` when a new lease is acquired;
+- ambiguous stages remain blocked until an explicit retry-confirmation call;
+- attempt history is recorded when a failed stage is explicitly authorized for retry.
+
+This is **not yet wired into** `SpecialistPipeline`, synchronous chat, SSE, or the UI. It does not yet provide a user-facing resume endpoint, provider/trust-lane revalidation, lease renewal, cancellation, or a complete cross-process fencing/expiry policy. Do not describe P2-01 as complete until those integrations and the full required test matrix pass.
 
 ## Why this is needed
 
