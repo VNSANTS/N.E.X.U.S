@@ -846,7 +846,8 @@ class NexusAPI:
                 daily_usd=data.get("daily_usd"), task_calls=data.get("task_calls"),
                 task_tokens=data.get("task_tokens"), task_usd=data.get("task_usd"),
                 input_price=data.get("input_usd_per_million"),
-                output_price=data.get("output_usd_per_million"))
+                output_price=data.get("output_usd_per_million"),
+                mode=data.get("mode", "cost"))
             return self._json(start_response, "200 OK", result)
         if route == ["learning", "settings"] and method == "GET":
             return self._json(start_response, "200 OK", self.learning.settings())
