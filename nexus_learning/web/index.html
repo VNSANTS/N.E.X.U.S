@@ -52,60 +52,6 @@ async function providers(){content.className='content';content.replaceChildren(h
 async function integrations(){content.className='content';content.replaceChildren(heading('Integrações','Fontes externas e consumo registrados.'));const [status,usage,docs,repos]=await Promise.all([api('/integrations'),api('/integrations/usage'),api('/integrations/documents'),api('/integrations/github/repos')]);const c=card('Conexões');Object.entries(status||{}).forEach(([name,s])=>{const row=node('div','list-row'),left=node('div','row-main');left.append(node('div','row-title',name),node('div','row-meta',s.configured?'Configuração detectada':'Configuração ausente'));row.append(left,stateBadge(s.enabled?'habilitada':'desativada'));c.append(row)});content.append(c);const grid=node('div','grid two'),research=card('Pesquisar na web · Tavily','Busca externa pode consumir créditos');const form=node('form','form-row');const query=node('input','field grow');query.placeholder='Assunto para pesquisar';query.maxLength=400;query.required=true;const depth=node('select');depth.innerHTML='<option value="basic">Busca básica</option><option value="advanced">Busca aprofundada</option>';const confirmBox=node('input');confirmBox.type='checkbox';confirmBox.required=true;const confirmLabel=node('label','status-text','Confirmo a consulta externa e o possível consumo');confirmLabel.prepend(confirmBox);const submit=node('button','primary-button','Pesquisar');form.append(query,depth);research.append(form,confirmLabel,submit);submit.onclick=async e=>{e.preventDefault();if(!form.reportValidity())return;submit.disabled=true;try{const result=await api('/integrations/tavily/search',{method:'POST',body:JSON.stringify({confirm:true,query:query.value,depth:depth.value,limit:5})});listRows(research,result.results,x=>x.title,x=>x.url,8);toast('Fontes retornadas e registradas.')}catch(err){research.append(node('div','error-box',err.message))}finally{submit.disabled=false}};const use=card('Utilização registrada');use.append(node('pre','',JSON.stringify(usage,null,2)));grid.append(research,use);content.append(grid);const source=card('Conteúdo coletado','Texto externo permanece não confiável');listRows(source,docs,x=>x.title||x.uri,x=>x.uri,8);content.append(source);const gh=card('Repositórios acompanhados');const gf=node('form','form-row'),owner=node('input','field'),repo=node('input','field');owner.placeholder='Organização';repo.placeholder='Repositório';owner.required=repo.required=true;const track=button('Adicionar repositório',async()=>{},'quiet-button');gf.append(owner,repo,track);gh.append(gf);gf.onsubmit=async e=>{e.preventDefault();if(!confirm('Registrar e consultar dados públicos deste repositório?'))return;try{await api('/integrations/github/repos',{method:'POST',body:JSON.stringify({confirm:true,owner:owner.value,repo:repo.value})});integrations()}catch(err){toast(err.message)}};(repos||[]).forEach(r=>{const row=node('div','list-row'),main=node('div','row-main');main.append(node('div','row-title',`${r.repo_owner}/${r.repo_name}`),node('div','row-meta',r.last_synced||'Ainda não sincronizado'));row.append(main,button('Sincronizar',async()=>{if(!confirm('Consultar metadados públicos, commits e issues?'))return;try{const result=await api(`/integrations/github/repos/${encodeURIComponent(r.id)}/sync`,{method:'POST',body:JSON.stringify({confirm:true})});toast(`Sincronização concluída: ${result.changes?.length??0} alteração(ões)`);integrations()}catch(err){toast(err.message)}}));gh.append(row)});content.append(gh)}
 async function learning(){content.className='content';content.replaceChildren(heading('Aprendizagem contínua','Ciclos, lacunas de conhecimento e revisão humana.'));const [settings,topics,cycles,findings,questions,research,status]=await Promise.all([api('/learning/settings'),api('/learning/topics'),api('/learning/cycles'),api('/learning/findings'),api('/learning/questions?status=pending'),api('/learning/research'),api('/worker/status')]);const state=card('Estado do ciclo local');state.append(node('pre','',JSON.stringify({worker:status,settings},null,2)));const toggle=button(settings.enabled?'Pausar autonomia':'Retomar autonomia',async()=>{try{await api('/learning/settings',{method:'POST',body:JSON.stringify({confirm:true,enabled:!settings.enabled,level:settings.level==='paused'?'local':settings.level,max_cycles_per_day:settings.max_cycles_per_day,max_sources_per_cycle:settings.max_sources_per_cycle,max_research_calls_per_day:settings.max_research_calls_per_day})});learning()}catch(e){toast(e.message)}},'primary-button');state.append(toggle);content.append(state);const grid=node('div','grid two');const topicCard=card('Assuntos de estudo');listRows(topicCard,topics,x=>x.topic,x=>`${x.enabled?'ativo':'pausado'} · ${x.allow_research?'pesquisa habilitada':'somente local'}`,12);const topicForm=node('form','form-row'),topic=node('input','field grow'),external=node('input');external.type='checkbox';const externalLabel=node('label','status-text','Permitir pesquisa externa (Crossref)');externalLabel.prepend(external);topic.placeholder='Adicionar assunto';topic.required=true;const addTopic=button('Adicionar',async()=>{},'primary-button');topicForm.append(topic,externalLabel,addTopic);topicCard.append(topicForm);topicForm.onsubmit=async e=>{e.preventDefault();try{const allow=external.checked;if(allow&&!confirm('Habilitar consulta externa recorrente para este assunto?'))return;await api('/learning/topics',{method:'POST',body:JSON.stringify({confirm:true,confirm_external_research:allow,topic:topic.value,enabled:true,interval_seconds:86400,allow_research:allow})});learning()}catch(err){toast(err.message)}};grid.append(topicCard);const cyclesCard=card('Ciclos recentes');listRows(cyclesCard,cycles,x=>x.topic,x=>`${x.phase} · ${x.status}`,8);grid.append(cyclesCard);content.append(grid);const lower=node('div','grid two'),pending=card('Perguntas para você',`${questions.length} pendente(s)`);(questions||[]).forEach(q=>{const f=node('form','list-row'),input=node('input','field grow');input.required=true;input.maxLength=4000;input.placeholder='Sua resposta';const remember=node('input');remember.type='checkbox';const label=node('label','status-text','Guardar como memória pessoal');label.prepend(remember);const send=button('Responder',async()=>{},'primary-button');f.append(node('div','row-main',q.question),input,label,send);f.onsubmit=async e=>{e.preventDefault();try{await api('/learning/questions/'+encodeURIComponent(q.id)+'/answer',{method:'POST',body:JSON.stringify({confirm:true,answer:input.value,remember:remember.checked})});learning()}catch(err){toast(err.message)}};pending.append(f)});if(!questions.length)empty(pending,'Nenhuma pergunta aguardando resposta.');const knowledge=card('Revisão e pesquisas');listRows(knowledge,[...(findings||[]),...(research||[])],x=>x.claim||x.title||x.topic||x.query,x=>x.state||x.created_at||x.provider,8);lower.append(pending,knowledge);content.append(lower);await cycleControls(topics,cycles);}
 async function agentsView(){
-  const [agents,activity]=await Promise.all([safe('/agents'),safe('/activity')]);
-  content.className='content';
-  content.replaceChildren(heading('Agentes especialistas','Papéis declarados e eventos recentes do pipeline.'));
-
-  const roster=card('Papéis registrados','A lista de papéis disponíveis e suas permissões declaradas.');
-  listRows(roster,agents,
-    x=>x.id,
-    x=>[x.role||'Sem descrição','etapas: '+(x.max_steps??'—'),
-        'ferramentas: '+((x.allowed_tools||[]).join(', ')||'nenhuma')].join(' · '),
-    20);
-
-  const history=card('Execuções recentes','Somente metadados de execução. Prompts, respostas internas e conteúdo de ferramentas não são exibidos.');
-  const events=(activity||[]).filter(x=>typeof x.event==='string'&&x.event.startsWith('agent.llm_')).slice(0,30);
-  if(!events.length){
-    empty(history,'Ainda não há execuções de especialistas registradas.');
-  }else{
-    const list=node('div','list');
-    const labels={
-      call_started:'Chamada iniciada',
-      call_completed:'Chamada concluída',
-      call_failed:'Chamada falhou',
-      stage_failed:'Etapa falhou',
-      failed:'Pipeline falhou',
-      blocked:'Pipeline bloqueado',
-      pipeline_completed:'Pipeline concluído'
-    };
-    const names={architect:'Architect',analyst:'Analyst',reviewer:'Reviewer'};
-    for(const event of events){
-      let details={};
-      try{
-        details=typeof event.details==='string'?JSON.parse(event.details):(event.details||{});
-        if(!details||typeof details!=='object'||Array.isArray(details))details={};
-      }catch{details={};}
-      const stage=String(event.event).slice('agent.llm_'.length);
-      const agent=names[details.agent_id]||details.agent_id||'N.E.X.U.S.';
-      const row=node('div','list-row'),main=node('div','row-main');
-      main.append(node('div','row-title',(agent+': '+(labels[stage]||stage.replaceAll('_',' ')))));
-      const meta=[];
-      if(details.provider||details.model)meta.push([details.provider,details.model].filter(Boolean).join(' / '));
-      if(Number.isFinite(details.duration_ms))meta.push(details.duration_ms+' ms');
-      if(details.error_code)meta.push('erro: '+details.error_code);
-      if(details.task_id)meta.push('tarefa '+String(details.task_id).slice(-8));
-      if(details.separate_review_model===true)meta.push('modelo distinto do Analyst');
-      if(details.separate_review_model===false)meta.push('mesmo modelo do Analyst');
-      if(event.created_at)meta.push(event.created_at);
-      if(meta.length)main.append(node('div','row-meta',meta.join(' · ')));
-      row.append(main,stateBadge(details.status||stage.replace('call_','')));
-      list.append(row);
-    }
-    history.append(list);
-  }
-  content.append(roster,history);
-}
-async function agentsView(){
   const [agents,activity]=await Promise.all([
     safe('/agents'),
     safe('/agents/activity')
