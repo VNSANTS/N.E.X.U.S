@@ -108,8 +108,7 @@ class SpecialistPipelineTests(unittest.TestCase):
         self.assertEqual(claim.evidence_ids, ("S1",))
         self.assertEqual(claim.link_status, "source_linked")
         reviewer_payload = json.loads(provider.requests[2]["messages"][1]["content"])
-        analyst_deliverable = json.loads(
-            reviewer_payload["quoted_untrusted_context"]["analyst_deliverable"])
+        analyst_deliverable = reviewer_payload["quoted_untrusted_context"]["analyst_deliverable"]
         self.assertEqual(analyst_deliverable["claims"][0]["link_status"], "source_linked")
 
     def test_unknown_or_fabricated_source_identifier_fails_closed(self):

@@ -120,11 +120,11 @@ class SpecialistPipeline:
         # JSON can escape every character in a model result; a backslash
         # placeholder uses JSON's six-byte control-character escape, the
         # largest UTF-8 expansion for one valid JSON string character.
-        worst_case_deliverable = json.dumps(
-            {"summary": "\x00" * 250, "items": ["\x00" * 150] * 3,
-             "claims": [{"text": "\x00" * 60, "evidence_ids": ["S1", "S2", "S3"],
-                         "link_status": "source_linked"} for _ in range(5)]},
-            ensure_ascii=False, separators=(",", ":"))
+        worst_case_deliverable = {
+            "summary": "\x00" * 250, "items": ["\x00" * 150] * 3,
+            "claims": [{"text": "\x00" * 60, "evidence_ids": ["S1", "S2", "S3"],
+                        "link_status": "source_linked"} for _ in range(2)],
+        }
         for specialist in _SPECIALISTS:
             visible_prior = dict(prior)
             if specialist.agent_id == "analyst":
@@ -204,11 +204,12 @@ class SpecialistPipeline:
                                  duration_ms=self._elapsed_ms(started), input_chars=input_chars,
                                  output_chars=result.output_chars, claims=result.claims)
             results.append(result)
-            prior[specialist.agent_id + "_deliverable"] = json.dumps(
-                {"summary": result.summary, "items": list(result.items),
-                 "claims": [{"text": claim.text, "evidence_ids": list(claim.evidence_ids),
-                             "link_status": claim.link_status} for claim in result.claims]},
-                ensure_ascii=False, separators=(",", ":"))
+            prior[specialist.agent_id + "_deliverable"] = {
+                "summary": result.summary,
+                "items": list(result.items),
+                "claims": [{"text": claim.text, "evidence_ids": list(claim.evidence_ids),
+                            "link_status": claim.link_status} for claim in result.claims],
+            }
             self._emit({"event": "agent_call_completed", "agent_id": specialist.agent_id,
                         "provider": provider_name, "model": model_name,
                         "status": "completed", "duration_ms": result.duration_ms,
