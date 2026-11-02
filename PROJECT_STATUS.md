@@ -366,3 +366,13 @@ Limites que permanecem: não existe sandbox de código/arquivos porque não há 
 ## P2-01 checkpoint/resume design gate
 
 A dedicated design contract now exists at `docs/SPECIALIST_CHECKPOINTS.md`. It defines owner-scoped run/stage records, a bounded state machine, leases/fencing, explicit resume authorization, same-trust-lane enforcement, budget revalidation and an `interrupted_unknown` state to prevent automatic duplicate billing after ambiguous provider outcomes. This is documentation only; implementation remains pending.
+
+
+## P3-01 SQLite backup/restore — implementation slice (CI pending)
+
+- Added `nexus_learning.backup` with SQLite online-backup snapshots, integrity checks, temporary-file publication and explicit overwrite controls.
+- Restore refuses to replace an existing database unless `--overwrite` and a separate new `--safety-backup` are supplied. The current database is copied and integrity-checked before replacement.
+- Symbolic-link database paths are rejected. The restore source is validated before destination mutation; the staged restored database is checked again before atomic replacement.
+- Added unit tests for backup, overwrite refusal/consent, safety backup, invalid snapshots, same-path rejection, missing source and symlink rejection.
+- Added `docs/DATABASE_BACKUP.md` with Windows commands and operational guidance. Stop API/worker before restoring over the live database.
+- CI pending. This does not complete P3-01: versioned schema migrations and an operational restore drill remain.

@@ -373,3 +373,13 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Only bounded typed deliverables are checkpointed; no hidden reasoning, secrets, raw exception text, tool payloads or unbounded provider responses.
 - Next implementation slices: schema/store and compare-and-swap first, then pipeline callbacks, explicit resume API, sync/SSE integration, and concurrency/privacy/billing tests.
 - No code implementation or resume capability is claimed yet.
+
+
+## P3-01 — SQLite backup/restore first slice (2026-11-02, CI pending)
+
+- Added `python -m nexus_learning.backup backup SOURCE DEST` using SQLite's online backup API and `PRAGMA integrity_check`.
+- Added `python -m nexus_learning.backup restore BACKUP DEST`; replacing an existing destination requires `--overwrite --safety-backup PATH`.
+- Temporary files are integrity-checked before atomic replacement; symlink paths are rejected. Backup files are treated as sensitive and not committed.
+- Added tests for snapshot consistency, overwrite behavior, safety-copy behavior, corrupt backup rejection, path validation and symlink rejection.
+- Added `docs/DATABASE_BACKUP.md`; restore requires stopping API/worker first.
+- CI pending. P3-01 remains partial until versioned migrations and a restore drill are implemented.
