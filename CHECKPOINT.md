@@ -261,3 +261,11 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Overrun becomes `pipeline_timeout`; later stages are skipped and the final synthesis is not called. This relies on the provider respecting its timeout parameter.
 - Still pending: durable stage checkpoint/resume, same-trust-lane fallback after safe pre-call failure, parallel work only after isolation/budget correctness.
 - Next task: P2-02 independent review and provenance.
+
+
+## P1-05 — skills discovery and integrity hardening (2026-11-02, CI pending)
+
+- Replaced SQL `LIKE` discovery with literal case-insensitive filtering over approved skill metadata, so '%' and '_' in user queries cannot turn the search into a wildcard match.
+- Discovery limit must be an integer 1–50; selection limit must keep max_skills within 0–10 and max_chars within 0–12000. Booleans and invalid bounds are rejected.
+- Added regression tests for wildcard search, invalid limits and SHA-256 integrity drift after approval.
+- Skills remain text-only, untrusted suggestions; this does not grant tools or execution privileges. CI pending.

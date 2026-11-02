@@ -17,6 +17,7 @@ class Skill:
 
 class SkillRegistry:
     MAX_INSTRUCTIONS = 12000
+    MAX_SKILLS_PER_MESSAGE = 10
     def __init__(self, engine):
         self.engine = engine
         with engine.db() as c:
@@ -50,20 +51,39 @@ class SkillRegistry:
                       (uid("ske"),skill_id,"approved",owner_id,now()))
 
     def discover(self, query="", limit=20):
-        if not isinstance(query,str) or len(query)>300: raise ValueError("invalid skill query")
-        limit=max(1,min(int(limit),50)); pattern="%"+query.strip()+"%"
+        if not isinstance(query, str) or len(query) > 300:
+            raise ValueError("invalid skill query")
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 50:
+            raise ValueError("skill discovery limit must be between 1 and 50")
+        needle = query.strip().casefold()
         with self.engine.db() as c:
-            rows=c.execute("SELECT name,version,description,status FROM runtime_skills WHERE status='approved' AND (name LIKE ? OR description LIKE ?) ORDER BY name,created_at DESC LIMIT ?",
-                           (pattern,pattern,limit*3)).fetchall()
-        seen=set(); unique=[]
+            rows = c.execute(
+                "SELECT name,version,description,status FROM runtime_skills "
+                "WHERE status='approved' ORDER BY name,created_at DESC"
+            ).fetchall()
+        seen = set()
+        unique = []
         for row in rows:
-            if row["name"] not in seen:
-                seen.add(row["name"]); unique.append(dict(row))
-            if len(unique)>=limit: break
+            name = row["name"]
+            if name in seen:
+                continue
+            if needle and needle not in name.casefold() and needle not in row["description"].casefold():
+                continue
+            seen.add(name)
+            unique.append(dict(row))
+            if len(unique) >= limit:
+                break
         return unique
 
     def select_for_message(self, message, *, owner_id, max_skills=2, max_chars=5000):
-        if not isinstance(message,str) or not message.strip(): return []
+        if (isinstance(max_skills, bool) or not isinstance(max_skills, int)
+                or not 0 <= max_skills <= self.MAX_SKILLS_PER_MESSAGE):
+            raise ValueError("max_skills is outside the supported range")
+        if (isinstance(max_chars, bool) or not isinstance(max_chars, int)
+                or not 0 <= max_chars <= self.MAX_INSTRUCTIONS):
+            raise ValueError("max_chars is outside the supported range")
+        if not isinstance(message, str) or not message.strip() or max_skills == 0 or max_chars == 0:
+            return []
         terms={w.lower() for w in re.findall(r"[\w-]{3,}",message,flags=re.UNICODE)}
         with self.engine.db() as c:
             rows=c.execute("SELECT name,description FROM runtime_skills WHERE status='approved'").fetchall()

@@ -130,3 +130,6 @@ Na síntese final, quando o pipeline recebe fontes, a API omite as claims `unref
 ## Limite global do pipeline de especialistas
 
 A pipeline sequencial tem um prazo global padrão de **90 segundos** (configurado internamente, máximo permitido de 180 segundos). Cada chamada recebe o menor valor entre o timeout por chamada e o tempo restante. Se uma chamada ultrapassar o prazo, a execução é marcada como `pipeline_timeout`, as etapas seguintes são marcadas como ignoradas e a síntese final não é chamada. O adaptador recebe um timeout reduzido, mas o limite efetivo depende de o transporte HTTP/provedor respeitar esse timeout; nenhuma interrupção forçada de código externo é simulada.
+
+
+Skill discovery uses literal case-insensitive text matching rather than SQL wildcard semantics. API search terms containing '%' or '_' are treated as ordinary text. Internal selection limits are strict: at most 10 skills and 12,000 total instruction characters; invalid numeric types, negative values and oversized values are rejected. Approved skill instructions are hash-checked on every load.

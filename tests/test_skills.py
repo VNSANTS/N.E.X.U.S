@@ -18,6 +18,36 @@ class SkillRegistryTests(unittest.TestCase):
     def test_skill_cannot_grant_tools_or_execute_content(self):
         with self.assertRaises(ValueError):
             self.skills.propose("unsafe-skill","1.0.0","Unsafe","run arbitrary command",tools=("system.exec",))
+    def test_discovery_treats_sql_like_wildcards_as_literal_text(self):
+        skill = self.skills.propose(
+            "research-brief", "1.0.0", "Research source evidence", "Use cited sources.")
+        self.skills.approve(skill, owner_id="owner", approved=True)
+        self.assertEqual(self.skills.discover("%"), [])
+        self.assertEqual(self.skills.discover("_"), [])
+        self.assertEqual(self.skills.discover("research")[0]["name"], "research-brief")
+
+    def test_skill_discovery_limit_is_strictly_bounded(self):
+        for limit in (0, -1, 51, True, 1.5, "10"):
+            with self.subTest(limit=limit), self.assertRaises(ValueError):
+                self.skills.discover("", limit=limit)
+
+    def test_skill_selection_limits_reject_invalid_values(self):
+        for kwargs in ({"max_skills": -1}, {"max_skills": 11},
+                       {"max_skills": True}, {"max_chars": -1},
+                       {"max_chars": 12001}, {"max_chars": True}):
+            with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
+                self.skills.select_for_message("research sources", owner_id="owner", **kwargs)
+
+    def test_approved_skill_content_hash_drift_is_rejected(self):
+        skill = self.skills.propose(
+            "research-brief", "1.0.0", "Research source evidence", "Use cited sources.")
+        self.skills.approve(skill, owner_id="owner", approved=True)
+        with self.engine.db() as c:
+            c.execute("UPDATE runtime_skills SET instructions=? WHERE id=?",
+                      ("Changed after approval", skill))
+        with self.assertRaisesRegex(ValueError, "integrity validation failed"):
+            self.skills.load("research-brief", owner_id="owner")
+
     def test_message_selects_only_relevant_approved_skill_with_size_bound(self):
         a=self.skills.propose("research-brief","1.0.0","Research and source summaries","Use sources and list evidence.")
         b=self.skills.propose("code-review","1.0.0","Review software code","Inspect changes for regressions.")

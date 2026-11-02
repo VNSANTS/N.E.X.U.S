@@ -290,3 +290,11 @@ Limites que permanecem: não existe sandbox de código/arquivos porque não há 
 - A stage that returns after the deadline is converted to `pipeline_timeout`; later specialists are skipped and final synthesis does not run.
 - Latest CI commit `029389e9a7ff3781ca0ec00770e2f7eaf1585927`: 195 unit tests passed on Python 3.11 and 195 on Python 3.12; 5/5 Playwright/Chromium E2E tests passed; compilation succeeded.
 - This timeout is cooperative through the provider transport's timeout parameter, not a hard process kill. Durable stage resume and same-trust-lane fallback remain unfinished.
+
+
+## Skills hardening — pending CI
+
+- Skill discovery now performs literal, case-insensitive substring filtering in Python instead of interpreting SQL LIKE wildcard characters. Discovery limits must be strict integers from 1 to 50.
+- On-demand selection now validates `max_skills` (0–10) and `max_chars` (0–12000), rejecting booleans, negative or oversized values before retrieving instruction text.
+- Added tests for literal wildcard queries, invalid limits and detection of approved instruction content changed after its stored SHA-256 hash.
+- This update does not add tools or execution permissions to skills. CI for the delta is pending.
