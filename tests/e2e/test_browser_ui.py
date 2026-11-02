@@ -206,6 +206,24 @@ class BrowserUITests(unittest.TestCase):
         self.page.get_by_role("button", name="Aprovar habilidade").click()
         expect(self.page.locator("#content")).to_contain_text("Nenhuma proposta aguardando revisão.")
         expect(self.page.locator("#content")).to_contain_text("browser-research · v1.0.0")
+
+        self.page.get_by_placeholder("ex.: research-brief").fill("browser-reject")
+        self.page.get_by_placeholder("1.0.0").fill("1.0.0")
+        self.page.get_by_placeholder("Descreva quando esta habilidade é útil").fill(
+            "Proposta que será rejeitada no teste."
+        )
+        self.page.get_by_placeholder("Escreva instruções textuais para esta habilidade...").fill(
+            "Este texto não deve entrar no catálogo aprovado."
+        )
+        self.page.get_by_role("button", name="Propor habilidade").click()
+        expect(self.page.locator("#content")).to_contain_text("browser-reject")
+        self.page.once("dialog", lambda dialog: dialog.accept())
+        self.page.get_by_role("button", name="Rejeitar proposta").click()
+        expect(self.page.locator("#content")).to_contain_text("Nenhuma proposta aguardando revisão.")
+        self.assertEqual(self.page.locator("#content").get_by_text(
+            "browser-reject · v1.0.0", exact=True
+        ).count(), 0)
+        expect(self.page.locator("#content")).to_contain_text("browser-research · v1.0.0")
         self.assertEqual(self.page_errors, [])
 
     def test_agents_view_displays_only_specialist_execution_metadata(self):

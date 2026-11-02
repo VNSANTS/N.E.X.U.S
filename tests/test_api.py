@@ -146,6 +146,29 @@ class APITests(unittest.TestCase):
         self.assertTrue(approved["status"].startswith("200"), approved)
         self.assertEqual(self.request("/api/v1/skills/proposals", token=self.owner)["body"], [])
 
+    def test_skill_proposal_can_be_rejected_only_with_explicit_confirmation(self):
+        created = self.request("/api/v1/skills", "POST", {
+            "name": "temporary-skill",
+            "version": "1.0.0",
+            "description": "A temporary proposed skill",
+            "instructions": "Draft instructions for owner review.",
+        }, self.owner)
+        skill_id = created["body"]["id"]
+        pending = self.request("/api/v1/skills/proposals", token=self.owner)
+        self.assertEqual([row["id"] for row in pending["body"]], [skill_id])
+
+        denied = self.request(f"/api/v1/skills/{skill_id}/reject", "POST",
+                              {"confirm": False}, self.owner)
+        self.assertTrue(denied["status"].startswith("403"))
+        self.assertEqual(len(self.request("/api/v1/skills/proposals", token=self.owner)["body"]), 1)
+
+        rejected = self.request(f"/api/v1/skills/{skill_id}/reject", "POST",
+                                {"confirm": True}, self.owner)
+        self.assertTrue(rejected["status"].startswith("200"), rejected)
+        self.assertEqual(rejected["body"]["status"], "rejected")
+        self.assertEqual(self.request("/api/v1/skills/proposals", token=self.owner)["body"], [])
+        self.assertEqual(self.request("/api/v1/skills?query=temporary", token=self.owner)["body"], [])
+
     def test_skill_discovery_endpoint_reads_query_string(self):
         research = self.app.skills.propose(
             "research-brief", "1.0.0", "Research source evidence", "Compare sourced evidence.")

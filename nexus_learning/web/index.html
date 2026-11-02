@@ -69,7 +69,8 @@ async function skillsView(){
       review.append(node('summary','row-title','Revisar instruções completas'));
       review.append(node('pre','',proposal.instructions));
       item.append(review);
-      item.append(button('Aprovar habilidade',async()=>{
+      const actions=node('div','form-actions');
+      actions.append(button('Aprovar habilidade',async()=>{
         if(!confirm('Aprovar '+proposal.name+' v'+proposal.version+'? Leia as instruções completas antes de confirmar.'))return;
         try{
           await api('/skills/'+encodeURIComponent(proposal.id)+'/approve',{
@@ -79,6 +80,17 @@ async function skillsView(){
           await skillsView();
         }catch(err){toast(err.message)}
       },'primary-button'));
+      actions.append(button('Rejeitar proposta',async()=>{
+        if(!confirm('Rejeitar e retirar '+proposal.name+' v'+proposal.version+' da fila de aprovação?'))return;
+        try{
+          await api('/skills/'+encodeURIComponent(proposal.id)+'/reject',{
+            method:'POST',body:JSON.stringify({confirm:true})
+          });
+          toast('Proposta rejeitada e registrada.');
+          await skillsView();
+        }catch(err){toast(err.message)}
+      },'danger-button'));
+      item.append(actions);
       pendingCard.append(item);
     }
   }

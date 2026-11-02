@@ -30,6 +30,24 @@ class SkillRegistryTests(unittest.TestCase):
         self.assertEqual(rows[0]["instructions"], "Use cited sources.")
         self.assertNotIn("tool_allowlist", rows[0])
 
+    def test_rejection_requires_confirmation_and_is_audited(self):
+        pending = self.skills.propose(
+            "research-brief", "1.0.0", "Research source evidence", "Use cited sources.")
+        with self.assertRaises(PermissionError):
+            self.skills.reject(pending, owner_id="owner", confirmed=False)
+        self.assertEqual(len(self.skills.proposals()), 1)
+        self.skills.reject(pending, owner_id="owner", confirmed=True)
+        self.assertEqual(self.skills.proposals(), [])
+        with self.engine.db() as c:
+            row = c.execute(
+                "SELECT event,owner_id FROM runtime_skill_events WHERE skill_id=?",
+                (pending,),
+            ).fetchone()
+        self.assertEqual(row["event"], "rejected")
+        self.assertEqual(row["owner_id"], "owner")
+        with self.assertRaises(KeyError):
+            self.skills.reject(pending, owner_id="owner", confirmed=True)
+
     def test_proposal_list_limit_is_strictly_bounded(self):
         for limit in (0, -1, 51, True, 1.5, "10"):
             with self.subTest(limit=limit), self.assertRaises(ValueError):

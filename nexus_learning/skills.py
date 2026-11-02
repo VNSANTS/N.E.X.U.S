@@ -63,6 +63,21 @@ class SkillRegistry:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    def reject(self, skill_id, *, owner_id, confirmed):
+        if confirmed is not True:
+            raise PermissionError("explicit rejection required")
+        with self.engine.db() as c:
+            c.execute("BEGIN IMMEDIATE")
+            changed = c.execute(
+                "UPDATE runtime_skills SET status='rejected',updated_at=? "
+                "WHERE id=? AND status='proposed'",
+                (now(), skill_id),
+            )
+            if not changed.rowcount:
+                raise KeyError(skill_id)
+            c.execute("INSERT INTO runtime_skill_events VALUES(?,?,?,?,?)",
+                      (uid("ske"), skill_id, "rejected", owner_id, now()))
+
     def discover(self, query="", limit=20):
         if not isinstance(query, str) or len(query) > 300:
             raise ValueError("invalid skill query")

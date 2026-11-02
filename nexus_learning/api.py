@@ -423,6 +423,10 @@ class NexusAPI:
         if len(route)==3 and route[0]=="skills" and route[2]=="approve" and method=="POST":
             self.skills.approve(route[1],owner_id=user["id"],approved=data.get("confirm") is True)
             return self._json(start_response,"200 OK",{"status":"approved"})
+        if len(route)==3 and route[0]=="skills" and route[2]=="reject" and method=="POST":
+            self.skills.reject(route[1], owner_id=user["id"],
+                               confirmed=data.get("confirm") is True)
+            return self._json(start_response, "200 OK", {"status": "rejected"})
         if route == ["providers"] and method == "GET":
             status = self.provider_manager.status()
             status["routing"] = self.model_routing.summary()
