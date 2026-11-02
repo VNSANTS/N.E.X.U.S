@@ -21,7 +21,7 @@ class ModelRouter:
     """Select only among caller-supplied candidates with verified metadata."""
 
     _research = re.compile(
-        r"\b(pesquis|busc|fontes?|referencias?|atual|noticias?|clim|previs|temperaturas?|cotacoes?)\w*"
+        r"\b(pesquis|busc|fontes?|referencias?|noticias?|clim|previs|temperaturas?|cotacoes?)\w*"
         r"|\btempo\b.{0,24}\bhoje\b|\bhoje\b.{0,24}\btempo\b", re.I)
     _advanced = re.compile(r"\b(compare|avalie|analisa|analise|planej|estrateg|riscos?|alternativas?|complex[oa])\w*", re.I)
 
