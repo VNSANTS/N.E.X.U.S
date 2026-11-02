@@ -7,7 +7,7 @@ This is an **experimental single-owner deployment** for a trusted personal devic
 - Galaxy J6+: Python application, SQLite database, and optional local worker.
 - Moto G52: browser and SSH client.
 - Both phones: Tailscale VPN for private device-to-device connectivity.
-- N.E.X.U.S HTTP server: stays bound to `127.0.0.1:8765`; do not port-forward it, bind it to `0.0.0.0`, or publish it through a public tunnel.
+- N.E.X.U.S HTTP server: stays bound to `127.0.0.1:8765`; Do not port-forward it, bind it to `0.0.0.0`, or publish it through a public tunnel.
 - Remote browser access: use an SSH local forward over the private VPN. The browser still talks to localhost, preserving the app's Host/origin protections.
 
 The application currently requires Python 3.11+ and uses the Python standard library for its runtime. The Galaxy J6+ does not need to run a local LLM. Remote provider calls remain optional and must pass the existing provider allowlist and explicit budget controls.
@@ -44,7 +44,7 @@ chmod 600 .env
 nano .env
 ```
 
-Leave all remote-provider and research opt-ins disabled until you have configured a provider, reviewed its free quota and explicitly set a low budget in the N.E.X.U.S. UI. ChatGPT Go is not an API credit. Never commit `.env`, database files, backups, logs or tokens.
+For the first local-only boot, keep these settings exactly disabled in `.env`:\n\n```dotenv\nNEXUS_ENABLE_REMOTE_PROVIDER=false\nNEXUS_REMOTE_PROVIDERS=\nNEXUS_MULTIAGENT_ENABLED=false\n```\n\nDo not enable remote providers until you have reviewed the provider's current free quota and configured an explicit budget in the N.E.X.U.S. UI. ChatGPT Go is not an API credit. Never commit `.env`, database files, backups, logs or tokens.
 
 5. Initialize the database:
 
