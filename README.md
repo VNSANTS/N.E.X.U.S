@@ -30,6 +30,7 @@ Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesq
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | Estado atual, próximo marco e riscos |
 | [ROADMAP.md](ROADMAP.md) | Fases e critérios para avançar |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Arquitetura conceitual |
+| [PERSONAL_AGENT_COMPARATIVE_REVIEW_2026-11-02.md](docs/PERSONAL_AGENT_COMPARATIVE_REVIEW_2026-11-02.md) | Comparação Hermes/OpenClaw/NanoClaw e plano de evolução do N.E.X.U.S. |
 | [TECH_STACK.md](TECH_STACK.md) | Tecnologias em avaliação |
 | [LEARNING_ENGINE.md](LEARNING_ENGINE.md) | Pesquisa e aprendizado |
 | [KNOWLEDGE_SYSTEM.md](KNOWLEDGE_SYSTEM.md) | Conhecimento e fontes |
