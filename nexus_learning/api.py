@@ -336,6 +336,13 @@ class NexusAPI:
             if not row:
                 raise KeyError(route[1])
             return self._json(start_response, "200 OK", self.runtime.get(route[1]))
+        if route == ["context", "preview"] and method == "POST":
+            if set(data) != {"query"} or not isinstance(data.get("query"), str):
+                raise ValueError("context preview requires only a text query")
+            if not data["query"].strip() or len(data["query"]) > 500:
+                raise ValueError("context query must contain 1-500 characters")
+            preview = self.context.retrieve_detailed(data["query"], include_semantic=False)
+            return self._json(start_response, "200 OK", preview)
         if route == ["memories"] and method == "GET":
             q = environ.get("QUERY_STRING", "")
             from urllib.parse import parse_qs
