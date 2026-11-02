@@ -4,7 +4,7 @@ Este plano organiza o backlog restante por dependência. Os status são delibera
 
 ## Próxima tarefa
 
-Retomar em **P2-01 — checkpoint/resume de etapas e fallback same-trust-lane**. O fluxo do Reviewer, as Skills administráveis e a atividade dos agentes estão validados; a execução continua sequencial, sem retomada durável entre etapas.
+Retomar em **P2-01 — checkpoint/resume durável de etapas**. A atividade LLM e de ferramentas já aparece com metadados seguros; a pipeline ainda não consegue retomar Architect/Analyst/Reviewer após reinício sem refazer chamadas.
 
 ## Plano ordenado
 
@@ -21,7 +21,7 @@ Retomar em **P2-01 — checkpoint/resume de etapas e fallback same-trust-lane**.
 | P2-01 | P2 | Delegação rastreável e isolada entre especialistas, limites de chamadas/tempo/budget, falha e retomada sem ciclos | P1-04 | PARCIAL VALIDADO: etapas fixas e sequenciais, seleção de modelo por papel, eventos metadata-only, timeout global de 90s (máx. 180s), falha interrompe etapas restantes; CI passou no commit 029389e (195 testes Python 3.11/3.12 + 5/5 browser E2E); ainda sem persistência/resume ou fallback same-lane |
 | P2-02 | P2 | Revisão independente com contexto reduzido e proveniência, sem autoaprovação | P1-06 | PARCIAL VALIDADO: Reviewer emite avaliação tipada por claim, cobertura 1:1, notas delimitadas, bloqueio de supported sem fonte e supressão determinística de unsupported/conflicting; distingue modelo diferente do Analyst; CI passou no commit 0ff391c (203 testes Python 3.11/3.12 + 5/5 browser E2E); revisão semântica independente/humana ainda pendente |
 | P2-03 | P2 | Execução de código/arquivos em sandbox real por tarefa, privilégio mínimo, mounts allowlisted, sem segredos e com limites | P0-01 | BLOQUEADA: não há runtime de isolamento confiável disponível nesta sessão; não foi criado executor simulado nem shell irrestrito |
-| P2-04 | P2 | Eventos de ferramenta/agente na UI com APIs reais e estados de falha | P1-03, P2-01 | PARCIAL VALIDADO: vista Agentes mostra roster e pipeline LLM; GET /api/v1/agents/activity filtra no backend eventos agent.llm_* por usuário e allowlist de metadados; CI no head ed844c3 passou com 211/211 testes Python 3.11/3.12 e 7/7 browser E2E; eventos individuais de ferramentas ainda não aparecem na UI |
+| P2-04 | P2 | Eventos de ferramenta/agente na UI com APIs reais e estados de falha | P1-03, P2-01 | PARCIAL VALIDADO: vista Agentes mostra roster, pipeline LLM e tool.started/completed/failed/denied; GET /api/v1/agents/activity filtra por usuário e allowlist metadata-only no backend; CI no head 7a207d5 passou com 216 testes Python 3.11/3.12 e 8/8 browser E2E; ainda faltam eventos de jobs/worker e correlação mais completa por task |
 | P3-01 | P3 | Migrações versionadas, backup/restore e recuperação documentada/testada | P0-02 | PARCIAL; SQLite local tem criação/migrações aditivas, falta estratégia formal de backup |
 | P3-02 | P3 | E2E navegador em fluxos principais, CI remoto verificado | P1-01 | E2E local existente; CI remoto depende de push/PR autorizado |
 | P3-03 | P3 | Produção cloud/TLS, identidade multiusuário, retenção e observabilidade operacional | P3-01 | BLOQUEADA por decisões/infraestrutura do proprietário |

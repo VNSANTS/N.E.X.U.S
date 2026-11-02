@@ -157,7 +157,7 @@ Na síntese, claims `unsupported` e `conflicting` são removidas de forma determ
 
 ### Atividade dos agentes na interface
 
-`GET /api/v1/agents/activity` retorna no máximo 60 eventos `agent.llm_*` da conta autenticada. A resposta contém somente metadados permitidos: agente, provider/model, estado, duração, contagens de caracteres, código de erro, motivo, task ID e indicador de modelo distinto do Reviewer. Prompts, saídas dos modelos, resultados de ferramentas e eventos de outras contas são excluídos no servidor.
+`GET /api/v1/agents/activity` retorna no máximo 150 eventos `agent.llm_*` e `tool.started/completed/failed/denied` da conta autenticada. A resposta contém somente metadados permitidos: agente/provider/model, nome da ferramenta, permission/risk, decisão, estado, duração, contagens de caracteres e códigos de falha/motivo. Prompts, saídas dos modelos, argumentos/resultados de ferramentas e eventos de outras contas são excluídos no servidor. A auditoria de ferramenta aplica sua própria allowlist antes de persistir os detalhes.
 
 
 The Agents screen uses the sanitized `GET /api/v1/agents/activity` route rather than the general activity feed. The server returns at most 100 specialist LLM events for the authenticated owner and filters event details through an allowlist. It does not return prompts, model response text, retrieved context, tool arguments or tool results. Individual tool-call activity has not yet been added to this screen.

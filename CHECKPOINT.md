@@ -340,3 +340,14 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - `GET /api/v1/skills/proposals` returns an `integrity_ok` flag. The UI displays it and disables approval when false.
 - Added registry/API/Playwright tests for tampered proposals remaining pending and the approval button being disabled.
 - CI pending.
+
+
+## Tool activity in Agents UI — 2026-11-02
+
+- Latest validated code head: `7a207d5967d1f4b0e542f522b8671f70651d8a1b`.
+- GitHub Actions passed: Python 3.11 — 216 tests; Python 3.12 — 216 tests; Playwright/Chromium browser E2E — 8/8.
+- ToolRegistry emits `tool.started`, `tool.completed`, `tool.failed` and `tool.denied` audit records with only allowlisted metadata: tool name, permission/risk class, decision, bounded error type/reason code and duration. Arguments and results are deliberately discarded by the audit writer.
+- `GET /api/v1/agents/activity` returns owner-scoped, allowlisted specialist LLM and tool events; the Agentes page renders them without HTML injection or private payload fields.
+- API and E2E tests inject private arguments/results and verify that neither the route nor the browser exposes them.
+- PR #3 remains open and unmerged, based on `nexus/review-nov-02`.
+- Next: durable specialist-stage checkpoint/resume; preserve no-repeat billing semantics and do not rerun completed stages automatically after ambiguous provider failures.
