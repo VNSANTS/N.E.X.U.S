@@ -1,4 +1,4 @@
-﻿import unittest
+import unittest
 from nexus_learning.engine import LearningEngine
 from nexus_learning.agents import ProductSupervisor
 
@@ -7,6 +7,17 @@ class ProductSupervisorTests(unittest.TestCase):
         self.engine=LearningEngine(':memory:')
         self.supervisor=ProductSupervisor(self.engine)
     def tearDown(self): self.engine.close()
+    def test_task_envelopes_reject_unbounded_or_ambiguous_contracts(self):
+        from nexus_learning.agents import TaskEnvelope, AgentSpec, AgentResult
+        with self.assertRaises(ValueError):
+            TaskEnvelope("task", "parent", "analyst", "analyze", ("request", "request"))
+        with self.assertRaises(ValueError):
+            TaskEnvelope("task", "parent", "analyst", "analyze", ("request",), True)
+        with self.assertRaises(ValueError):
+            AgentSpec("analyst", "Evidence analyst", max_steps=11)
+        with self.assertRaises(ValueError):
+            AgentResult("reviewer", "unknown", "Not a supported result")
+
     def test_reviewer_requires_valid_source_citations_when_research_context_exists(self):
         sources=[{'id':'src1','url':'https://example.org'}]
         self.assertEqual(self.supervisor.review_response('owner','Claim [S1].',100,sources).status,'completed')

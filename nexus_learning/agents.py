@@ -7,12 +7,31 @@ from .engine import now, uid
 from .model_router import ModelRouter
 
 
+def _bounded_text(value, field, limit=120):
+    if not isinstance(value, str) or not value.strip() or len(value) > limit:
+        raise ValueError(f"{field} must be non-empty text within {limit} characters")
+
+
+def _bounded_steps(value):
+    if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 10:
+        raise ValueError("max_steps must be an integer between 1 and 10")
+
+
 @dataclass(frozen=True)
 class AgentSpec:
     id: str
     role: str
     max_steps: int = 1
     allowed_tools: tuple = ()
+
+    def __post_init__(self):
+        _bounded_text(self.id, "agent id", 80)
+        _bounded_text(self.role, "agent role", 300)
+        _bounded_steps(self.max_steps)
+        if not isinstance(self.allowed_tools, tuple) or len(self.allowed_tools) > 20:
+            raise ValueError("allowed_tools must be a tuple of at most 20 tool names")
+        for tool in self.allowed_tools:
+            _bounded_text(tool, "tool name", 100)
 
 
 @dataclass(frozen=True)
@@ -21,6 +40,14 @@ class AgentResult:
     status: str
     summary: str
     context: tuple = ()
+
+    def __post_init__(self):
+        _bounded_text(self.agent_id, "agent id", 80)
+        if self.status not in {"completed", "rejected", "failed"}:
+            raise ValueError("invalid agent result status")
+        _bounded_text(self.summary, "agent summary", 5000)
+        if not isinstance(self.context, tuple) or len(self.context) > 50:
+            raise ValueError("agent context must be a tuple of at most 50 items")
 
 
 @dataclass(frozen=True)
@@ -31,6 +58,19 @@ class TaskEnvelope:
     operation: str
     allowed_context: tuple
     max_steps: int = 1
+
+    def __post_init__(self):
+        _bounded_text(self.id, "task id", 100)
+        _bounded_text(self.parent_id, "parent task id", 100)
+        _bounded_text(self.agent_id, "agent id", 80)
+        _bounded_text(self.operation, "operation", 120)
+        _bounded_steps(self.max_steps)
+        if not isinstance(self.allowed_context, tuple) or len(self.allowed_context) > 20:
+            raise ValueError("allowed_context must be a tuple of at most 20 fields")
+        for field in self.allowed_context:
+            _bounded_text(field, "context field", 80)
+        if len(set(self.allowed_context)) != len(self.allowed_context):
+            raise ValueError("allowed_context fields must be unique")
 
 
 class ProductSupervisor:
