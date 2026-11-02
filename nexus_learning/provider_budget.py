@@ -8,6 +8,25 @@ class ProviderBudgetExceededError(ProviderError):
     code='provider_budget_exceeded'
     safe_message='Provider usage budget is unavailable or exhausted.'
 
+def estimate_text_tokens(text):
+    """Conservative UTF-8 byte upper bound for text-only token budgeting."""
+    if not isinstance(text, str):
+        raise TypeError("text must be a string")
+    return len(text.encode("utf-8"))
+
+
+def estimate_message_tokens(messages):
+    """Conservative text plus per-message framing allowance for chat requests."""
+    if not isinstance(messages, (list, tuple)):
+        raise TypeError("messages must be a list or tuple")
+    total = 0
+    for message in messages:
+        if not isinstance(message, dict) or not isinstance(message.get("content"), str):
+            raise ValueError("each message must contain string content")
+        total += estimate_text_tokens(message["content"]) + 16
+    return total
+
+
 class ProviderBudget:
     def __init__(self,engine):
         self.engine=engine
@@ -72,30 +91,6 @@ class ProviderBudget:
                 and usage['usd']+estimate<=cfg['daily_usd']
                 and input_tokens+output_tokens<=cfg['task_tokens']
                 and estimate<=cfg['task_usd'])
-    def can_reserve(self,provider,input_tokens,output_tokens):
-        """Read-only route preflight. `_reserve` remains the atomic final gate."""
-        if any(isinstance(value,bool) or not isinstance(value,int) or value<0
-               for value in (input_tokens,output_tokens)):
-            return False
-        cfg=self.settings()
-        required=('daily_calls','daily_tokens','daily_usd','task_calls','task_tokens','task_usd')
-        if not cfg['enabled'] or not all(cfg.get(key,0)>0 for key in required):
-            return False
-        if cfg.get('input_usd_per_million',0)<=0 or cfg.get('output_usd_per_million',0)<0:
-            return False
-        estimate=(input_tokens*cfg['input_usd_per_million']+
-                  output_tokens*cfg['output_usd_per_million'])/1_000_000
-        today=datetime.now(timezone.utc).date().isoformat()+'%'
-        with self.engine.db() as c:
-            usage=c.execute("""SELECT COUNT(*) calls,
-                COALESCE(SUM(input_tokens+output_tokens),0) tokens,
-                COALESCE(SUM(COALESCE(actual_usd,estimated_usd)),0) usd
-                FROM provider_usage WHERE created_at LIKE ?""",(today,)).fetchone()
-        return (usage['calls']<cfg['daily_calls']
-                and usage['tokens']+input_tokens+output_tokens<=cfg['daily_tokens']
-                and usage['usd']+estimate<=cfg['daily_usd']
-                and input_tokens+output_tokens<=cfg['task_tokens']
-                and estimate<=cfg['task_usd'])
     def _reserve(self,provider,input_tokens,output_tokens,task_id):
         cfg=self.settings()
         if not cfg['enabled'] or not all(cfg[k]>0 for k in ('daily_usd','daily_calls','daily_tokens','task_usd','task_calls','task_tokens')):
@@ -121,7 +116,7 @@ class ProviderBudget:
         actual=(a*cfg['input_usd_per_million']+b*cfg['output_usd_per_million'])/1_000_000
         with self.engine.db() as c: c.execute('UPDATE provider_usage SET state=?,input_tokens=?,output_tokens=?,actual_usd=? WHERE id=?',(state,a,b,actual,usage_id))
     def generate(self,provider,messages,*,max_tokens=800,timeout=30,task_id=None):
-        input_estimate=sum(len(m['content']) for m in messages) # conservative upper bound, not a tokenizer claim
+        input_estimate=estimate_message_tokens(messages)
         output_estimate=max_tokens
         usage_id,cfg,input_estimate,output_estimate=self._reserve(provider,input_estimate,output_estimate,task_id)
         try: response=provider.generate(messages,max_tokens=max_tokens,timeout=timeout)
@@ -132,7 +127,7 @@ class ProviderBudget:
         return response
     def embed(self,provider,text,*,title=None,task_type='RETRIEVAL_QUERY',timeout=30,task_id=None):
         if not callable(getattr(provider,'embed',None)): raise ProviderConfigurationError()
-        estimated=len(text)
+        estimated=estimate_text_tokens(text)
         usage_id,cfg,estimated,_=self._reserve(provider,estimated,0,task_id)
         try: vector=provider.embed(text,title=title,task_type=task_type,timeout=timeout)
         except Exception:
