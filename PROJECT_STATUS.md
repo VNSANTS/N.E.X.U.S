@@ -1,5 +1,15 @@
 # Project Status
 
+## Free Gemini quota audit — 2026-11-03 (local, not pushed)
+
+- Synchronized `nexus/remote-continuation` with `origin/nexus/remote-continuation` at `e219e3af7b083e0c13f7138ba4c5878ac722fda3`; the local review branch was preserved. The `free_quota` implementation commits are present.
+- Added authenticated API integration coverage for ordinary chat and SSE using a simulated `gemini/gemini-2.5-flash`, configured through the budget API. Both paths reached the simulator and recorded usage with zero USD. Unit coverage confirms all other models/providers are denied and automatic routing does not call a paid fallback.
+- Fixed the browser status label so `provider_budget_exceeded` is reported as “Orçamento bloqueou a chamada” instead of “Provider indisponível”. The original safe budget error remains visible.
+- Fixed Windows test cleanup for SQLite connections and made POSIX-shell/symlink tests skip when the host lacks those capabilities.
+- Local verification: 242 standard tests passed (12 expected skips), compileall passed using a temporary bytecode cache, and Playwright/Chromium E2E passed 10/10. No real Gemini call or paid provider call was made.
+- GitHub Actions for the base `e219e3a` passed on both push and PR runs. These runs do not include the current local changes. PR #3 remains open and targets `nexus/review-nov-02`; no merge was made.
+- Device status remains unverified: the Galaxy J6+ SQLite budget settings and selected model were not read. The reproduced valid configuration works; the on-device budget error therefore still needs a UI check of mode, enabled state, call/token limits, selected exact model, and current usage. Local quota limits do not establish the provider account's billing behavior.
+
 ## Current remote snapshot — 2026-11-02
 
 - **Published source:** branch `nexus/review-nov-02`, commit `16991c3aaf030f2ff9ef9233b61253c100a82538`. This is a review branch; it is not merged into `main`.

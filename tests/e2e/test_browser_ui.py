@@ -48,6 +48,14 @@ class BrowserStreamProvider:
         yield "persistida pelo navegador."
 
 
+class BudgetBlockedGeminiProvider:
+    provider_name = "gemini"
+    model = "gemini-2.5-flash"
+
+    def stream_generate(self, messages, **kwargs):
+        raise AssertionError("budget must block before the provider is called")
+
+
 class QuietRequestHandler(WSGIRequestHandler):
     def log_message(self, format, *args):
         pass
@@ -161,6 +169,34 @@ class BrowserUITests(unittest.TestCase):
         expect(self.page.locator("#login")).to_be_visible()
         self.login()
         self.assertEqual(self.page_errors, [])
+
+    def test_budget_block_is_not_reported_as_provider_unavailable(self):
+        self.login()
+        provider = BudgetBlockedGeminiProvider()
+        self.app.provider_manager.injected_provider = provider
+        with self.engine.db() as connection:
+            connection.execute(
+                "UPDATE provider_settings SET provider='gemini',model=? WHERE id=1",
+                (provider.model,))
+        self.page.locator('[data-view="conversation"]').click()
+        self.page.locator("#input").fill("Esta chamada deve ser bloqueada pelo orçamento")
+        self.page.locator("#sendButton").click()
+        expect(self.page.locator("#messages .error-box")).to_contain_text(
+            "Provider usage budget is unavailable or exhausted.", timeout=10000)
+        expect(self.page.locator("#providerStatus")).to_contain_text(
+            "Orçamento bloqueou a chamada")
+        self.assertNotIn("indisponível", self.page.locator("#providerStatus").inner_text())
+
+    def test_stream_error_without_message_uses_readable_fallback(self):
+        self.login()
+        self.page.route("**/api/v1/sessions/*/messages/stream", lambda route: route.fulfill(
+            status=200, content_type="text/event-stream",
+            body='event: error\ndata: {"code":"generation_failed"}\n\n'))
+        self.page.locator('[data-view="conversation"]').click()
+        self.page.locator("#input").fill("Gerar um erro SSE sem mensagem")
+        self.page.locator("#sendButton").click()
+        expect(self.page.locator("#messages .error-box")).to_contain_text(
+            "Falha na geração", timeout=10000)
 
     def test_opt_in_specialist_pipeline_reaches_browser_stream(self):
         self.login()

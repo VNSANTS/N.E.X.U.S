@@ -84,6 +84,91 @@ class APITests(unittest.TestCase):
         self.assertFalse(self.app._owns_session(session_id, "another-user"))
         self.assertEqual(self.request("/api/v1/auth/me", token=self.owner)["body"]["username"], "owner")
 
+    def _free_gemini_app(self):
+        class GeminiSimulator:
+            provider_name = "gemini"
+            model = "gemini-2.5-flash"
+
+            def __init__(self):
+                self.calls = []
+
+            def generate(self, messages, *, max_tokens=800, timeout=30):
+                from nexus_learning.providers.base import ModelResponse
+                self.calls.append(("generate", messages))
+                return ModelResponse("Resposta Gemini simulada.", self.provider_name,
+                                     self.model, input_tokens=20, output_tokens=5)
+
+            def stream_generate(self, messages, *, max_tokens=800, timeout=60,
+                                cancel_event=None):
+                self.calls.append(("stream", messages))
+                yield "Resposta "
+                yield "Gemini simulada."
+
+        engine = LearningEngine(":memory:")
+        provider = GeminiSimulator()
+        app = NexusAPI(engine, provider)
+        app.auth.create_user("owner", "correct horse battery staple")
+        token = app.auth.login("owner", "correct horse battery staple")["access_token"]
+        budget = self._request_for_app(app, "/api/v1/usage/budget", "POST", {
+            "confirm": True, "enabled": True, "mode": "free_quota",
+            "daily_calls": 10, "daily_tokens": 5000, "daily_usd": 0,
+            "task_calls": 5, "task_tokens": 5000, "task_usd": 0,
+            "input_usd_per_million": 0, "output_usd_per_million": 0}, token)
+        if not budget["status"].startswith("200"):
+            engine.close()
+            self.fail(f"could not configure simulated free quota: {budget}")
+        response = self._request_for_app(app, "/api/v1/sessions", "POST", {}, token)
+        session_id = response["body"]["id"]
+        return engine, provider, app, token, session_id
+
+    @staticmethod
+    def _request_for_app(app, path, method, body, token):
+        raw = json.dumps(body).encode()
+        environ = {"REQUEST_METHOD": method, "PATH_INFO": path, "QUERY_STRING": "",
+                   "CONTENT_LENGTH": str(len(raw)), "CONTENT_TYPE": "application/json",
+                   "wsgi.input": io.BytesIO(raw), "HTTP_HOST": "127.0.0.1",
+                   "HTTP_AUTHORIZATION": "Bearer " + token,
+                   "SERVER_NAME": "127.0.0.1", "SERVER_PORT": "8765", "wsgi.url_scheme": "http"}
+        captured = {}
+        def start(status, headers):
+            captured["status"] = status
+            captured["headers"] = dict(headers)
+        payload = b"".join(app(environ, start))
+        captured["body"] = (json.loads(payload) if
+            captured["headers"].get("Content-Type", "").startswith("application/json") else payload)
+        return captured
+
+    def test_free_quota_chat_sends_authenticated_message_to_gemini_simulator(self):
+        engine, provider, app, token, session_id = self._free_gemini_app()
+        try:
+            response = self._request_for_app(app,
+                f"/api/v1/sessions/{session_id}/messages", "POST",
+                {"content": "Olá, responda em português."}, token)
+            self.assertTrue(response["status"].startswith("200"), response["body"])
+            self.assertEqual(response["body"]["message"]["content"], "Resposta Gemini simulada.")
+            self.assertEqual(len(provider.calls), 1)
+            self.assertEqual(provider.calls[0][0], "generate")
+            usage = app.provider_budget.usage()["today"]
+            self.assertEqual(usage[0]["provider"], "gemini")
+            self.assertEqual(usage[0]["calls"], 1)
+        finally:
+            engine.close()
+
+    def test_free_quota_stream_sends_message_to_gemini_simulator(self):
+        engine, provider, app, token, session_id = self._free_gemini_app()
+        try:
+            response = self._request_for_app(app,
+                f"/api/v1/sessions/{session_id}/messages/stream", "POST",
+                {"content": "Olá, faça streaming."}, token)
+            self.assertTrue(response["status"].startswith("200"), response["status"])
+            self.assertIn(b"event: done", response["body"])
+            self.assertIn("Resposta Gemini simulada.", response["body"].decode())
+            self.assertEqual([call[0] for call in provider.calls], ["stream"])
+            usage = app.provider_budget.usage()["today"]
+            self.assertEqual(usage[0]["calls"], 1)
+        finally:
+            engine.close()
+
     def test_chat_persists_messages_task_and_retrieves_only_eligible_memory(self):
         sid = self.request("/api/v1/sessions", "POST", {}, self.owner)["body"]["id"]
         memory_id = self.engine.add_memory("episodic", "Projeto ponte", "A ponte azul usa aÃ§o especial.")

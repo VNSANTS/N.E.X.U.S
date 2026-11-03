@@ -1,9 +1,24 @@
 import sqlite3
 import tempfile
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
 
 from nexus_learning.backup import backup_database, restore_database
+
+
+@contextmanager
+def database(path):
+    """Close test connections explicitly; sqlite's connection context only commits."""
+    connection = sqlite3.connect(path)
+    try:
+        yield connection
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
 
 
 class DatabaseBackupTests(unittest.TestCase):
@@ -11,7 +26,7 @@ class DatabaseBackupTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         self.source = self.root / "source.db"
-        with sqlite3.connect(self.source) as connection:
+        with database(self.source) as connection:
             connection.execute("CREATE TABLE records(value TEXT NOT NULL)")
             connection.execute("INSERT INTO records VALUES('original')")
         self.backup = self.root / "backup.db"
@@ -21,14 +36,14 @@ class DatabaseBackupTests(unittest.TestCase):
         self.temp.cleanup()
 
     def values(self, path):
-        with sqlite3.connect(path) as connection:
+        with database(path) as connection:
             return [row[0] for row in connection.execute("SELECT value FROM records")]
 
     def test_backup_is_consistent_and_preserves_data(self):
         result = backup_database(self.source, self.backup)
         self.assertEqual(result, self.backup.resolve())
         self.assertEqual(self.values(self.backup), ["original"])
-        with sqlite3.connect(self.backup) as connection:
+        with database(self.backup) as connection:
             self.assertEqual(connection.execute("PRAGMA integrity_check").fetchone()[0], "ok")
 
     def test_backup_refuses_overwrite_by_default(self):
@@ -39,7 +54,7 @@ class DatabaseBackupTests(unittest.TestCase):
 
     def test_backup_overwrite_requires_explicit_flag(self):
         backup_database(self.source, self.backup)
-        with sqlite3.connect(self.source) as connection:
+        with database(self.source) as connection:
             connection.execute("INSERT INTO records VALUES('new')")
         backup_database(self.source, self.backup, overwrite=True)
         self.assertEqual(self.values(self.backup), ["original", "new"])
@@ -51,7 +66,7 @@ class DatabaseBackupTests(unittest.TestCase):
 
     def test_restore_refuses_overwrite_without_explicit_flag(self):
         backup_database(self.source, self.backup)
-        with sqlite3.connect(self.target) as connection:
+        with database(self.target) as connection:
             connection.execute("CREATE TABLE records(value TEXT NOT NULL)")
             connection.execute("INSERT INTO records VALUES('keep')")
         with self.assertRaises(FileExistsError):
@@ -60,7 +75,7 @@ class DatabaseBackupTests(unittest.TestCase):
 
     def test_restore_overwrite_requires_and_creates_safety_backup(self):
         backup_database(self.source, self.backup)
-        with sqlite3.connect(self.target) as connection:
+        with database(self.target) as connection:
             connection.execute("CREATE TABLE records(value TEXT NOT NULL)")
             connection.execute("INSERT INTO records VALUES('before')")
         with self.assertRaises(ValueError):
@@ -72,7 +87,7 @@ class DatabaseBackupTests(unittest.TestCase):
 
     def test_restore_rejects_invalid_backup_without_touching_target(self):
         self.backup.write_bytes(b"not a sqlite database")
-        with sqlite3.connect(self.target) as connection:
+        with database(self.target) as connection:
             connection.execute("CREATE TABLE records(value TEXT NOT NULL)")
             connection.execute("INSERT INTO records VALUES('keep')")
         with self.assertRaises(sqlite3.DatabaseError):
@@ -89,13 +104,18 @@ class DatabaseBackupTests(unittest.TestCase):
 
     def test_symbolic_link_database_paths_are_rejected(self):
         link = self.root / "source-link.db"
-        link.symlink_to(self.source)
+        try:
+            link.symlink_to(self.source)
+        except OSError as exc:
+            if getattr(exc, "winerror", None) == 1314:
+                self.skipTest("Windows symlink privilege is unavailable")
+            raise
         with self.assertRaises(ValueError):
             backup_database(link, self.backup)
 
     def test_safety_backup_must_be_a_distinct_new_file(self):
         backup_database(self.source, self.backup)
-        with sqlite3.connect(self.target) as connection:
+        with database(self.target) as connection:
             connection.execute("CREATE TABLE records(value TEXT NOT NULL)")
         with self.assertRaises(ValueError):
             restore_database(self.backup, self.target, overwrite=True,

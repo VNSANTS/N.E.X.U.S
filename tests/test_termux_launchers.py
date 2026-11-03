@@ -1,4 +1,5 @@
 import subprocess
+import shutil
 import unittest
 from pathlib import Path
 
@@ -8,6 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class TermuxLauncherTests(unittest.TestCase):
     def test_termux_launchers_have_valid_posix_shell_syntax(self):
+        if shutil.which("sh") is None:
+            self.skipTest("POSIX sh is unavailable on this host; CI validates on Linux")
         for relative in ("scripts/termux-start.sh", "scripts/termux-worker.sh"):
             with self.subTest(script=relative):
                 completed = subprocess.run(

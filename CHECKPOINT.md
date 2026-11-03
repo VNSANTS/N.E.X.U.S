@@ -393,3 +393,30 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Commits on `nexus/remote-continuation`: `cae8c77` (guide), `68c6c92` (API launcher), `a903400` (worker launcher), `09dff48` (launcher tests). PR #3 remains the delivery vehicle; no merge to `main` was performed.
 - This is deployment preparation, not proof of a running Android installation. Device-side Termux/Python compatibility, first login, background stability, Tailscale routing and SSH key-only access still require validation on the Galaxy J6+ and Moto G52.
 - Next implementation priority remains **P2-01 durable specialist checkpoint/resume** from `docs/SPECIALIST_CHECKPOINTS.md`; versioned SQLite migrations and production deployment/TLS remain pending.
+
+
+## Registro de execução — 2026-11-03T16:54:13+00:00
+
+- Tarefa: `P1-02-FREE-QUOTA` — **EM ANDAMENTO**
+- Resumo: Branch nexus/remote-continuation sincronizada em e219e3a. Testes de integração com Gemini simulado passaram no chat normal e SSE; free_quota negou outros modelos e não chamou fallback pago. UI distingue bloqueio de orçamento de indisponibilidade do provider. O erro no Galaxy J6+ não foi reproduzido com o estado SQLite local, que permaneceu sem inspeção; verificar modo, enabled, limites, modelo selecionado e uso no painel do dispositivo.
+- Testes (resultado observado): 241 testes padrão passaram (11 skips esperados); Playwright/Chromium E2E 9/9; compileall passou com cache temporário; git diff --check pendente após documentação.
+- Arquivos: nexus_learning/web/index.html; tests/test_api.py; tests/test_provider_budget.py; tests/test_routing.py; tests/e2e/test_browser_ui.py; tests/test_backup.py; tests/test_termux_launchers.py; PROJECT_STATUS.md; NEXUS_EXECUTION_PLAN.md
+- Próxima tarefa: No Galaxy J6+, entrar na UI autenticada, conferir Configurações > Limites de utilização (mode=free_quota, enabled=true, limites positivos e uso diário), Provedores (gemini/gemini-2.5-flash), enviar uma mensagem simples e relatar o erro/código exato se persistir. Depois: git status --short --branch; python -m unittest discover -s tests -q
+
+
+## Registro de execução — 2026-11-03T17:02:16+00:00
+
+- Tarefa: `P1-02-FREE-QUOTA` — **EM ANDAMENTO**
+- Resumo: Revisão independente corrigiu fallback SSE corrompido e o E2E agora cobre erro sem mensagem. Caminho autenticado de chat e SSE com Gemini simulado passa; free_quota não autoriza outro modelo nem chama fallback pago. UI informa bloqueio do orçamento corretamente. O erro no Galaxy J6+ permanece dependente do estado SQLite local, que não foi inspecionado.
+- Testes (resultado observado): 242 testes padrão passaram (12 skips esperados); Playwright/Chromium E2E 10/10; compileall passou usando cache temporário; git diff --check será executado nesta revisão final.
+- Arquivos: nexus_learning/web/index.html; tests/test_api.py; tests/test_provider_budget.py; tests/test_routing.py; tests/e2e/test_browser_ui.py; tests/test_backup.py; tests/test_termux_launchers.py; PROJECT_STATUS.md; NEXUS_EXECUTION_PLAN.md; CHECKPOINT.md
+- Próxima tarefa: No Galaxy J6+, abrir a UI autenticada, conferir Configurações > Limites de utilização (mode=free_quota, enabled=true, limites positivos e uso), Provedores (gemini/gemini-2.5-flash), enviar uma mensagem simples e registrar o código exato caso falhe. Depois: git status --short --branch; python -m unittest discover -s tests -q
+
+
+## Registro de execução — 2026-11-03T17:02:42+00:00
+
+- Tarefa: `P1-02-FREE-QUOTA-VALIDATION` — **EM ANDAMENTO**
+- Resumo: Validação final local concluída após revisão: chat/sse autenticados com Gemini simulado funcionam sob free_quota, outros modelos são negados e fallback pago não recebe chamadas. Interface separa provider indisponível de orçamento bloqueado. A causa do erro no aparelho não foi inferida: SQLite e limites do Galaxy J6+ continuam fora de inspeção. CI remoto disponível refere-se apenas ao head base e219e3a.
+- Testes (resultado observado): python -m unittest discover -s tests -q: 242 OK, 12 skips; E2E Playwright/Chromium: 10/10 OK; compileall: OK com cache temporário; git diff --check: OK.
+- Arquivos: nexus_learning/web/index.html; tests/test_api.py; tests/test_provider_budget.py; tests/test_routing.py; tests/e2e/test_browser_ui.py; tests/test_backup.py; tests/test_termux_launchers.py; PROJECT_STATUS.md; NEXUS_EXECUTION_PLAN.md; CHECKPOINT.md
+- Próxima tarefa: No Galaxy J6+, UI autenticada > Configurações > Limites de utilização: confirmar mode=free_quota, enabled, chamadas/tokens > 0 e uso diário; Provedores: gemini/gemini-2.5-flash; enviar mensagem curta. Se persistir, informar código e valores visíveis de status/uso sem compartilhar credenciais. Em seguida, retomar P1-02-FREE-QUOTA no checkout nexus/remote-continuation.

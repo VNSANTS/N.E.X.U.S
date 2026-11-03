@@ -107,6 +107,57 @@ class ModelRoutingServiceTests(unittest.TestCase):
             {"role": "user", "content": "Compare as alternativas e avalie riscos"}])
         self.assertEqual((result.route.provider, result.route.model), ("gemini", "flash"))
 
+    def test_free_quota_routing_never_falls_back_to_paid_provider(self):
+        class CountingProvider(FakeProvider):
+            def __init__(self, name, model, *, fail=False):
+                super().__init__(name, model, fail=fail)
+                self.calls = 0
+
+            def generate(self, messages, **kwargs):
+                self.calls += 1
+                return super().generate(messages, **kwargs)
+
+        gemini = CountingProvider("gemini", "gemini-2.5-flash", fail=True)
+        paid = CountingProvider("openai", "gpt-test")
+        env = {"NEXUS_ROUTING_MODE": "automatic",
+               "NEXUS_ROUTER_CANDIDATES": json.dumps([
+                   {"provider": "gemini", "model": "gemini-2.5-flash",
+                    "context_window": 32768, "reasoning_score": 2,
+                    "capabilities": {"chat": True}},
+                   {"provider": "openai", "model": "gpt-test",
+                    "context_window": 32768, "reasoning_score": 4,
+                    "capabilities": {"chat": True}}]),
+               "NEXUS_ENABLE_REMOTE_PROVIDER": "true",
+               "NEXUS_REMOTE_PROVIDERS": "gemini,openai"}
+
+        class Manager:
+            def __init__(self): self.env = env
+            def build(self, name, model):
+                return {"gemini": gemini, "openai": paid}[name]
+            def list_models(self, name):
+                model = "gemini-2.5-flash" if name == "gemini" else "gpt-test"
+                return [{"id": model, "context_window": 32768}]
+            def check(self, name): return {"available": True}
+            def _remote_enabled(self, name): return True
+            def selected(self): return gemini
+
+        class FreeQuotaBudget(FakeBudget):
+            def settings(self):
+                return {"enabled": True, "mode": "free_quota",
+                        "input_usd_per_million": 0, "output_usd_per_million": 0}
+            def can_reserve(self, provider, input_tokens, output_tokens):
+                return (getattr(provider, "provider_name", "") == "gemini"
+                        and getattr(provider, "model", "") == "gemini-2.5-flash")
+
+        service = ModelRoutingService(Manager(), FreeQuotaBudget(enabled=True),
+                                      wrap_provider=lambda provider: provider)
+        result = service.resolve("Oi", [{"role": "user", "content": "Oi"}])
+        self.assertEqual((result.route.provider, result.route.model),
+                         ("gemini", "gemini-2.5-flash"))
+        with self.assertRaises(ProviderUnavailableError):
+            result.provider.generate([{"role": "user", "content": "Oi"}])
+        self.assertEqual((gemini.calls, paid.calls), (1, 0))
+
     def test_automatic_router_can_select_openai_when_allowlisted_and_budgeted(self):
         local = FakeProvider("ollama", "qwen-small")
         remote = FakeProvider("openai", "gpt-test")

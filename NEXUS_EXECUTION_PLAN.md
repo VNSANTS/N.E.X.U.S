@@ -6,6 +6,10 @@ Este plano organiza o backlog restante por dependência. Os status são delibera
 
 Retomar em **P2-01 — implementação do checkpoint/resume durável**. O design está especificado em `docs/SPECIALIST_CHECKPOINTS.md`; a implementação permanece pendente. P3-01 recebeu uma primeira fatia de backup/restore SQLite, aguardando CI.
 
+### Prioridade desta continuidade — chat gratuito
+
+O pedido de continuidade prioriza verificar o chat com `gemini/gemini-2.5-flash` em modo `free_quota`. O fluxo foi validado com provider simulado em chat normal e SSE; o bloqueio observado na interface agora é rotulado como orçamento, sem marcar falsamente o provider como indisponível. O estado persistido no Galaxy J6+ continua pendente de inspeção pelo proprietário. Próximo passo: abrir Configurações → Limites de utilização e Provedores no dispositivo, conferir `free_quota`, orçamento habilitado, limites positivos e o modelo exato, então enviar uma mensagem simples. Não habilitar provedores pagos nem fazer fallback.
+
 ## Plano ordenado
 
 | ID | Prioridade | Tarefa / critério de aceite | Dependências | Estado |
