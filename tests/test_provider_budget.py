@@ -19,6 +19,47 @@ class ProviderBudgetTests(unittest.TestCase):
     def test_remote_calls_fail_closed_until_budget_configured(self):
         with self.assertRaises(ProviderBudgetExceededError): self.provider.generate([{'role':'user','content':'hello'}])
         self.assertEqual(self.inner.calls,0)
+
+    def test_free_quota_authorizes_only_gemini_25_flash_and_tracks_usage(self):
+        class GeminiFlash(FakeProvider):
+            model = 'gemini-2.5-flash'
+
+        flash = GeminiFlash()
+        self.budget.update(enabled=True, mode='free_quota', daily_calls=2,
+            daily_tokens=5000, daily_usd=0, task_calls=1, task_tokens=1000,
+            task_usd=0, input_price=0, output_price=0)
+
+        self.assertTrue(self.budget.can_reserve(flash, 100, 100))
+        self.budget.generate(flash, [{'role': 'user', 'content': 'hello'}],
+                             max_tokens=100, task_id='free-task')
+        self.assertEqual(flash.calls, 1)
+        with self.engine.db() as connection:
+            row = connection.execute(
+                'SELECT provider,model,state,estimated_usd,actual_usd FROM provider_usage'
+            ).fetchone()
+        self.assertEqual((row['provider'], row['model'], row['state']),
+                         ('gemini', 'gemini-2.5-flash', 'settled'))
+        self.assertEqual((row['estimated_usd'], row['actual_usd']), (0, 0))
+
+        with self.assertRaises(ProviderBudgetExceededError):
+            self.budget.generate(flash, [{'role': 'user', 'content': 'second'}],
+                                 max_tokens=100, task_id='free-task')
+        self.assertEqual(flash.calls, 1)
+
+    def test_free_quota_rejects_other_gemini_model_and_paid_provider(self):
+        self.budget.update(enabled=True, mode='free_quota', daily_calls=10,
+            daily_tokens=5000, daily_usd=0, task_calls=5, task_tokens=1000,
+            task_usd=0, input_price=0, output_price=0)
+        other_model = FakeProvider()
+        paid_provider = FakeProvider()
+        paid_provider.provider_name = 'openai'
+        self.assertFalse(self.budget.can_reserve(other_model, 100, 100))
+        self.assertFalse(self.budget.can_reserve(paid_provider, 100, 100))
+        for provider in (other_model, paid_provider):
+            with self.assertRaises(ProviderBudgetExceededError):
+                self.budget.generate(provider, [{'role': 'user', 'content': 'hello'}],
+                                     max_tokens=100)
+        self.assertEqual((other_model.calls, paid_provider.calls), (0, 0))
     def test_can_reserve_is_read_only_and_fails_closed_at_limits(self):
         self.assertFalse(self.budget.can_reserve(self.inner,10,10))
         self.config(daily_calls=1,task_calls=1,daily_tokens=100,task_tokens=100)

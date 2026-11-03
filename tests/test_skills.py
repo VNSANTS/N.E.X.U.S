@@ -18,6 +18,86 @@ class SkillRegistryTests(unittest.TestCase):
     def test_skill_cannot_grant_tools_or_execute_content(self):
         with self.assertRaises(ValueError):
             self.skills.propose("unsafe-skill","1.0.0","Unsafe","run arbitrary command",tools=("system.exec",))
+    def test_proposals_list_only_pending_skills_with_reviewable_instructions(self):
+        pending = self.skills.propose(
+            "research-brief", "1.0.0", "Research source evidence", "Use cited sources.")
+        approved = self.skills.propose(
+            "code-review", "1.0.0", "Review software code", "Inspect regressions.")
+        self.skills.approve(approved, owner_id="owner", approved=True)
+        rows = self.skills.proposals()
+        self.assertEqual([row["id"] for row in rows], [pending])
+        self.assertEqual(rows[0]["status"], "proposed")
+        self.assertEqual(rows[0]["instructions"], "Use cited sources.")
+        self.assertNotIn("tool_allowlist", rows[0])
+
+    def test_rejection_requires_confirmation_and_is_audited(self):
+        pending = self.skills.propose(
+            "research-brief", "1.0.0", "Research source evidence", "Use cited sources.")
+        with self.assertRaises(PermissionError):
+            self.skills.reject(pending, owner_id="owner", confirmed=False)
+        self.assertEqual(len(self.skills.proposals()), 1)
+        self.skills.reject(pending, owner_id="owner", confirmed=True)
+        self.assertEqual(self.skills.proposals(), [])
+        with self.engine.db() as c:
+            row = c.execute(
+                "SELECT event,owner_id FROM runtime_skill_events WHERE skill_id=?",
+                (pending,),
+            ).fetchone()
+        self.assertEqual(row["event"], "rejected")
+        self.assertEqual(row["owner_id"], "owner")
+        with self.assertRaises(KeyError):
+            self.skills.reject(pending, owner_id="owner", confirmed=True)
+
+    def test_tampered_proposal_cannot_be_approved(self):
+        skill_id = self.skills.propose(
+            "research-brief", "1.0.0", "Research source evidence", "Original instructions.")
+        with self.engine.db() as c:
+            c.execute("UPDATE runtime_skills SET instructions=? WHERE id=?",
+                      ("Tampered instructions", skill_id))
+        proposal = self.skills.proposals()[0]
+        self.assertFalse(proposal["integrity_ok"])
+        with self.assertRaisesRegex(ValueError, "skill integrity validation failed"):
+            self.skills.approve(skill_id, owner_id="owner", approved=True)
+        with self.engine.db() as c:
+            status = c.execute("SELECT status FROM runtime_skills WHERE id=?",
+                               (skill_id,)).fetchone()["status"]
+        self.assertEqual(status, "proposed")
+
+    def test_proposal_list_limit_is_strictly_bounded(self):
+        for limit in (0, -1, 51, True, 1.5, "10"):
+            with self.subTest(limit=limit), self.assertRaises(ValueError):
+                self.skills.proposals(limit=limit)
+
+    def test_discovery_treats_sql_like_wildcards_as_literal_text(self):
+        skill = self.skills.propose(
+            "research-brief", "1.0.0", "Research source evidence", "Use cited sources.")
+        self.skills.approve(skill, owner_id="owner", approved=True)
+        self.assertEqual(self.skills.discover("%"), [])
+        self.assertEqual(self.skills.discover("_"), [])
+        self.assertEqual(self.skills.discover("research")[0]["name"], "research-brief")
+
+    def test_skill_discovery_limit_is_strictly_bounded(self):
+        for limit in (0, -1, 51, True, 1.5, "10"):
+            with self.subTest(limit=limit), self.assertRaises(ValueError):
+                self.skills.discover("", limit=limit)
+
+    def test_skill_selection_limits_reject_invalid_values(self):
+        for kwargs in ({"max_skills": -1}, {"max_skills": 11},
+                       {"max_skills": True}, {"max_chars": -1},
+                       {"max_chars": 12001}, {"max_chars": True}):
+            with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
+                self.skills.select_for_message("research sources", owner_id="owner", **kwargs)
+
+    def test_approved_skill_content_hash_drift_is_rejected(self):
+        skill = self.skills.propose(
+            "research-brief", "1.0.0", "Research source evidence", "Use cited sources.")
+        self.skills.approve(skill, owner_id="owner", approved=True)
+        with self.engine.db() as c:
+            c.execute("UPDATE runtime_skills SET instructions=? WHERE id=?",
+                      ("Changed after approval", skill))
+        with self.assertRaisesRegex(ValueError, "integrity validation failed"):
+            self.skills.load("research-brief", owner_id="owner")
+
     def test_message_selects_only_relevant_approved_skill_with_size_bound(self):
         a=self.skills.propose("research-brief","1.0.0","Research and source summaries","Use sources and list evidence.")
         b=self.skills.propose("code-review","1.0.0","Review software code","Inspect changes for regressions.")

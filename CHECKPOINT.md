@@ -1,5 +1,24 @@
 # Development Checkpoint
 
+## Continuidade remota — CI e auditoria de evidências (2026-11-02)
+
+- Branch de trabalho: `nexus/remote-continuation`; PR #3 continua aberto e direcionado a `nexus/review-nov-02`, não à `main`.
+- Commit `d11adc710e149dd17b94294de76b89d798c8c571`: GitHub Actions passou com 187 testes unitários em Python 3.11 e 3.12; browser E2E Playwright/Chromium também passou. Este resultado é anterior às novas alterações de evidência.
+- P1-04: `NEXUS_AGENT_MODELS` permite configurar provider:model por Architect, Analyst e Reviewer. ProviderManager mantém opt-ins/allowlists/credenciais; o preflight inclui apenas chamadas remotas e cada chamada remota exige sua reserva individual. Sem descoberta automática de capacidade/disponibilidade ou fallback same-lane.
+- P1-05: busca autenticada de Skills agora usa `QUERY_STRING`; o bug de `UnboundLocalError` causado por imports locais de `parse_qs` foi corrigido e o CI passou.
+- P1-06 em implementação: o pipeline recebe até três fontes, atribui IDs S1–S3 e valida determinísticamente que cada claim referencie apenas IDs fornecidos. Claims sem referência ficam `unreferenced`; IDs fabricados/duplicados são rejeitados. Isso comprova apenas ligação a uma fonte fornecida, não a verdade/confiabilidade da fonte. A nova etapa ainda aguarda CI.
+- Próxima validação: suíte CI completa, incluindo browser E2E, para as alterações de evidence claims e preflight.
+
+
+## Último snapshot publicado — 2026-11-02
+
+- Branch remota de referência: `nexus/review-nov-02`; commit `16991c3aaf030f2ff9ef9233b61253c100a82538`. A branch não foi mesclada em `main`.
+- Codex reportou 183 testes unitários aprovados, 5 E2E opcionais ignorados, `compileall` e `git diff --check` aprovados antes da publicação. CI remoto não havia sido executado.
+- Gemini e Anthropic já tinham tool calling nativo com preservação do turno original; Skills aprovadas eram carregadas sob demanda no chat síncrono/SSE.
+- Pendências comprovadas nesse commit: seleção de modelos independentes por especialista, auditoria estruturada de evidências, delegação mais forte, eventos na UI, CI remoto, sandbox real e implantação cloud.
+- O trabalho remoto subsequente está em `nexus/remote-continuation`; não o considere validado até CI/testes passarem. Ele adiciona mapa de provider/model por especialista com budget preflight, correção do query string de Skills e testes de regressão.
+- Os registros abaixo são checkpoints históricos e não devem ser usados isoladamente como estado atual.
+
 ## Continuidade - pipeline de especialistas (2026-11-02)
 
 - O checkout continua na branch `main`, HEAD `852131e52f454175c501e6f36bcea2c04a73e9e7`, sem commit/push nesta rodada. Alteracoes locais anteriores foram preservadas.
@@ -207,3 +226,197 @@ Continuar com: testar a suíte completa depois desta rodada; então implementar 
 - Testes (resultado observado): API skill integration: passou; tests/test_skills.py 3 passaram; compileall passou.
 - Arquivos: AGENTS.md, NEXUS_EXECUTION_PLAN.md, tools/update_checkpoint.py, nexus_learning/api.py, tests/test_api.py, CHECKPOINT.md
 - Próxima tarefa: P1-04 modelos independentes por especialista; P1-06 auditoria de evidências
+
+
+## Evidence handoff policy — 2026-11-02
+
+- Previous green CI head: `373a55e803269ad9489d6ea4b26ce228e7738965`; 190 unit tests passed in Python 3.11 and 3.12; browser E2E: 5/5 passed.
+- New pending change: synthesis serialization deterministically withholds `unreferenced` specialist claims whenever a source catalogue is present, preserving a per-agent withheld count. The final synthesis prompt states that `source_linked` is a traceable reference, not a proof, and that summaries/items remain untrusted analysis.
+- Reviewer receives explicit instructions to call out factual claims without supplied source IDs. The filtering is structural; semantic support and truth still require review.
+- New unit coverage: linked claims retained, unreferenced claims withheld, no-source claims remain visibly unreferenced, invalid result types rejected. CI pending for this delta.
+
+
+## P1-06 — withholding policy validated (2026-11-02)
+
+- Latest CI head: `18347368767042b78cfa86e0617550928a8152c0`.
+- GitHub Actions passed: 193 unit tests in Python 3.11, 193 in Python 3.12, and 5/5 Playwright/Chromium browser E2E tests. Compile step passed in both Python versions.
+- With a source catalogue present, final synthesis now deterministically receives only `source_linked` specialist claims; unreferenced claims are withheld and counted per agent. The Reviewer is prompted to flag factual statements without a supplied source ID. Summary/item fields remain untrusted analysis.
+- Without sources, claims remain labelled `unreferenced` and are explicitly described to final synthesis as analysis, not verified facts.
+- This is structural reference hygiene, not semantic validation. It does not prove the source is reliable or that the claim is true.
+- Next: P2-01 bounded delegation with explicit stage records, resumability/cancellation semantics and no cycles. Do not introduce parallel execution until isolation and budget accounting are sound.
+
+
+## P2-01 bounded-stage deadline — 2026-11-02 (CI pending)
+
+- Added a global specialist pipeline deadline (90 seconds default, constructor maximum 180 seconds). Each provider call receives the remaining time capped by the existing per-call timeout.
+- If a stage returns after the global deadline, it is reported as `pipeline_timeout`; remaining specialists are marked skipped and final synthesis is not called.
+- Tests cover an overlong first stage and reject invalid/unbounded deadline settings.
+- Timeout is cooperative through provider/HTTP timeout; no false claim of forcibly stopping a non-cooperative external provider.
+
+
+## P2-01 — deadline and stage-stop validation (2026-11-02)
+
+- Commit `029389e9a7ff3781ca0ec00770e2f7eaf1585927` passed full GitHub Actions: Python 3.11: 195 unit tests; Python 3.12: 195 unit tests; Playwright/Chromium: 5/5.
+- Specialist stages now share a 90-second global deadline by default (maximum configurable constructor bound 180s). Each call receives remaining time no greater than the per-call timeout.
+- Overrun becomes `pipeline_timeout`; later stages are skipped and the final synthesis is not called. This relies on the provider respecting its timeout parameter.
+- Still pending: durable stage checkpoint/resume, same-trust-lane fallback after safe pre-call failure, parallel work only after isolation/budget correctness.
+- Next task: P2-02 independent review and provenance.
+
+
+## P1-05 — skills discovery and integrity hardening (2026-11-02, CI pending)
+
+- Replaced SQL `LIKE` discovery with literal case-insensitive filtering over approved skill metadata, so '%' and '_' in user queries cannot turn the search into a wildcard match.
+- Discovery limit must be an integer 1–50; selection limit must keep max_skills within 0–10 and max_chars within 0–12000. Booleans and invalid bounds are rejected.
+- Added regression tests for wildcard search, invalid limits and SHA-256 integrity drift after approval.
+- Skills remain text-only, untrusted suggestions; this does not grant tools or execution privileges. CI pending.
+
+
+## P1-05 — Skills discovery and integrity hardening validated (2026-11-02)
+
+- CI head: `182f59ea06897a9e4eaafff1e1866597b51fe2aa`.
+- Python 3.11: 199 tests passed (5 opt-in E2E skipped by standard discovery).
+- Python 3.12: 199 tests passed (5 opt-in E2E skipped by standard discovery).
+- Browser E2E: 5/5 passed.
+- Skill search treats wildcard symbols as literal text; query/selection limits reject invalid values; tampered approved instructions fail the stored SHA-256 integrity check.
+- Remaining: skill-management UI and semantic instruction-conflict detection; no execution/permission capabilities are granted.
+- Next: P2-02 independent review/provenance.
+
+
+## P2-02 — typed Reviewer assessments (2026-11-02, CI pending)
+
+- Reviewer schema adds a one-to-one `reviews` array for Analyst claims: zero-based `claim_index`, assessment `supported` / `unsupported` / `uncertain` / `conflicting`, note up to 100 chars.
+- The parser rejects incomplete/duplicate review coverage, invalid indices/assessment/note, and any `supported` assessment where the Analyst claim has no supplied evidence ID. Reviewer cannot add claims.
+- Synthesis drops Analyst claims assessed `unsupported` or `conflicting` even if source-link filtering is disabled; uncertain claims remain labelled. The final response is instructed not to restate rejected claims as facts.
+- Activity events include `separate_review_model` to distinguish a reviewer configured with a different provider/model. That is model diversity, not proof or human approval.
+- New unit tests cover exact review coverage, unsupported source-less claims, suppression and model difference. An API integration fixture exercises an unsupported Analyst claim through the real conversation route.
+- CI pending for this delta.
+
+
+## Reviewer preflight footprint adjustment — 2026-11-02 (CI pending)
+
+- Reduced specialist output bounds to summary 160 chars, at most two items (100 chars each), one claim (50 chars) and Reviewer note (60 chars). Source references still cap at three IDs.
+- Worst-case preflight placeholders were aligned to the accepted schema, retaining the default 12,000-character specialist input limit and 24,000-character API pipeline limit.
+- Updated synthesis test to assert the structured review assessment/note metadata.
+- CI pending.
+
+
+## P2-02 — typed Reviewer assessments validated (2026-11-02)
+
+- CI head: `0ff391c0fd4642d6d1792c310b91d9a01ece1db5`.
+- Python 3.11: 203 tests passed; 5 optional E2E skipped by standard discovery.
+- Python 3.12: 203 tests passed; 5 optional E2E skipped by standard discovery.
+- Playwright/Chromium browser E2E: 5/5 passed.
+- Reviewer produces one bounded typed finding per Analyst claim; the parser enforces complete one-to-one index coverage and rejects fabricated/missing findings.
+- Unsupported/conflicting claims are removed before final synthesis; uncertain claims remain visibly labelled. Supported is rejected if no evidence ID was supplied.
+- The API preflight placeholder now uses fixed claim index zero; the integration test confirms that a Reviewer-rejected statement is not included in final synthesis.
+- This is structural review metadata and an LLM opinion, not independent verification or human approval.
+- Next: re-evaluate the sandbox blocker and continue any secure, non-destructive work. No cloud deployment or privileged execution is authorized.
+
+
+## P2-04 — specialist activity UI (2026-11-02, CI pending)
+
+- Added a dedicated authenticated metadata-only endpoint `GET /api/v1/agents/activity`; it returns only specialist LLM events belonging to the signed-in user and filters the detail payload on the server.
+- The Agentes page displays the role roster and up to 40 recent LLM stage events, with provider/model, stage, time, duration, character counts and safe failure metadata.
+- API test exercises unauthorized access, another user's event isolation, and redaction of injected prompt/response/tool-result fields.
+- Browser rendering uses node/textContent helpers; no dynamic HTML strings or arbitrary activity JSON are inserted.
+- CI pending.
+
+
+## Skills administration + sanitized agent activity — 2026-11-02
+
+- Latest code head validated by CI: `ed844c370458a8b8a8f233965b9043f23286af36`.
+- GitHub Actions passed: Python 3.11 — 211 tests; Python 3.12 — 211 tests; Playwright/Chromium browser E2E — 7/7. Compile step passed in both Python jobs.
+- Skills registry now supports owner-reviewable pending proposals, explicit approval and explicit rejection, with audit records. The UI lets the owner propose a text-only skill, inspect the full instruction body, approve/reject after confirmation, and search approved skills.
+- The API proposal-list route is authenticated. Rejected skills are removed from the pending queue and never appear in approved discovery.
+- Agent activity is read via `GET /api/v1/agents/activity`, which returns only allowlisted metadata for `agent.llm_*` events belonging to the authenticated owner. Prompts, model responses and tool results are filtered server-side.
+- The Agentes UI renders roster and specialist LLM activity metadata. The UI uses DOM text nodes, not HTML insertion.
+- PR #3 remains open, based on `nexus/review-nov-02`; no merge into `main`.
+- Next priority: durable specialist-stage checkpoint/resume and carefully bounded same-trust-lane fallback; keep sandboxed code execution blocked until an actual isolation runtime is validated.
+
+
+## Skills integrity at approval boundary (2026-11-02, CI pending)
+
+- `SkillRegistry.approve` re-fetches the proposal under `BEGIN IMMEDIATE`, recomputes the SHA-256, and refuses approval when instructions differ from the original proposal.
+- `GET /api/v1/skills/proposals` returns an `integrity_ok` flag. The UI displays it and disables approval when false.
+- Added registry/API/Playwright tests for tampered proposals remaining pending and the approval button being disabled.
+- CI pending.
+
+
+## Tool activity in Agents UI — 2026-11-02
+
+- Latest validated code head: `7a207d5967d1f4b0e542f522b8671f70651d8a1b`.
+- GitHub Actions passed: Python 3.11 — 216 tests; Python 3.12 — 216 tests; Playwright/Chromium browser E2E — 8/8.
+- ToolRegistry emits `tool.started`, `tool.completed`, `tool.failed` and `tool.denied` audit records with only allowlisted metadata: tool name, permission/risk class, decision, bounded error type/reason code and duration. Arguments and results are deliberately discarded by the audit writer.
+- `GET /api/v1/agents/activity` returns owner-scoped, allowlisted specialist LLM and tool events; the Agentes page renders them without HTML injection or private payload fields.
+- API and E2E tests inject private arguments/results and verify that neither the route nor the browser exposes them.
+- PR #3 remains open and unmerged, based on `nexus/review-nov-02`.
+- Next: durable specialist-stage checkpoint/resume; preserve no-repeat billing semantics and do not rerun completed stages automatically after ambiguous provider failures.
+
+
+## P2-04 — worker event visibility validated (2026-11-02)
+
+- CI head: `9224957e2623c344223b9ad39bc4cd6423965127`.
+- Python 3.11: 216 tests passed (8 optional E2E skipped in standard discovery).
+- Python 3.12: 216 tests passed (8 optional E2E skipped in standard discovery).
+- Playwright/Chromium: 8/8 browser E2E passed.
+- `GET /api/v1/agents/activity` now includes owner-scoped worker events joined to jobs; only allowlisted metadata is returned, never job payload/result.
+- Agentes view displays LLM, tool and worker events. API and browser tests confirm private prompts, model responses, tool arguments/results and job payload/results do not leak.
+- P2-04 validated for MVP. Better task/session correlation remains a follow-up.
+- Next: P2-01 durable specialist-stage checkpoints. Do not retry ambiguous provider calls automatically.
+
+
+## P2-01 — durable specialist checkpoint design (2026-11-02)
+
+- Added `docs/SPECIALIST_CHECKPOINTS.md` as an implementation contract, not an implementation claim.
+- Key safety decision: a stage left `running` after a crash is ambiguous and must become `interrupted_unknown`; never retry automatically because the provider may already have completed/billed the request.
+- Resume must be explicit, owner/session scoped, lease/fencing protected, and revalidate budget, provider allowlist, trust lane, limits and task age.
+- Only bounded typed deliverables are checkpointed; no hidden reasoning, secrets, raw exception text, tool payloads or unbounded provider responses.
+- Next implementation slices: schema/store and compare-and-swap first, then pipeline callbacks, explicit resume API, sync/SSE integration, and concurrency/privacy/billing tests.
+- No code implementation or resume capability is claimed yet.
+
+
+## P3-01 — SQLite backup/restore first slice (2026-11-02, CI pending)
+
+- Added `python -m nexus_learning.backup backup SOURCE DEST` using SQLite's online backup API and `PRAGMA integrity_check`.
+- Added `python -m nexus_learning.backup restore BACKUP DEST`; replacing an existing destination requires `--overwrite --safety-backup PATH`.
+- Temporary files are integrity-checked before atomic replacement; symlink paths are rejected. Backup files are treated as sensitive and not committed.
+- Added tests for snapshot consistency, overwrite behavior, safety-copy behavior, corrupt backup rejection, path validation and symlink rejection.
+- Added `docs/DATABASE_BACKUP.md`; restore requires stopping API/worker first.
+- CI head `0fd07dc420241a32fcc3f347cefe39eff8eaa553`: 226 unit tests passed on Python 3.11 and 226 on Python 3.12 (8 optional E2E skipped in standard discovery); Playwright/Chromium passed 8/8. P3-01 remains partial until versioned migrations and a restore drill are implemented.
+
+
+## Android Termux preparation — 2026-11-02
+
+- Added `docs/ANDROID_TERMUX.md` describing the Galaxy J6+ single-owner deployment, local SQLite, loopback-only API, optional worker, and private Moto G52 access through Tailscale + an SSH local forward. The guide explicitly forbids public HTTP exposure, router port forwarding for N.E.X.U.S, Tailscale Funnel, and insecure `0.0.0.0` binding.
+- Added `scripts/termux-start.sh` and `scripts/termux-worker.sh`; both use the same default private database path, enforce Python 3.11+, and keep the API bound to `127.0.0.1:8765`. No credentials are included.
+- Added `tests/test_termux_launchers.py` to validate POSIX shell syntax and guard the loopback/database invariants. The test has been committed but has **not yet been observed passing in CI**. The workflow run created after the preceding launcher commit was cancelled when a newer commit arrived; no successful run is claimed for this change.
+- Commits on `nexus/remote-continuation`: `cae8c77` (guide), `68c6c92` (API launcher), `a903400` (worker launcher), `09dff48` (launcher tests). PR #3 remains the delivery vehicle; no merge to `main` was performed.
+- This is deployment preparation, not proof of a running Android installation. Device-side Termux/Python compatibility, first login, background stability, Tailscale routing and SSH key-only access still require validation on the Galaxy J6+ and Moto G52.
+- Next implementation priority remains **P2-01 durable specialist checkpoint/resume** from `docs/SPECIALIST_CHECKPOINTS.md`; versioned SQLite migrations and production deployment/TLS remain pending.
+
+
+## Registro de execução — 2026-11-03T16:54:13+00:00
+
+- Tarefa: `P1-02-FREE-QUOTA` — **EM ANDAMENTO**
+- Resumo: Branch nexus/remote-continuation sincronizada em e219e3a. Testes de integração com Gemini simulado passaram no chat normal e SSE; free_quota negou outros modelos e não chamou fallback pago. UI distingue bloqueio de orçamento de indisponibilidade do provider. O erro no Galaxy J6+ não foi reproduzido com o estado SQLite local, que permaneceu sem inspeção; verificar modo, enabled, limites, modelo selecionado e uso no painel do dispositivo.
+- Testes (resultado observado): 241 testes padrão passaram (11 skips esperados); Playwright/Chromium E2E 9/9; compileall passou com cache temporário; git diff --check pendente após documentação.
+- Arquivos: nexus_learning/web/index.html; tests/test_api.py; tests/test_provider_budget.py; tests/test_routing.py; tests/e2e/test_browser_ui.py; tests/test_backup.py; tests/test_termux_launchers.py; PROJECT_STATUS.md; NEXUS_EXECUTION_PLAN.md
+- Próxima tarefa: No Galaxy J6+, entrar na UI autenticada, conferir Configurações > Limites de utilização (mode=free_quota, enabled=true, limites positivos e uso diário), Provedores (gemini/gemini-2.5-flash), enviar uma mensagem simples e relatar o erro/código exato se persistir. Depois: git status --short --branch; python -m unittest discover -s tests -q
+
+
+## Registro de execução — 2026-11-03T17:02:16+00:00
+
+- Tarefa: `P1-02-FREE-QUOTA` — **EM ANDAMENTO**
+- Resumo: Revisão independente corrigiu fallback SSE corrompido e o E2E agora cobre erro sem mensagem. Caminho autenticado de chat e SSE com Gemini simulado passa; free_quota não autoriza outro modelo nem chama fallback pago. UI informa bloqueio do orçamento corretamente. O erro no Galaxy J6+ permanece dependente do estado SQLite local, que não foi inspecionado.
+- Testes (resultado observado): 242 testes padrão passaram (12 skips esperados); Playwright/Chromium E2E 10/10; compileall passou usando cache temporário; git diff --check será executado nesta revisão final.
+- Arquivos: nexus_learning/web/index.html; tests/test_api.py; tests/test_provider_budget.py; tests/test_routing.py; tests/e2e/test_browser_ui.py; tests/test_backup.py; tests/test_termux_launchers.py; PROJECT_STATUS.md; NEXUS_EXECUTION_PLAN.md; CHECKPOINT.md
+- Próxima tarefa: No Galaxy J6+, abrir a UI autenticada, conferir Configurações > Limites de utilização (mode=free_quota, enabled=true, limites positivos e uso), Provedores (gemini/gemini-2.5-flash), enviar uma mensagem simples e registrar o código exato caso falhe. Depois: git status --short --branch; python -m unittest discover -s tests -q
+
+
+## Registro de execução — 2026-11-03T17:02:42+00:00
+
+- Tarefa: `P1-02-FREE-QUOTA-VALIDATION` — **EM ANDAMENTO**
+- Resumo: Validação final local concluída após revisão: chat/sse autenticados com Gemini simulado funcionam sob free_quota, outros modelos são negados e fallback pago não recebe chamadas. Interface separa provider indisponível de orçamento bloqueado. A causa do erro no aparelho não foi inferida: SQLite e limites do Galaxy J6+ continuam fora de inspeção. CI remoto disponível refere-se apenas ao head base e219e3a.
+- Testes (resultado observado): python -m unittest discover -s tests -q: 242 OK, 12 skips; E2E Playwright/Chromium: 10/10 OK; compileall: OK com cache temporário; git diff --check: OK.
+- Arquivos: nexus_learning/web/index.html; tests/test_api.py; tests/test_provider_budget.py; tests/test_routing.py; tests/e2e/test_browser_ui.py; tests/test_backup.py; tests/test_termux_launchers.py; PROJECT_STATUS.md; NEXUS_EXECUTION_PLAN.md; CHECKPOINT.md
+- Próxima tarefa: No Galaxy J6+, UI autenticada > Configurações > Limites de utilização: confirmar mode=free_quota, enabled, chamadas/tokens > 0 e uso diário; Provedores: gemini/gemini-2.5-flash; enviar mensagem curta. Se persistir, informar código e valores visíveis de status/uso sem compartilhar credenciais. Em seguida, retomar P1-02-FREE-QUOTA no checkout nexus/remote-continuation.

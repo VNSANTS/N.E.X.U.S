@@ -4,7 +4,7 @@
 
 Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesquisar, organizar conhecimento, utilizar ferramentas, coordenar agentes e executar tarefas autorizadas, mantendo o usuário no controle.
 
-> **Estado atual:** aplicação local em Python/SQLite com API WSGI autenticada, conversas persistidas, recuperação contextual, UI web conectada, ferramentas READ em allowlist e worker local resiliente. MockProvider é o padrão offline; adapters opcionais existem para Ollama, Gemini, OpenAI, Anthropic, Groq e OpenRouter. Um pipeline sequencial Architect→Analyst→Reviewer pode ser habilitado explicitamente para tarefas ADVANCED/RESEARCH; fica desabilitado por padrão, não usa ferramentas e seus papéis compartilham o provider/modelo escolhido. O MVP não é cloud nem colaboração multi-modelo geral. Consulte [PROJECT_STATUS.md](PROJECT_STATUS.md) e [docs/LOCAL_API.md](docs/LOCAL_API.md).
+> **Estado atual:** aplicação local em Python/SQLite com API WSGI autenticada, conversas persistidas, memória contextual, ferramentas READ em allowlist e worker local. MockProvider é o padrão de desenvolvimento; adapters existem para Ollama, Gemini, OpenAI, Anthropic, Groq e OpenRouter. A pipeline Architect→Analyst→Reviewer é opt-in, sequencial, sem ferramentas e com limites de tempo/orçamento; pode usar modelos diferentes por papel. O Reviewer produz avaliações estruturadas, mas não certifica a verdade das afirmações. Skills têm fluxo na UI para propor, revisar o texto integral, aprovar ou rejeitar; apenas as aprovadas podem entrar no contexto, como instruções não confiáveis. A tela Agentes mostra metadados sanitizados de execuções LLM e ferramentas; argumentos e resultados não são exibidos. O CI do head remoto `7a207d5` passou: 216 testes em Python 3.11, 216 em Python 3.12 e 8/8 testes E2E de navegador. O produto ainda não é cloud/produção: não há sandbox de código validada, worker remoto ou implantação TLS. Consulte [PROJECT_STATUS.md](PROJECT_STATUS.md), [NEXUS_EXECUTION_PLAN.md](NEXUS_EXECUTION_PLAN.md) e [docs/LOCAL_API.md](docs/LOCAL_API.md).
 
 ## Visão do projeto
 
@@ -28,6 +28,8 @@ Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesq
 | Documento | Conteúdo |
 |---|---|
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | Estado atual, próximo marco e riscos |
+| [NEXUS_EXECUTION_PLAN.md](NEXUS_EXECUTION_PLAN.md) | Backlog, dependências e critérios de conclusão |
+| [docs/EVIDENCE_AUDIT.md](docs/EVIDENCE_AUDIT.md) | Formato de claims, referências e limites da auditoria |
 | [ROADMAP.md](ROADMAP.md) | Fases e critérios para avançar |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Arquitetura conceitual |
 | [docs/UNIVERSAL_TOOL_CALLING.md](docs/UNIVERSAL_TOOL_CALLING.md) | Contrato, limites e ativação de chamadas nativas de ferramentas |

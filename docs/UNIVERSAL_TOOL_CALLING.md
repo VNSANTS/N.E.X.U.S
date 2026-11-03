@@ -14,13 +14,13 @@ Current READ tools: `memory.search` (personal memory) and `knowledge.claims` (cl
 
 ## Enablement
 
-Native protocol support is implemented for Ollama `/api/chat` and OpenAI-compatible Chat Completions adapters (OpenAI, Groq and OpenRouter). Protocol support alone does not establish support in every model. Verify an exact model's tool-call capability first, then add its exact identifier to local `.env`:
+Native protocol support is implemented for Ollama `/api/chat`, OpenAI-compatible Chat Completions adapters (OpenAI, Groq and OpenRouter), Gemini `generateContent`, and Anthropic `messages`. Gemini continuation preserves the original model content parts, including opaque fields such as `thoughtSignature`; Anthropic continuation preserves the original assistant content blocks. These adapters were tested with HTTP mocks, not live provider calls. Protocol support does not establish support in every model. Verify the selected model's tool-call capability first, then add its exact identifier to local `.env`:
 
 ```dotenv
 NEXUS_TOOL_CALLING_MODELS=ollama:qwen2.5:0.5b,openai:<verified-model-id>
 ```
 
-The setting is empty in `.env.example`. Gemini and Anthropic adapters remain text-only; the runtime does not advertise tools to them.
+The setting is empty in `.env.example`. Tool support remains opt-in per exact provider:model pair; unsupported model capability must not be inferred from the provider adapter alone.
 
 Each task is bounded to four tool rounds, eight calls and 180 seconds of total tool-cycle time. Individual model calls are also bounded by the provider timeout; existing remote budget reservations apply to each generation including tool schemas and continuations. Arguments and serialized results are limited to 8 KB. These limits are code defaults, not a configurable financial budget.
 

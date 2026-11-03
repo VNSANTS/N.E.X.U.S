@@ -40,12 +40,20 @@ class BrowserStreamProvider:
         from nexus_learning.providers.base import ModelResponse
         agent = ("architect", "analyst", "reviewer")[self.specialist_calls]
         self.specialist_calls += 1
-        return ModelResponse(json.dumps({"summary": agent + " plan", "items": []}),
+        return ModelResponse(json.dumps({"summary": agent + " plan", "items": [], "claims": []}),
                              self.provider_name, self.model)
 
     def stream_generate(self, messages, **kwargs):
         yield "Resposta "
         yield "persistida pelo navegador."
+
+
+class BudgetBlockedGeminiProvider:
+    provider_name = "gemini"
+    model = "gemini-2.5-flash"
+
+    def stream_generate(self, messages, **kwargs):
+        raise AssertionError("budget must block before the provider is called")
 
 
 class QuietRequestHandler(WSGIRequestHandler):
@@ -112,6 +120,7 @@ class BrowserUITests(unittest.TestCase):
             "research": "Pesquisas e fontes",
             "memories": "Memórias",
             "claims": "Conhecimento",
+            "skills": "Skills",
             "agents": "Agentes",
             "tasks": "Tarefas",
             "jobs": "Fila do worker",
@@ -161,6 +170,34 @@ class BrowserUITests(unittest.TestCase):
         self.login()
         self.assertEqual(self.page_errors, [])
 
+    def test_budget_block_is_not_reported_as_provider_unavailable(self):
+        self.login()
+        provider = BudgetBlockedGeminiProvider()
+        self.app.provider_manager.injected_provider = provider
+        with self.engine.db() as connection:
+            connection.execute(
+                "UPDATE provider_settings SET provider='gemini',model=? WHERE id=1",
+                (provider.model,))
+        self.page.locator('[data-view="conversation"]').click()
+        self.page.locator("#input").fill("Esta chamada deve ser bloqueada pelo orçamento")
+        self.page.locator("#sendButton").click()
+        expect(self.page.locator("#messages .error-box")).to_contain_text(
+            "Provider usage budget is unavailable or exhausted.", timeout=10000)
+        expect(self.page.locator("#providerStatus")).to_contain_text(
+            "Orçamento bloqueou a chamada")
+        self.assertNotIn("indisponível", self.page.locator("#providerStatus").inner_text())
+
+    def test_stream_error_without_message_uses_readable_fallback(self):
+        self.login()
+        self.page.route("**/api/v1/sessions/*/messages/stream", lambda route: route.fulfill(
+            status=200, content_type="text/event-stream",
+            body='event: error\ndata: {"code":"generation_failed"}\n\n'))
+        self.page.locator('[data-view="conversation"]').click()
+        self.page.locator("#input").fill("Gerar um erro SSE sem mensagem")
+        self.page.locator("#sendButton").click()
+        expect(self.page.locator("#messages .error-box")).to_contain_text(
+            "Falha na geração", timeout=10000)
+
     def test_opt_in_specialist_pipeline_reaches_browser_stream(self):
         self.login()
         self.page.locator('[data-view="conversation"]').click()
@@ -177,6 +214,141 @@ class BrowserUITests(unittest.TestCase):
                 "SELECT event FROM api_activity WHERE event LIKE 'agent.llm_call_%'").fetchall()]
         self.assertEqual(events.count("agent.llm_call_started"), 3)
         self.assertEqual(events.count("agent.llm_call_completed"), 3)
+        self.assertEqual(self.page_errors, [])
+
+    def test_skills_view_reviews_and_approves_text_only_proposals(self):
+        self.login()
+        self.page.locator('[data-view="skills"]').click()
+        expect(self.page.locator("#viewTitle")).to_have_text("Skills")
+        expect(self.page.locator("#content")).to_contain_text("não podem conceder ferramentas")
+
+        self.page.get_by_placeholder("ex.: research-brief").fill("browser-research")
+        self.page.get_by_placeholder("1.0.0").fill("1.0.0")
+        self.page.get_by_placeholder("Descreva quando esta habilidade é útil").fill(
+            "Ajuda a preparar resumos de pesquisa com fontes."
+        )
+        instruction_text = "Liste fontes, indique incerteza e nunca execute ações."
+        self.page.get_by_placeholder("Escreva instruções textuais para esta habilidade...").fill(
+            instruction_text
+        )
+        self.page.get_by_role("button", name="Propor habilidade").click()
+        expect(self.page.locator("#content")).to_contain_text("browser-research")
+        expect(self.page.locator("#content")).to_contain_text("Propostas aguardando aprovação")
+
+        self.page.get_by_text("Revisar instruções completas").click()
+        expect(self.page.locator("#content")).to_contain_text(instruction_text)
+
+        self.page.once("dialog", lambda dialog: dialog.accept())
+        self.page.get_by_role("button", name="Aprovar habilidade").click()
+        expect(self.page.locator("#content")).to_contain_text("Nenhuma proposta aguardando revisão.")
+        expect(self.page.locator("#content")).to_contain_text("browser-research · v1.0.0")
+
+        self.page.get_by_placeholder("ex.: research-brief").fill("browser-reject")
+        self.page.get_by_placeholder("1.0.0").fill("1.0.0")
+        self.page.get_by_placeholder("Descreva quando esta habilidade é útil").fill(
+            "Proposta que será rejeitada no teste."
+        )
+        self.page.get_by_placeholder("Escreva instruções textuais para esta habilidade...").fill(
+            "Este texto não deve entrar no catálogo aprovado."
+        )
+        self.page.get_by_role("button", name="Propor habilidade").click()
+        expect(self.page.locator("#content")).to_contain_text("browser-reject")
+        self.page.once("dialog", lambda dialog: dialog.accept())
+        self.page.get_by_role("button", name="Rejeitar proposta").click()
+        expect(self.page.locator("#content")).to_contain_text("Nenhuma proposta aguardando revisão.")
+        self.assertEqual(self.page.locator("#content").get_by_text(
+            "browser-reject · v1.0.0", exact=True
+        ).count(), 0)
+        expect(self.page.locator("#content")).to_contain_text("browser-research · v1.0.0")
+        self.assertEqual(self.page_errors, [])
+
+    def test_tampered_skill_proposal_cannot_be_approved_in_ui(self):
+        self.login()
+        skill_id = self.app.skills.propose(
+            "tampered-skill", "1.0.0", "Skill integrity UI test",
+            "Original instructions that the owner must review.")
+        with self.engine.db() as connection:
+            connection.execute("UPDATE runtime_skills SET instructions=? WHERE id=?",
+                               ("Changed after proposal", skill_id))
+
+        self.page.locator('[data-view="skills"]').click()
+        expect(self.page.locator("#content")).to_contain_text("tampered-skill")
+        expect(self.page.locator("#content")).to_contain_text("integridade inválida")
+        approve = self.page.get_by_role("button", name="Aprovar habilidade")
+        expect(approve).to_be_disabled()
+        with self.engine.db() as connection:
+            status = connection.execute("SELECT status FROM runtime_skills WHERE id=?",
+                                         (skill_id,)).fetchone()["status"]
+        self.assertEqual(status, "proposed")
+        self.assertEqual(self.page_errors, [])
+
+    def test_agents_view_displays_only_specialist_execution_metadata(self):
+        self.login()
+        with self.engine.db() as connection:
+            owner_id = connection.execute(
+                "SELECT id FROM api_users WHERE username=?",
+                ("browser-owner",),
+            ).fetchone()["id"]
+        self.app.agents.record(owner_id, "agent.llm_call_completed", {
+            "agent_id": "reviewer",
+            "provider": "gemini",
+            "model": "review-model",
+            "status": "completed",
+            "duration_ms": 42,
+            "task_id": "task-87654321",
+            "separate_review_model": True,
+            "prompt": "PRIVATE PROMPT MUST NOT RENDER",
+            "response_text": "PRIVATE INTERNAL RESPONSE MUST NOT RENDER",
+        })
+        self.app.agents.record(owner_id, "agent.llm_call_failed", {
+            "agent_id": "analyst",
+            "provider": "ollama",
+            "model": "analysis-model",
+            "status": "failed",
+            "error_code": "model_timeout",
+            "duration_ms": 1000,
+        })
+        self.app.tools._audit(owner_id, "tool.completed", "knowledge.claims", {
+            "permission": "READ", "risk": "READ", "decision": "allowed",
+            "duration_ms": 17, "arguments": "PRIVATE TOOL ARGUMENT MUST NOT RENDER",
+            "result": "PRIVATE TOOL RESULT MUST NOT RENDER",
+        })
+        job_id = self.app.queue.enqueue(
+            "learning.stats", {"private_payload": "PRIVATE WORKER PAYLOAD MUST NOT RENDER"},
+            owner_id=owner_id,
+        )
+        claimed = self.app.queue.claim(owner_id=owner_id)
+        self.app.queue.complete(
+            job_id, {"private_result": "PRIVATE WORKER RESULT MUST NOT RENDER"},
+            lease_token=claimed["lease_token"],
+        )
+
+        self.page.locator('[data-view="agents"]').click()
+        expect(self.page.locator("#viewTitle")).to_have_text("Agentes")
+        expect(self.page.locator("#content")).to_contain_text("Papéis registrados")
+        expect(self.page.locator("#content")).to_contain_text("Execuções recentes")
+        expect(self.page.locator("#content")).to_contain_text("Reviewer: Chamada concluída")
+        expect(self.page.locator("#content")).to_contain_text("gemini / review-model")
+        expect(self.page.locator("#content")).to_contain_text("42 ms")
+        expect(self.page.locator("#content")).to_contain_text("modelo distinto do Analyst")
+        expect(self.page.locator("#content")).to_contain_text("Analyst: Chamada falhou")
+        expect(self.page.locator("#content")).to_contain_text("model_timeout")
+        expect(self.page.locator("#content")).to_contain_text("Ferramenta knowledge.claims: execução concluída")
+        expect(self.page.locator("#content")).to_contain_text("permissão: READ")
+        expect(self.page.locator("#content")).to_contain_text("Tarefa learning.stats: concluída")
+        expect(self.page.locator("#content")).to_contain_text("estado: completed")
+        expect(self.page.locator("#content")).to_contain_text("tentativa 1")
+        self.assertNotIn("PRIVATE WORKER PAYLOAD MUST NOT RENDER",
+                         self.page.locator("#content").inner_text())
+        self.assertNotIn("PRIVATE WORKER RESULT MUST NOT RENDER",
+                         self.page.locator("#content").inner_text())
+        self.assertNotIn("PRIVATE TOOL ARGUMENT MUST NOT RENDER",
+                         self.page.locator("#content").inner_text())
+        self.assertNotIn("PRIVATE TOOL RESULT MUST NOT RENDER",
+                         self.page.locator("#content").inner_text())
+        self.assertNotIn("PRIVATE PROMPT MUST NOT RENDER", self.page.locator("#content").inner_text())
+        self.assertNotIn("PRIVATE INTERNAL RESPONSE MUST NOT RENDER",
+                         self.page.locator("#content").inner_text())
         self.assertEqual(self.page_errors, [])
 
     def test_mobile_sidebar_opens_and_closes_after_navigation(self):

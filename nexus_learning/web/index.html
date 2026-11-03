@@ -14,7 +14,7 @@
 <aside class="sidebar" id="sidebar"><div class="brand"><div class="brand-mark">NX</div><div><div class="brand-name">N<span>.</span>E<span>.</span>X<span>.</span>U<span>.</span>S<span>.</span></div><div class="brand-caption">INTELLIGENCE WORKSPACE</div></div></div>
 <div class="side-scroll">
 <div class="nav-group"><div class="nav-label">Visão geral</div><button class="nav-item" data-view="dashboard"><span class="nav-icon">◫</span>Dashboard</button><button class="nav-item" data-view="conversation"><span class="nav-icon">◌</span>Conversas</button></div>
-<div class="nav-group"><div class="nav-label">Inteligência</div><button class="nav-item" data-view="learning"><span class="nav-icon">✳</span>Aprendizagem</button><button class="nav-item" data-view="research"><span class="nav-icon">⌕</span>Pesquisas e fontes</button><button class="nav-item" data-view="memories"><span class="nav-icon">▤</span>Memórias</button><button class="nav-item" data-view="claims"><span class="nav-icon">◇</span>Conhecimento</button></div>
+<div class="nav-group"><div class="nav-label">Inteligência</div><button class="nav-item" data-view="learning"><span class="nav-icon">✳</span>Aprendizagem</button><button class="nav-item" data-view="research"><span class="nav-icon">⌕</span>Pesquisas e fontes</button><button class="nav-item" data-view="memories"><span class="nav-icon">▤</span>Memórias</button><button class="nav-item" data-view="claims"><span class="nav-icon">◇</span>Conhecimento</button><button class="nav-item" data-view="skills"><span class="nav-icon">✧</span>Skills</button></div>
 <div class="nav-group"><div class="nav-label">Operações</div><button class="nav-item" data-view="agents"><span class="nav-icon">◎</span>Agentes</button><button class="nav-item" data-view="tasks"><span class="nav-icon">☷</span>Tarefas</button><button class="nav-item" data-view="jobs"><span class="nav-icon">↻</span>Fila do worker</button><button class="nav-item" data-view="activity"><span class="nav-icon">◷</span>Atividade</button></div>
 <div class="nav-group"><div class="nav-label">Sistema</div><button class="nav-item" data-view="providers"><span class="nav-icon">⌘</span>Provedores</button><button class="nav-item" data-view="integrations"><span class="nav-icon">⇄</span>Integrações</button><button class="nav-item" data-view="tools"><span class="nav-icon">⚒</span>Ferramentas</button><button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span>Configurações</button></div>
 <div class="nav-label">Conversas recentes</div><div id="sessions" class="session-list"></div>
@@ -23,8 +23,8 @@
 <div class="modal" id="login"><form class="modal-box" id="loginForm"><h2>Entrar no N.E.X.U.S.</h2><p>Acesso local autenticado. Suas conversas permanecem no banco local.</p><label class="field-block">Usuário<input class="field" name="username" autocomplete="username" required></label><label class="field-block">Senha<input class="field" name="password" type="password" autocomplete="current-password" required></label><button class="primary-button" style="width:100%">Entrar</button><p id="loginError" role="alert"></p></form></div><div id="toast" class="toast hidden" role="status"></div>
 <script>
 let token='',sessionId='',currentUser=null,providerConfig=null,sessionRows=[],activeView='dashboard',busy=false;const $=s=>document.querySelector(s), content=$('#content');
-const groups={dashboard:'Visão geral',conversation:'Visão geral',learning:'Inteligência',research:'Inteligência',memories:'Inteligência',claims:'Inteligência',agents:'Operações',tasks:'Operações',jobs:'Operações',activity:'Operações',providers:'Sistema',integrations:'Sistema',tools:'Sistema',settings:'Sistema'};
-const titles={dashboard:'Dashboard',conversation:'Conversas',learning:'Aprendizagem',research:'Pesquisas e fontes',memories:'Memórias',claims:'Conhecimento',agents:'Agentes',tasks:'Tarefas',jobs:'Fila do worker',activity:'Atividade',providers:'Provedores',integrations:'Integrações',tools:'Ferramentas',settings:'Configurações'};
+const groups={dashboard:'Visão geral',conversation:'Visão geral',learning:'Inteligência',research:'Inteligência',memories:'Inteligência',claims:'Inteligência',skills:'Inteligência',agents:'Operações',tasks:'Operações',jobs:'Operações',activity:'Operações',providers:'Sistema',integrations:'Sistema',tools:'Sistema',settings:'Sistema'};
+const titles={dashboard:'Dashboard',conversation:'Conversas',learning:'Aprendizagem',research:'Pesquisas e fontes',memories:'Memórias',claims:'Conhecimento',skills:'Skills',agents:'Agentes',tasks:'Tarefas',jobs:'Fila do worker',activity:'Atividade',providers:'Provedores',integrations:'Integrações',tools:'Ferramentas',settings:'Configurações'};
 async function api(path,options={}){const headers={'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{}),...options.headers};const r=await fetch('/api/v1'+path,{...options,headers});let d;try{d=await r.json()}catch{d={error:'Resposta inválida da API'}}if(r.status===401&&token){token='';$('#login').classList.remove('hidden')}if(!r.ok)throw Error(d.error||`Falha HTTP ${r.status}`);return d}
 function toast(text){const el=$('#toast');el.textContent=text;el.classList.remove('hidden');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.add('hidden'),3600)}
 function node(tag,cls,text){const x=document.createElement(tag);if(cls)x.className=cls;if(text!==undefined)x.textContent=text;return x}
@@ -41,7 +41,7 @@ async function openSession(id){sessionId=id;const rows=await api('/sessions/'+en
 function renderWelcome(root){const w=node('div','welcome');w.append(node('div','welcome-kicker','Seu espaço de trabalho'));w.append(node('h1','', 'Uma conversa com contexto.'));w.append(node('p','', 'Faça uma pergunta, organize ideias ou continue de onde parou. O contexto de memória é limitado e tratado como informação não confiável.'));const s=node('div','suggestions');['Ajude-me a organizar uma ideia','Resuma um tema que estou estudando','Planeje as próximas etapas de uma tarefa','O que você lembra sobre meus projetos?'].forEach(t=>{const b=node('button','suggestion',t);b.onclick=()=>{$('#input').value=t;$('#input').focus()};s.append(b)});root.append(w,s)}
 function renderMessage(role,text){const row=node('article','message '+role),avatar=node('div','message-avatar',role==='user'?'EU':'NX'),body=node('div','message-body');body.append(node('div','message-label',role==='user'?'Você':'N.E.X.U.S.'));body.append(node('div','message-content',text));row.append(avatar,body);$('#messages').append(row);$('#messages').scrollTop=$('#messages').scrollHeight}
 function renderResearchSources(target,sources){if(!Array.isArray(sources)||!sources.length)return;const refs=node('div','research-sources');refs.append(node('div','message-label','Research sources'));sources.forEach((src,i)=>{const a=node('a','',`[S${i+1}] ${src.title||src.url}`);a.href=src.url;a.target='_blank';a.rel='noopener noreferrer';refs.append(a)});target.append(refs)}
-let activeRequest=null;async function sendMessage(e){e.preventDefault();if(busy)return;const field=$('#input'),text=field.value.trim();if(!text)return;if(!sessionId)await createSession();field.value='';renderMessage('user',text);busy=true;activeRequest=new AbortController();$('#sendButton').disabled=true;$('#sendButton').innerHTML='<span class="spinner"></span>';$('#stopButton').classList.remove('hidden');const pending=node('article','message assistant');pending.id='pendingMessage';pending.append(node('div','message-avatar','NX'),node('div','message-body'));const pendingBody=pending.querySelector('.message-body'),label=node('div','message-label','N.E.X.U.S. · conectando'),textNode=node('div','message-content','');pendingBody.append(label,textNode);$('#messages').append(pending);let finished=false;try{const endpoint='/api/v1/sessions/'+encodeURIComponent(sessionId)+'/messages/stream',headers={'Content-Type':'application/json','Authorization':'Bearer '+token},requestBody={content:text};let response=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify(requestBody),signal:activeRequest.signal});if(response.status===409){let failure={};try{failure=await response.json()}catch{}if(failure.code==='research_confirmation_required'&&confirm('Esta solicitacao requer pesquisa externa no Tavily e pode consumir creditos. Pesquisar agora?')){requestBody.confirm_research=true;response=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify(requestBody),signal:activeRequest.signal})}else throw Error(failure.error||'Pesquisa nao confirmada.')}if(!response.ok){let failure={};try{failure=await response.json()}catch{}throw Error(failure.error||`Falha HTTP ${response.status}`)}if(!response.body)throw Error('O navegador não disponibilizou o fluxo de resposta.');const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';while(true){const {value,done}=await reader.read();buffer+=decoder.decode(value||new Uint8Array(),{stream:!done});let boundary;while((boundary=buffer.indexOf('\n\n'))>=0){const block=buffer.slice(0,boundary);buffer=buffer.slice(boundary+2);const event=(block.match(/^event: (.+)$/m)||[])[1];const dataLine=block.split('\n').find(line=>line.startsWith('data: '));if(!dataLine)continue;const data=JSON.parse(dataLine.slice(6));if(event==='start'){label.textContent=`N.E.X.U.S. · ${data.provider} / ${data.model}`;setProvider(`${data.provider} · ${data.model} · gerando`,'connected')}else if(event==='fallback'){label.textContent=`N.E.X.U.S. fallback ${data.provider} / ${data.model}`;setProvider(`${data.provider} ${data.model} gerando`,'connected')}else if(event==='sources'){renderResearchSources(pendingBody,data.sources)}else if(event==='delta'){textNode.textContent+=data.text;$('#messages').scrollTop=$('#messages').scrollHeight}else if(event==='done'){finished=true;label.textContent=`N.E.X.U.S. · ${data.provider} / ${data.model}`;if(!textNode.textContent)textNode.textContent=data.message.content;setProvider(`${data.provider} · ${data.model} · conectado`,'connected');await refreshSessions()}else if(event==='error'){throw Error(data.error||'Falha na geração')}}if(done)break}if(!finished&&!activeRequest.signal.aborted)throw Error('A conexão foi encerrada antes da resposta final.')}catch(err){if(err.name==='AbortError'){label.textContent='N.E.X.U.S. · geração interrompida';if(!textNode.textContent)pending.remove()}else{pending.remove();$('#messages').append(node('div','error-box','Não foi possível gerar a resposta: '+err.message));setProvider('Provider indisponível','error')}}finally{busy=false;activeRequest=null;$('#sendButton').disabled=false;$('#sendButton').textContent='Enviar ↑';$('#stopButton').classList.add('hidden');field.focus()}}
+let activeRequest=null;async function sendMessage(e){e.preventDefault();if(busy)return;const field=$('#input'),text=field.value.trim();if(!text)return;if(!sessionId)await createSession();field.value='';renderMessage('user',text);busy=true;activeRequest=new AbortController();$('#sendButton').disabled=true;$('#sendButton').innerHTML='<span class="spinner"></span>';$('#stopButton').classList.remove('hidden');const pending=node('article','message assistant');pending.id='pendingMessage';pending.append(node('div','message-avatar','NX'),node('div','message-body'));const pendingBody=pending.querySelector('.message-body'),label=node('div','message-label','N.E.X.U.S. · conectando'),textNode=node('div','message-content','');pendingBody.append(label,textNode);$('#messages').append(pending);let finished=false,failureCode='';try{const endpoint='/api/v1/sessions/'+encodeURIComponent(sessionId)+'/messages/stream',headers={'Content-Type':'application/json','Authorization':'Bearer '+token},requestBody={content:text};let response=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify(requestBody),signal:activeRequest.signal});if(response.status===409){let failure={};try{failure=await response.json()}catch{}if(failure.code==='research_confirmation_required'&&confirm('Esta solicitacao requer pesquisa externa no Tavily e pode consumir creditos. Pesquisar agora?')){requestBody.confirm_research=true;response=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify(requestBody),signal:activeRequest.signal})}else throw Error(failure.error||'Pesquisa nao confirmada.')}if(!response.ok){let failure={};try{failure=await response.json()}catch{}failureCode=failure.code||'';throw Error(failure.error||`Falha HTTP ${response.status}`)}if(!response.body)throw Error('O navegador não disponibilizou o fluxo de resposta.');const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';while(true){const {value,done}=await reader.read();buffer+=decoder.decode(value||new Uint8Array(),{stream:!done});let boundary;while((boundary=buffer.indexOf('\n\n'))>=0){const block=buffer.slice(0,boundary);buffer=buffer.slice(boundary+2);const event=(block.match(/^event: (.+)$/m)||[])[1];const dataLine=block.split('\n').find(line=>line.startsWith('data: '));if(!dataLine)continue;const data=JSON.parse(dataLine.slice(6));if(event==='start'){label.textContent=`N.E.X.U.S. · ${data.provider} / ${data.model}`;setProvider(`${data.provider} · ${data.model} · gerando`,'connected')}else if(event==='fallback'){label.textContent=`N.E.X.U.S. fallback ${data.provider} / ${data.model}`;setProvider(`${data.provider} ${data.model} gerando`,'connected')}else if(event==='sources'){renderResearchSources(pendingBody,data.sources)}else if(event==='delta'){textNode.textContent+=data.text;$('#messages').scrollTop=$('#messages').scrollHeight}else if(event==='done'){finished=true;label.textContent=`N.E.X.U.S. · ${data.provider} / ${data.model}`;if(!textNode.textContent)textNode.textContent=data.message.content;setProvider(`${data.provider} · ${data.model} · conectado`,'connected');await refreshSessions()}else if(event==='error'){failureCode=data.code||'';throw Error(data.error||'Falha na gera\u00e7\u00e3o')}}if(done)break}if(!finished&&!activeRequest.signal.aborted)throw Error('A conexão foi encerrada antes da resposta final.')}catch(err){if(err.name==='AbortError'){label.textContent='N.E.X.U.S. · geração interrompida';if(!textNode.textContent)pending.remove()}else{pending.remove();$('#messages').append(node('div','error-box','Não foi possível gerar a resposta: '+err.message));setProvider(failureCode==='provider_budget_exceeded'?'Or\u00e7amento bloqueou a chamada':'Provider indispon\u00edvel',failureCode==='provider_budget_exceeded'?'configured':'error')}}finally{busy=false;activeRequest=null;$('#sendButton').disabled=false;$('#sendButton').textContent='Enviar ↑';$('#stopButton').classList.add('hidden');field.focus()}}
 function heading(title,subtitle,actions){const h=node('div','page-heading'),left=node('div');left.append(node('div','eyebrow',groups[activeView]||'N.E.X.U.S.'),node('h1','',title),node('p','',subtitle));h.append(left);if(actions){const a=node('div','heading-actions');a.append(actions);h.append(a)}return h}
 function button(label,fn,cls='quiet-button'){const b=node('button',cls,label);b.onclick=fn;return b}
 function stateBadge(state){const s=String(state||'unknown');return node('span','badge',s.replaceAll('_',' '))}
@@ -51,8 +51,227 @@ async function tableView(title,subtitle,path,columns,opts={}){content.className=
 async function providers(){content.className='content';content.replaceChildren(heading('Provedores de IA','Seleção persistente, modelos disponíveis e estado de conexão.'));const data=await api('/providers'),active=data.default,providerRows=data.providers||[];const routing=data.routing||{};const c=card('Modelo padrão');c.append(node('div','callout info',`Roteamento ${routing.mode||'manual'} - ${routing.configured_candidates||0} candidatos configurados - or?amento remoto ${routing.remote_budget_enabled?'habilitado':'desligado'}. Modo automatico requer catalogo explicito e candidatos verificados.`));const current=providerRows.find(x=>x.id===active.provider);c.append(node('div','kpi-value',active.model||current?.suggested_model||'Modelo ainda não escolhido'),node('div','kpi-note',`${current?.name||active.provider} · ${current?.availability||'status não verificado'}`));const f=node('form','form-row'),providerSelect=node('select','field'),modelSelect=node('select','field grow'),load=node('button','quiet-button','Carregar modelos'),check=node('button','quiet-button','Testar conexão'),save=node('button','primary-button','Usar este modelo');providerRows.forEach(x=>{const o=node('option','',x.name);o.value=x.id;o.selected=x.id===active.provider;providerSelect.append(o)});f.append(providerSelect,modelSelect,load,check,save);c.append(f);const hint=node('div','callout info','As credenciais nunca são retornadas pela API nem armazenadas no navegador. Configure chaves no .env local e reinicie o serviço. Um modelo só será marcado disponível após uma verificação real.');c.append(hint);const loadModels=async()=>{load.disabled=true;load.textContent='Consultando…';modelSelect.replaceChildren();try{const result=await api(`/providers/${encodeURIComponent(providerSelect.value)}/models`);(result.models||[]).forEach(m=>{const label=m.name===m.id?m.id:`${m.name} (${m.id})`;const opt=node('option','',label);opt.value=m.id;opt.dataset.capabilities=JSON.stringify(m.capabilities||{});modelSelect.append(opt)});if(!modelSelect.options.length)throw Error('Nenhum modelo disponível para este provider.');const preferred=providerSelect.value===active.provider?active.model:providerRows.find(x=>x.id===providerSelect.value)?.suggested_model;if(preferred&&[...modelSelect.options].some(o=>o.value===preferred))modelSelect.value=preferred;toast(`${modelSelect.options.length} modelo(s) listado(s)`)}catch(e){modelSelect.append(node('option','',e.message));modelSelect.options[0].value='';}finally{load.disabled=false;load.textContent='Carregar modelos'}};providerSelect.onchange=loadModels;load.onclick=async e=>{e.preventDefault();await loadModels()};check.onclick=async e=>{e.preventDefault();if(!confirm(`Verificar conexão com ${providerSelect.value}?`))return;check.disabled=true;try{const result=await api(`/providers/${encodeURIComponent(providerSelect.value)}/check`,{method:'POST',body:JSON.stringify({confirm:true})});toast(`${result.provider}: conexão disponível${result.version?' · '+result.version:''}`);await providers()}catch(err){toast(err.message)}finally{check.disabled=false}};f.onsubmit=async e=>{e.preventDefault();if(!modelSelect.value){toast('Carregue e selecione um modelo disponível.');return}if(!confirm(`Definir ${providerSelect.value} / ${modelSelect.value} como padrão para novas mensagens?`))return;save.disabled=true;try{await api('/providers/default',{method:'POST',body:JSON.stringify({confirm:true,provider:providerSelect.value,model:modelSelect.value})});toast('Provider padrão atualizado');await providers();await loadProvider()}catch(err){toast(err.message)}finally{save.disabled=false}};content.append(c);const list=card('Disponibilidade real');providerRows.forEach(p=>{const row=node('div','list-row'),left=node('div','row-main');left.append(node('div','row-title',p.name),node('div','row-meta',p.id==='ollama'?`Modelos locais: ${(p.installed_models||[]).join(', ')||'nenhum detectado'}`:p.configured?'Credencial presente; conexão aguardando teste':'Credencial ausente'));row.append(left,stateBadge(p.availability==='available'?'disponível':p.availability==='not_configured'?'não configurado':p.availability));list.append(row)});content.append(list);}
 async function integrations(){content.className='content';content.replaceChildren(heading('Integrações','Fontes externas e consumo registrados.'));const [status,usage,docs,repos]=await Promise.all([api('/integrations'),api('/integrations/usage'),api('/integrations/documents'),api('/integrations/github/repos')]);const c=card('Conexões');Object.entries(status||{}).forEach(([name,s])=>{const row=node('div','list-row'),left=node('div','row-main');left.append(node('div','row-title',name),node('div','row-meta',s.configured?'Configuração detectada':'Configuração ausente'));row.append(left,stateBadge(s.enabled?'habilitada':'desativada'));c.append(row)});content.append(c);const grid=node('div','grid two'),research=card('Pesquisar na web · Tavily','Busca externa pode consumir créditos');const form=node('form','form-row');const query=node('input','field grow');query.placeholder='Assunto para pesquisar';query.maxLength=400;query.required=true;const depth=node('select');depth.innerHTML='<option value="basic">Busca básica</option><option value="advanced">Busca aprofundada</option>';const confirmBox=node('input');confirmBox.type='checkbox';confirmBox.required=true;const confirmLabel=node('label','status-text','Confirmo a consulta externa e o possível consumo');confirmLabel.prepend(confirmBox);const submit=node('button','primary-button','Pesquisar');form.append(query,depth);research.append(form,confirmLabel,submit);submit.onclick=async e=>{e.preventDefault();if(!form.reportValidity())return;submit.disabled=true;try{const result=await api('/integrations/tavily/search',{method:'POST',body:JSON.stringify({confirm:true,query:query.value,depth:depth.value,limit:5})});listRows(research,result.results,x=>x.title,x=>x.url,8);toast('Fontes retornadas e registradas.')}catch(err){research.append(node('div','error-box',err.message))}finally{submit.disabled=false}};const use=card('Utilização registrada');use.append(node('pre','',JSON.stringify(usage,null,2)));grid.append(research,use);content.append(grid);const source=card('Conteúdo coletado','Texto externo permanece não confiável');listRows(source,docs,x=>x.title||x.uri,x=>x.uri,8);content.append(source);const gh=card('Repositórios acompanhados');const gf=node('form','form-row'),owner=node('input','field'),repo=node('input','field');owner.placeholder='Organização';repo.placeholder='Repositório';owner.required=repo.required=true;const track=button('Adicionar repositório',async()=>{},'quiet-button');gf.append(owner,repo,track);gh.append(gf);gf.onsubmit=async e=>{e.preventDefault();if(!confirm('Registrar e consultar dados públicos deste repositório?'))return;try{await api('/integrations/github/repos',{method:'POST',body:JSON.stringify({confirm:true,owner:owner.value,repo:repo.value})});integrations()}catch(err){toast(err.message)}};(repos||[]).forEach(r=>{const row=node('div','list-row'),main=node('div','row-main');main.append(node('div','row-title',`${r.repo_owner}/${r.repo_name}`),node('div','row-meta',r.last_synced||'Ainda não sincronizado'));row.append(main,button('Sincronizar',async()=>{if(!confirm('Consultar metadados públicos, commits e issues?'))return;try{const result=await api(`/integrations/github/repos/${encodeURIComponent(r.id)}/sync`,{method:'POST',body:JSON.stringify({confirm:true})});toast(`Sincronização concluída: ${result.changes?.length??0} alteração(ões)`);integrations()}catch(err){toast(err.message)}}));gh.append(row)});content.append(gh)}
 async function learning(){content.className='content';content.replaceChildren(heading('Aprendizagem contínua','Ciclos, lacunas de conhecimento e revisão humana.'));const [settings,topics,cycles,findings,questions,research,status]=await Promise.all([api('/learning/settings'),api('/learning/topics'),api('/learning/cycles'),api('/learning/findings'),api('/learning/questions?status=pending'),api('/learning/research'),api('/worker/status')]);const state=card('Estado do ciclo local');state.append(node('pre','',JSON.stringify({worker:status,settings},null,2)));const toggle=button(settings.enabled?'Pausar autonomia':'Retomar autonomia',async()=>{try{await api('/learning/settings',{method:'POST',body:JSON.stringify({confirm:true,enabled:!settings.enabled,level:settings.level==='paused'?'local':settings.level,max_cycles_per_day:settings.max_cycles_per_day,max_sources_per_cycle:settings.max_sources_per_cycle,max_research_calls_per_day:settings.max_research_calls_per_day})});learning()}catch(e){toast(e.message)}},'primary-button');state.append(toggle);content.append(state);const grid=node('div','grid two');const topicCard=card('Assuntos de estudo');listRows(topicCard,topics,x=>x.topic,x=>`${x.enabled?'ativo':'pausado'} · ${x.allow_research?'pesquisa habilitada':'somente local'}`,12);const topicForm=node('form','form-row'),topic=node('input','field grow'),external=node('input');external.type='checkbox';const externalLabel=node('label','status-text','Permitir pesquisa externa (Crossref)');externalLabel.prepend(external);topic.placeholder='Adicionar assunto';topic.required=true;const addTopic=button('Adicionar',async()=>{},'primary-button');topicForm.append(topic,externalLabel,addTopic);topicCard.append(topicForm);topicForm.onsubmit=async e=>{e.preventDefault();try{const allow=external.checked;if(allow&&!confirm('Habilitar consulta externa recorrente para este assunto?'))return;await api('/learning/topics',{method:'POST',body:JSON.stringify({confirm:true,confirm_external_research:allow,topic:topic.value,enabled:true,interval_seconds:86400,allow_research:allow})});learning()}catch(err){toast(err.message)}};grid.append(topicCard);const cyclesCard=card('Ciclos recentes');listRows(cyclesCard,cycles,x=>x.topic,x=>`${x.phase} · ${x.status}`,8);grid.append(cyclesCard);content.append(grid);const lower=node('div','grid two'),pending=card('Perguntas para você',`${questions.length} pendente(s)`);(questions||[]).forEach(q=>{const f=node('form','list-row'),input=node('input','field grow');input.required=true;input.maxLength=4000;input.placeholder='Sua resposta';const remember=node('input');remember.type='checkbox';const label=node('label','status-text','Guardar como memória pessoal');label.prepend(remember);const send=button('Responder',async()=>{},'primary-button');f.append(node('div','row-main',q.question),input,label,send);f.onsubmit=async e=>{e.preventDefault();try{await api('/learning/questions/'+encodeURIComponent(q.id)+'/answer',{method:'POST',body:JSON.stringify({confirm:true,answer:input.value,remember:remember.checked})});learning()}catch(err){toast(err.message)}};pending.append(f)});if(!questions.length)empty(pending,'Nenhuma pergunta aguardando resposta.');const knowledge=card('Revisão e pesquisas');listRows(knowledge,[...(findings||[]),...(research||[])],x=>x.claim||x.title||x.topic||x.query,x=>x.state||x.created_at||x.provider,8);lower.append(pending,knowledge);content.append(lower);await cycleControls(topics,cycles);}
-async function showView(name){activeView=name;$('#sidebar').classList.remove('open');document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));$('#crumb').textContent=groups[name]||'N.E.X.U.S.';$('#viewTitle').textContent=titles[name]||name;const chat=name==='conversation';content.classList.toggle('hidden',chat);$('#conversation').classList.toggle('hidden',!chat);if(chat){if(!sessionId){if(sessionRows.length)await openSession(sessionRows[0].id);else await createSession()}return}content.className='content';content.replaceChildren(node('div','loading','Carregando…'));try{if(name==='dashboard')await dashboard();else if(name==='learning')await learning();else if(name==='research')await researchView();else if(name==='memories')await memoriesView();else if(name==='claims')await knowledgeView();else if(name==='agents')await tableView('Agentes','Papéis e permissões declarados pelo supervisor local.','/agents',[{label:'Agente',value:x=>x.id},{label:'Responsabilidade',value:x=>x.role},{label:'Limite de etapas',value:x=>x.max_steps},{label:'Ferramentas',value:x=>(x.allowed_tools||[]).join(', ')||'—'}]);else if(name==='tasks')await tableView('Tarefas','Histórico de execução do runtime.','/tasks',[{label:'ID',value:x=>x.id},{label:'Estado',value:x=>x.state},{label:'Criada',value:x=>x.created_at},{label:'Atualizada',value:x=>x.updated_at}]);else if(name==='jobs')await tableView('Fila do worker','Jobs persistentes, estado e tentativas.','/jobs',[{label:'Tipo',value:x=>x.kind},{label:'Estado',value:x=>x.state},{label:'Tentativas',value:x=>x.attempts},{label:'Próxima execução',value:x=>x.run_after},{label:'Criado',value:x=>x.created_at}],{action:button('Executar próxima tarefa',async()=>{try{await api('/jobs/run-once',{method:'POST',body:'{}'});showView('jobs')}catch(e){toast(e.message)}})});else if(name==='activity')await tableView('Atividade','Eventos auditáveis desta conta local.','/activity',[{label:'Evento',value:x=>x.event},{label:'Detalhes',value:x=>x.details},{label:'Data',value:x=>x.created_at}]);else if(name==='providers')await providers();else if(name==='integrations')await integrations();else if(name==='tools')await toolsView();else if(name==='settings')await settingsView();}catch(err){content.replaceChildren(node('div','error-box','Não foi possível carregar esta área: '+err.message))}}
-async function settingsView(){content.className='content';content.replaceChildren(heading('Configurações','Preferências locais desta interface.'));const c=card('Aparência');c.append(node('p','row-meta','A interface mantém o tema escolhido neste navegador. As configurações de credenciais são carregadas pelo backend a partir do ambiente local.'));const theme=button(document.documentElement.dataset.theme==='light'?'Usar tema escuro':'Usar tema claro',toggleTheme,'quiet-button');c.append(theme);content.append(c);const auth=card('Sessão e conectividade');auth.append(node('div','row-meta',`Usuário: ${currentUser?.username||'sessão local'} · API local autenticada.`));auth.append(node('div','callout info','Chaves Gemini e Tavily não são exibidas nesta tela. Configure-as localmente e reinicie o serviço para carregá-las.'));content.append(auth);const budget=await api('/usage/budget');const bc=card('Limites de utilização','O orçamento fail-closed controla chamadas remotas.');const f=node('form');const fields=[['enabled','Permitir chamadas remotas','checkbox'],['daily_calls','Chamadas por dia','number'],['daily_tokens','Tokens por dia','number'],['daily_usd','USD por dia','number'],['task_calls','Chamadas por tarefa','number'],['task_tokens','Tokens por tarefa','number'],['task_usd','USD por tarefa','number'],['input_usd_per_million','USD por milhão de tokens de entrada','number'],['output_usd_per_million','USD por milhão de tokens de saída','number']];fields.forEach(([key,label,type])=>{const l=node('label','field-block',label),i=node('input','field');i.name=key;i.type=type;if(type==='checkbox')i.checked=Boolean(budget.enabled);else{i.required=true;i.min='0';i.step='any';i.value=budget[key]??''}l.append(i);f.append(l)});const save=button('Salvar limites',async()=>{},'primary-button');f.append(save);f.onsubmit=async e=>{e.preventDefault();const fd=new FormData(f),n=k=>Number(fd.get(k));try{await api('/usage/budget',{method:'POST',body:JSON.stringify({confirm:true,enabled:fd.get('enabled')==='on',daily_calls:n('daily_calls'),daily_tokens:n('daily_tokens'),daily_usd:n('daily_usd'),task_calls:n('task_calls'),task_tokens:n('task_tokens'),task_usd:n('task_usd'),input_usd_per_million:n('input_usd_per_million'),output_usd_per_million:n('output_usd_per_million')})});toast('Limites atualizados');settingsView()}catch(err){toast(err.message)}};bc.append(f);content.append(bc)}
+async function skillsView(){
+  content.className='content';
+  content.replaceChildren(heading('Skills','Habilidades textuais que o N.E.X.U.S. pode consultar. Toda proposta exige sua revisão e aprovação explícita.'));
+
+  content.append(node('div','callout info',
+    'Skills são instruções de texto não confiáveis. Elas não podem conceder ferramentas, permissões ou executar código. Revise o conteúdo completo antes de aprovar.'));
+
+  const pendingCard=card('Propostas aguardando aprovação','O texto integral fica visível antes de qualquer aprovação.');
+  const pending=await api('/skills/proposals');
+  if(!pending.length){
+    empty(pendingCard,'Nenhuma proposta aguardando revisão.');
+  }else{
+    for(const proposal of pending){
+      const item=card(proposal.name+' · v'+proposal.version,proposal.description);
+      const review=node('details','');
+      review.append(node('summary','row-title','Revisar instruções completas'));
+      review.append(node('pre','',proposal.instructions));
+      item.append(review);
+      item.append(stateBadge(proposal.integrity_ok===false?'integridade inválida':'integridade válida'));
+      const actions=node('div','form-actions');
+      const approveButton=button('Aprovar habilidade',async()=>{
+        if(!confirm('Aprovar '+proposal.name+' v'+proposal.version+'? Leia as instruções completas antes de confirmar.'))return;
+        try{
+          await api('/skills/'+encodeURIComponent(proposal.id)+'/approve',{
+            method:'POST',body:JSON.stringify({confirm:true})
+          });
+          toast('Skill aprovada. Ela poderá ser carregada quando for relevante.');
+          await skillsView();
+        }catch(err){toast(err.message)}
+      },'primary-button');
+      approveButton.disabled=proposal.integrity_ok===false;
+      actions.append(approveButton);
+      actions.append(button('Rejeitar proposta',async()=>{
+        if(!confirm('Rejeitar e retirar '+proposal.name+' v'+proposal.version+' da fila de aprovação?'))return;
+        try{
+          await api('/skills/'+encodeURIComponent(proposal.id)+'/reject',{
+            method:'POST',body:JSON.stringify({confirm:true})
+          });
+          toast('Proposta rejeitada e registrada.');
+          await skillsView();
+        }catch(err){toast(err.message)}
+      },'danger-button'));
+      item.append(actions);
+      if(proposal.integrity_ok===false){
+        item.append(node('div','error-box','O conteúdo foi alterado depois da proposta e não pode ser aprovado.'));
+      }
+      pendingCard.append(item);
+    }
+  }
+  content.append(pendingCard);
+
+  const approvedCard=card('Skills aprovadas','Somente estas habilidades podem ser selecionadas pelo chat.');
+  const search=node('form','form-row');
+  const query=node('input','field grow');
+  query.placeholder='Buscar por nome ou descrição';
+  query.maxLength=300;
+  const searchButton=button('Buscar',async()=>{},'quiet-button');
+  search.append(query,searchButton);
+  const results=node('div','list');
+  async function loadApproved(term=''){
+    const rows=await api('/skills?query='+encodeURIComponent(term));
+    results.replaceChildren();
+    if(!rows.length){empty(results,'Nenhuma skill aprovada corresponde à busca.');return;}
+    rows.forEach(skill=>{
+      const row=node('div','list-row'),main=node('div','row-main');
+      main.append(node('div','row-title',skill.name+' · v'+skill.version));
+      main.append(node('div','row-meta',skill.description));
+      row.append(main,stateBadge('approved'));
+      results.append(row);
+    });
+  }
+  search.onsubmit=async e=>{
+    e.preventDefault();searchButton.disabled=true;
+    try{await loadApproved(query.value.trim())}
+    catch(err){toast(err.message)}
+    finally{searchButton.disabled=false}
+  };
+  searchButton.onclick=e=>{
+    e.preventDefault();search.requestSubmit();
+  };
+  await loadApproved();
+  approvedCard.append(search,results);
+  content.append(approvedCard);
+
+  const proposalCard=card('Propor nova skill','A proposta é salva como pendente. Ela não entra no chat até você aprová-la.');
+  const form=node('form','');
+  const name=node('input','field');name.placeholder='ex.: research-brief';name.maxLength=64;
+  name.pattern='[a-z][a-z0-9-]{1,63}';name.required=true;
+  const version=node('input','field');version.placeholder='1.0.0';version.maxLength=24;
+  version.pattern='[0-9]+\\.[0-9]+\\.[0-9]+';version.required=true;
+  const description=node('input','field');description.placeholder='Descreva quando esta habilidade é útil';
+  description.maxLength=500;description.required=true;
+  const instructions=node('textarea','');instructions.placeholder='Escreva instruções textuais para esta habilidade...';
+  instructions.rows=8;instructions.maxLength=12000;instructions.required=true;
+  const nameLabel=node('label','field-block','Nome (slug)');nameLabel.append(name);
+  const versionLabel=node('label','field-block','Versão');versionLabel.append(version);
+  const descriptionLabel=node('label','field-block','Descrição');descriptionLabel.append(description);
+  const instructionsLabel=node('label','field-block','Instruções');instructionsLabel.append(instructions);
+  const formSubmit=button('Propor habilidade',async()=>{},'primary-button');
+  form.append(nameLabel,versionLabel,descriptionLabel,instructionsLabel,formSubmit);
+  form.onsubmit=async e=>{
+    e.preventDefault();formSubmit.disabled=true;
+    try{
+      await api('/skills',{method:'POST',body:JSON.stringify({
+        name:name.value.trim(),version:version.value.trim(),
+        description:description.value.trim(),instructions:instructions.value
+      })});
+      toast('Proposta registrada. Revise-a na seção de aprovação.');
+      form.reset();
+      await skillsView();
+    }catch(err){toast(err.message)}
+    finally{formSubmit.disabled=false}
+  };
+  proposalCard.append(form);
+  content.append(proposalCard);
+}
+async function agentsView(){
+  const [agents,activity]=await Promise.all([
+    safe('/agents'),
+    safe('/agents/activity')
+  ]);
+  content.className='content';
+  content.replaceChildren(heading(
+    'Agentes especialistas',
+    'Papéis configurados e metadados das execuções recentes.'
+  ));
+
+  const roster=card('Papéis registrados',
+    'Especializações disponíveis no supervisor local; não significa que estejam ativos em todas as conversas.');
+  listRows(roster,agents,
+    x=>x.id,
+    x=>[
+      x.role||'Sem descrição',
+      'etapas: '+(x.max_steps??'—'),
+      'ferramentas: '+((x.allowed_tools||[]).join(', ')||'nenhuma')
+    ].join(' · '),
+    20
+  );
+
+  const history=card('Execuções recentes',
+    'Metadados permitidos. Prompts, respostas internas e resultados de ferramentas não são exibidos.');
+  const toolEvents=new Set(['tool.started','tool.completed','tool.failed','tool.denied']);
+  const jobEvents=new Set(['job.queued','job.claimed','job.completed','job.failed','job.requeued','job.cancelled']);
+  const events=(activity||[]).filter(x=>
+    x && typeof x.event==='string' &&
+    (x.event.startsWith('agent.llm_') || toolEvents.has(x.event) || jobEvents.has(x.event))
+  );
+  if(!events.length){
+    empty(history,'Ainda não há eventos de agentes, ferramentas ou jobs registrados.');
+  }else{
+    const list=node('div','list');
+    const names={architect:'Architect',analyst:'Analyst',reviewer:'Reviewer'};
+    const labels={
+      call_started:'Chamada iniciada',
+      call_completed:'Chamada concluída',
+      call_failed:'Chamada falhou',
+      stage_failed:'Etapa falhou',
+      failed:'Pipeline falhou',
+      blocked:'Pipeline bloqueado',
+      pipeline_completed:'Pipeline concluído'
+    };
+    for(const event of events.slice(0,40)){
+      const details=event.details&&typeof event.details==='object'&&!Array.isArray(event.details)
+        ?event.details:{};
+      const isTool=event.event.startsWith('tool.');
+      const isJob=event.event.startsWith('job.');
+      const stage=isTool?event.event.slice('tool.'.length)
+        :isJob?event.event.slice('job.'.length):event.event.slice('agent.llm_'.length);
+      const agent=names[details.agent_id]||details.agent_id||'N.E.X.U.S.';
+      const toolLabels={
+        started:'execução iniciada',
+        completed:'execução concluída',
+        failed:'execução falhou',
+        denied:'ação negada pela política'
+      };
+      const jobLabels={
+        queued:'enfileirada',
+        claimed:'iniciada',
+        completed:'concluída',
+        failed:'falhou',
+        requeued:'reagendada',
+        cancelled:'cancelada'
+      };
+      const row=node('div','list-row');
+      const main=node('div','row-main');
+      const title=isTool
+        ?'Ferramenta '+(details.tool||'desconhecida')+': '+(toolLabels[stage]||stage)
+        :isJob?'Tarefa '+(details.kind||'N.E.X.U.S')+': '+(jobLabels[stage]||stage)
+        :agent+': '+(labels[stage]||stage.replaceAll('_',' '));
+      main.append(node('div','row-title',title));
+      const meta=[];
+      if(details.provider||details.model)
+        meta.push([details.provider,details.model].filter(Boolean).join(' / '));
+      if(Number.isFinite(details.duration_ms))meta.push(details.duration_ms+' ms');
+      if(Number.isFinite(details.input_chars))meta.push('entrada '+details.input_chars+' caracteres');
+      if(Number.isFinite(details.output_chars))meta.push('saída '+details.output_chars+' caracteres');
+      if(details.error_code)meta.push('erro: '+details.error_code);
+      if(details.error_type)meta.push('tipo: '+details.error_type);
+      if(details.reason)meta.push('motivo: '+details.reason);
+      if(details.reason_code)meta.push('motivo: '+details.reason_code);
+      if(details.permission)meta.push('permissão: '+details.permission);
+      if(details.risk)meta.push('risco: '+details.risk);
+      if(details.decision)meta.push('decisão: '+details.decision);
+      if(details.kind)meta.push('tipo: '+details.kind);
+      if(details.state)meta.push('estado: '+details.state);
+      if(Number.isFinite(details.attempt))meta.push('tentativa '+details.attempt);
+      if(details.job_id)meta.push('job '+String(details.job_id).slice(-8));
+      if(details.task_id)meta.push('tarefa '+String(details.task_id).slice(-8));
+      if(details.separate_review_model===true)meta.push('modelo distinto do Analyst');
+      else if(details.separate_review_model===false)meta.push('mesmo modelo do Analyst');
+      if(event.created_at)meta.push(event.created_at);
+      if(meta.length)main.append(node('div','row-meta',meta.join(' · ')));
+      row.append(main,stateBadge(details.status||stage.replace('call_','')));
+      list.append(row);
+    }
+    history.append(list);
+  }
+  content.append(roster,history);
+}
+async function showView(name){activeView=name;$('#sidebar').classList.remove('open');document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));$('#crumb').textContent=groups[name]||'N.E.X.U.S.';$('#viewTitle').textContent=titles[name]||name;const chat=name==='conversation';content.classList.toggle('hidden',chat);$('#conversation').classList.toggle('hidden',!chat);if(chat){if(!sessionId){if(sessionRows.length)await openSession(sessionRows[0].id);else await createSession()}return}content.className='content';content.replaceChildren(node('div','loading','Carregando…'));try{if(name==='dashboard')await dashboard();else if(name==='learning')await learning();else if(name==='research')await researchView();else if(name==='memories')await memoriesView();else if(name==='claims')await knowledgeView();else if(name==='skills')await skillsView();else if(name==='agents')await agentsView();else if(name==='tasks')await tableView('Tarefas','Histórico de execução do runtime.','/tasks',[{label:'ID',value:x=>x.id},{label:'Estado',value:x=>x.state},{label:'Criada',value:x=>x.created_at},{label:'Atualizada',value:x=>x.updated_at}]);else if(name==='jobs')await tableView('Fila do worker','Jobs persistentes, estado e tentativas.','/jobs',[{label:'Tipo',value:x=>x.kind},{label:'Estado',value:x=>x.state},{label:'Tentativas',value:x=>x.attempts},{label:'Próxima execução',value:x=>x.run_after},{label:'Criado',value:x=>x.created_at}],{action:button('Executar próxima tarefa',async()=>{try{await api('/jobs/run-once',{method:'POST',body:'{}'});showView('jobs')}catch(e){toast(e.message)}})});else if(name==='activity')await tableView('Atividade','Eventos auditáveis desta conta local.','/activity',[{label:'Evento',value:x=>x.event},{label:'Detalhes',value:x=>x.details},{label:'Data',value:x=>x.created_at}]);else if(name==='providers')await providers();else if(name==='integrations')await integrations();else if(name==='tools')await toolsView();else if(name==='settings')await settingsView();}catch(err){content.replaceChildren(node('div','error-box','Não foi possível carregar esta área: '+err.message))}}
+async function settingsView(){content.className='content';content.replaceChildren(heading('Configurações','Preferências locais desta interface.'));const c=card('Aparência');c.append(node('p','row-meta','A interface mantém o tema escolhido neste navegador. As configurações de credenciais são carregadas pelo backend a partir do ambiente local.'));const theme=button(document.documentElement.dataset.theme==='light'?'Usar tema escuro':'Usar tema claro',toggleTheme,'quiet-button');c.append(theme);content.append(c);const auth=card('Sessão e conectividade');auth.append(node('div','row-meta',`Usuário: ${currentUser?.username||'sessão local'} · API local autenticada.`));auth.append(node('div','callout info','Chaves Gemini e Tavily não são exibidas nesta tela. Configure-as localmente e reinicie o serviço para carregá-las.'));content.append(auth);const budget=await api('/usage/budget');const bc=card('Limites de utilização','O orçamento fail-closed controla chamadas remotas.');const f=node('form');const fields=[['enabled','Permitir chamadas remotas','checkbox'],['mode','Modo de orçamento','select'],['daily_calls','Chamadas por dia','number'],['daily_tokens','Tokens por dia','number'],['daily_usd','USD por dia','number'],['task_calls','Chamadas por tarefa','number'],['task_tokens','Tokens por tarefa','number'],['task_usd','USD por tarefa','number'],['input_usd_per_million','USD por milhão de tokens de entrada','number'],['output_usd_per_million','USD por milhão de tokens de saída','number']];fields.forEach(([key,label,type])=>{const l=node('label','field-block',label);let i;if(type==='select'){i=node('select','field');i.name=key;[['cost','Com custos (USD)'],['free_quota','Cotas gratuitas — Gemini 2.5 Flash']].forEach(([v,t])=>{const o=node('option','',t);o.value=v;i.append(o)});i.value=budget.mode||'cost'}else{i=node('input','field');i.name=key;i.type=type;if(type==='checkbox')i.checked=Boolean(budget.enabled);else{i.required=true;i.min='0';i.step='any';i.value=budget[key]??''}}l.append(i);f.append(l)});const save=button('Salvar limites',async()=>{},'primary-button');f.append(save);f.onsubmit=async e=>{e.preventDefault();const fd=new FormData(f),n=k=>Number(fd.get(k));try{await api('/usage/budget',{method:'POST',body:JSON.stringify({confirm:true,mode:fd.get('mode')||'cost',enabled:fd.get('enabled')==='on',daily_calls:n('daily_calls'),daily_tokens:n('daily_tokens'),daily_usd:fd.get('mode')==='free_quota'?0:n('daily_usd'),task_calls:n('task_calls'),task_tokens:n('task_tokens'),task_usd:fd.get('mode')==='free_quota'?0:n('task_usd'),input_usd_per_million:fd.get('mode')==='free_quota'?0:n('input_usd_per_million'),output_usd_per_million:fd.get('mode')==='free_quota'?0:n('output_usd_per_million')})});toast('Limites atualizados');settingsView()}catch(err){toast(err.message)}};bc.append(f);content.append(bc)}
 async function memoriesView(){content.className='content';content.replaceChildren(heading('Memórias','Conhecimento pessoal persistido e usado para recuperação contextual.'));const formCard=card('Registrar memória explicitamente');const f=node('form');const kind=node('input','field');kind.placeholder='Tipo';kind.value='note';kind.required=true;const title=node('input','field');title.placeholder='Título';title.required=true;const body=node('textarea','field');body.placeholder='Conteúdo';body.required=true;const submit=button('Salvar memória',async()=>{},'primary-button');f.append(kind,title,body,submit);f.onsubmit=async e=>{e.preventDefault();try{await api('/memories',{method:'POST',body:JSON.stringify({confirm:true,kind:kind.value,title:title.value,body:body.value})});memoriesView()}catch(err){toast(err.message)}};formCard.append(f);content.append(formCard);const rows=await api('/memories');const c=card('Memórias ativas');(rows||[]).forEach(m=>{const r=node('div','list-row'),main=node('div','row-main');main.append(node('div','row-title',m.title),node('div','row-meta',`${m.kind} · ${m.body}`));const actions=node('div','heading-actions');actions.append(button('Indexar',async()=>{try{await api(`/memories/${encodeURIComponent(m.id)}/embed`,{method:'POST',body:JSON.stringify({confirm:true})});toast('Indexação concluída')}catch(err){toast(err.message)}}),button('Arquivar',async()=>{if(!confirm('Arquivar esta memória?'))return;try{await api(`/memories/${encodeURIComponent(m.id)}`,{method:'DELETE',body:JSON.stringify({confirm:true})});memoriesView()}catch(err){toast(err.message)}}));r.append(main,actions);c.append(r)});if(!rows.length)empty(c);content.append(c)}
 async function knowledgeView(){content.className='content';content.replaceChildren(heading('Conhecimento','Afirmações propostas e revisão explícita baseada em fontes.'));const sources=await api('/sources'),f=node('form','form-row'),claim=node('input','field grow'),sourceSelect=node('select');claim.placeholder='Nova afirmação para revisão';claim.required=true;sourceSelect.multiple=true;sourceSelect.title='Selecione fontes cadastradas (Ctrl ou Command para múltiplas)';sources.forEach(s=>{const o=node('option','',s.title||s.uri);o.value=s.id;sourceSelect.append(o)});const b=button('Propor afirmação',async()=>{},'primary-button');f.append(claim,sourceSelect,b);f.onsubmit=async e=>{e.preventDefault();try{await api('/claims',{method:'POST',body:JSON.stringify({confirm:true,claim:claim.value,source_ids:[...sourceSelect.selectedOptions].map(x=>x.value),excerpts:{}})});knowledgeView()}catch(err){toast(err.message)}};content.append(f);const rows=await api('/claims'),c=card('Afirmações');(rows||[]).forEach(x=>{const r=node('div','list-row'),main=node('div','row-main');main.append(node('div','row-title',x.claim),node('div','row-meta',`Estado: ${x.state||'proposed'} · confiança: ${x.confidence??'—'} · fontes: ${(x.sources||[]).length}`));const actions=node('div','heading-actions');['under_review','validated','disputed','stale','rejected'].forEach(state=>actions.append(button(state,async()=>{const rationale=prompt('Justificativa da revisão:','');if(rationale===null)return;try{await api(`/claims/${encodeURIComponent(x.id)}/review`,{method:'POST',body:JSON.stringify({confirm:true,state,rationale,confidence:state==='validated'?(x.confidence??0.8):x.confidence})});knowledgeView()}catch(err){toast(err.message)}})));r.append(main,actions);c.append(r)});if(!rows.length)empty(c);content.append(c)}
 async function researchView(){content.className='content';content.replaceChildren(heading('Pesquisas e fontes','Fontes com URL original e conteúdo externo marcado como não confiável.'));const [sources,docs,research]=await Promise.all([api('/sources'),api('/integrations/documents'),api('/learning/research')]);const c=card('Adicionar referência');const f=node('form','form-row'),uri=node('input','field grow'),title=node('input','field grow');uri.placeholder='URL';uri.required=true;title.placeholder='Título';const b=button('Registrar fonte',async()=>{},'primary-button');f.append(uri,title,b);f.onsubmit=async e=>{e.preventDefault();try{await api('/sources',{method:'POST',body:JSON.stringify({uri:uri.value,title:title.value})});researchView()}catch(err){toast(err.message)}};c.append(f);content.append(c);const combined=[...(sources||[]).map(x=>({...x,_origin:'source'})),...(docs||[]).map(x=>({...x,uri:x.uri,_origin:'conteúdo coletado'})),...(research||[]).map(x=>({...x,_origin:'pesquisa'}))],list=card('Referências registradas');listRows(list,combined,x=>x.title||x.uri||x.query,x=>`${x._origin} · ${x.uri||x.url||''} · ${x.retrieved_at||x.fetched_at||''}`,100);content.append(list)}

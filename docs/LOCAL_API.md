@@ -30,7 +30,8 @@ The server persists data in `nexus_learning.db` (ignored by Git). Back up this d
 | `GET/POST /api/v1/memories`, `DELETE /api/v1/memories/{id}` | Search/list or explicitly add/archive memory. Writes require `confirm: true`; assistant output is never written automatically. |
 | `GET/POST /api/v1/sources` | List or register source metadata. Registering a URI does not fetch it. |
 | `GET/POST /api/v1/claims`, `GET /api/v1/claims/{id}`, `POST /api/v1/claims/{id}/review` | Propose, inspect and explicitly review sourced claims. New claims start `proposed`; validation requires rationale and confidence. Writes require `confirm: true`. |
-| `GET /api/v1/agents`, `GET /api/v1/activity` | Product agent roster and redacted task activity. |
+| `GET /api/v1/agents`, `GET /api/v1/agents/activity` | Specialist roster and server-sanitized `agent.llm_*` metadata for the authenticated owner. Prompt text, model responses and tool results are excluded. |
+| `GET /api/v1/activity` | General redacted task activity for the authenticated owner. |
 | `GET /api/v1/tools`, `POST /api/v1/tools/{id}/execute` | Tool catalog and bounded allowlisted READ tools only. No shell, code execution, remote MCP or sensitive tool exists. Unknown tools are denied. |
 | `GET/POST /api/v1/jobs`, `GET /api/v1/jobs/{id}`, `GET /api/v1/jobs/{id}/events`, `POST /api/v1/jobs/{id}/cancel`, `POST /api/v1/jobs/run-once`, `GET /api/v1/worker/status` | Durable local jobs with idempotency keys, priority, optional one-shot `run_after`, leases and bounded retries. Cancellation is for queued work; status reports the last worker heartbeat. |
 | `GET /api/v1/config` | Active provider/model; never returns secrets. |
@@ -47,6 +48,18 @@ Conversation turn example after login:
 {"content":"O que registrei sobre o projeto?"}
 ```
 
+### Skills management (owner review required)
+
+| Method and path | Behavior |
+|---|---|
+| `GET /api/v1/skills?query=...` | Search only approved text-only skills using literal, case-insensitive substring matching. |
+| `GET /api/v1/skills/proposals` | List up to 20 pending proposals, including full instruction text for owner review. Requires authentication. |
+| `POST /api/v1/skills` | Propose a versioned text-only skill. New proposals are pending and are not loaded into chat. |
+| `POST /api/v1/skills/{id}/approve` with `{"confirm":true}` | Explicitly approve a pending proposal; writes an audit event. |
+| `POST /api/v1/skills/{id}/reject` with `{"confirm":true}` | Explicitly reject a pending proposal; writes an audit event and removes it from the pending queue. |
+
+The Skills screen shows the full instructions before approval/rejection. Skills are untrusted text and cannot grant tools, permissions or code execution. Approved content is checked against its stored SHA-256 hash when loaded.
+
 ## Providers
 
 The provider manager supports Ollama, OpenAI, Anthropic, Google Gemini, Groq, OpenRouter and MockProvider. The code default without a local setting remains MockProvider for development; the local `.env` supplied with this checkout selects Ollama and `qwen2.5:0.5b`. Provider selection is persisted in `provider_settings`, so changing `.env` does not override a database selection that already exists. Use the authenticated provider settings screen or `POST /api/v1/providers/default` to change it.
@@ -57,7 +70,7 @@ Remote providers require `NEXUS_ENABLE_REMOTE_PROVIDER=true`, a provider key and
 
 ### Optional multi-agent conversation stage
 
-`NEXUS_MULTIAGENT_ENABLED=false` is the default. Set it to `true` locally to run the bounded Architect → Analyst → Reviewer sequence before the final answer for requests classified as ADVANCED or RESEARCH. Each role uses the same selected provider/model and makes up to one generation call; all agents have no tools. Results are size/schema validated, marked as untrusted data in the final prompt and excluded from logs. Remote runs first check that the configured budget can accommodate three specialist calls plus the final answer, then each call passes through the normal atomic budget gate. The preflight itself is not an all-or-nothing reservation, so concurrent usage or a budget change can make later stages stop after earlier calls have consumed budget. Leave this feature disabled if you do not want the additional inference calls.
+`NEXUS_MULTIAGENT_ENABLED=false` is the default. Set it to `true` locally to run the bounded Architect → Analyst → Reviewer sequence before the final answer for requests classified as ADVANCED or RESEARCH. By default each role uses the selected main provider/model; optional per-role `NEXUS_AGENT_MODELS` overrides may select separate providers/models. Each role makes up to one generation call; all agents have no tools. Results are size/schema validated, marked as untrusted data in the final prompt and excluded from logs. Remote runs first check that the configured budget can accommodate three specialist calls plus the final answer, then each call passes through the normal atomic budget gate. The preflight itself is not an all-or-nothing reservation, so concurrent usage or a budget change can make later stages stop after earlier calls have consumed budget. Leave this feature disabled if you do not want the additional inference calls.
 
 `GET /api/v1/providers` returns configured state, actual local Ollama availability, installed and loaded models, and the persisted selection without secrets. `GET /api/v1/providers/{provider}/models` lists models; `POST /api/v1/providers/{provider}/check` performs an explicit connection check with `{"confirm":true}`; Gemini checks use model discovery, not generation; `POST /api/v1/providers/default` selects an installed model with `{"provider":"ollama","model":"qwen2.5:0.5b","confirm":true}`. The web UI uses these endpoints.
 
@@ -99,3 +112,60 @@ The UI makes this confirmation explicit and renders returned source URLs as exte
 ## Tool call capability gate
 
 Set NEXUS_TOOL_CALLING_MODELS in local .env only after verifying native tool support for the exact selected model. The API accepts comma-separated provider:model identifiers. The default is empty. Available schemas are READ-only (memory.search, knowledge.claims); sensitive research is not included. Remote continuations remain behind the provider budget and count as separate calls. Tool calls currently use the synchronous messages endpoint; the SSE route keeps streaming and cancellation and withholds tools until cancellable generation transport is available. Full details: docs/UNIVERSAL_TOOL_CALLING.md.
+
+
+## Modelos independentes para especialistas
+
+O estágio multiagente continua desativado por padrão. Para ativá-lo, configure `NEXUS_MULTIAGENT_ENABLED=true`. Opcionalmente, use `NEXUS_AGENT_MODELS` como objeto JSON com um provider/model por papel:
+
+```dotenv
+NEXUS_MULTIAGENT_ENABLED=true
+NEXUS_AGENT_MODELS={"architect":"ollama:qwen2.5:0.5b","analyst":"gemini:<model-id-verificado>","reviewer":"ollama:qwen2.5:0.5b"}
+```
+
+Papéis aceitos: `architect`, `analyst` e `reviewer`. O formato de cada valor é `provider:model`; modelos não configurados continuam usando o provider principal. O `ProviderManager` exige credenciais presentes, opt-in remoto e allowlist para cada provider remoto. Chamadas remotas entram no preflight de orçamento e cada geração continua fazendo sua própria reserva. Se o orçamento não autorizar o conjunto remoto, o pipeline é bloqueado antes da primeira chamada.
+
+A configuração não faz descoberta de modelos nem uma chamada de saúde automática: informe apenas IDs conhecidos/verificados. Nesta etapa, falha de um modelo de especialista encerra a pipeline em vez de repetir uma chamada potencialmente faturável. Fallback entre modelos, mesmo dentro do mesmo trust lane, ainda é pendência. Os especialistas continuam sequenciais, sem ferramentas próprias e sem execução de código.
+
+
+## Auditoria estruturada de evidências dos especialistas
+
+O pipeline pode transportar claims tipadas em cada deliverable: texto da afirmação e `evidence_ids`. Quando fontes são fornecidas, o runtime atribui IDs locais `S1`–`S3` e rejeita IDs que não existam no catálogo recebido ou que estejam duplicados. O estado resultante é apenas `source_linked` ou `unreferenced`; não existe pontuação numérica automática de confiança nem declaração de que a fonte prova a afirmação.
+
+As fontes são dados não confiáveis. Um ID válido só indica que o modelo referenciou um item que foi incluído no contexto. Não garante qualidade, atualidade, independência ou veracidade. A revisão semântica do Reviewer continua sendo uma etapa de modelo, não uma verificação factual independente.
+
+O orçamento configurado usa preços estimados globais, não tarifários por modelo. Em uma execução com vários providers remotos, configure os preços por milhão de tokens de forma conservadora, considerando o modelo mais caro selecionado; o preflight é uma estimativa e não substitui limites de faturamento do provedor.
+
+
+Na síntese final, quando o pipeline recebe fontes, a API omite as claims `unreferenced` de forma determinística e registra a quantidade omitida em cada deliverable. O texto do contexto diferencia `source_linked` de verificação factual: resumo e itens continuam não confiáveis; links não provam a verdade de uma afirmação. Sem fontes, claims ficam rotuladas como `unreferenced` e a síntese recebe instrução para não tratá-las como fatos.
+
+
+## Limite global do pipeline de especialistas
+
+A pipeline sequencial tem um prazo global padrão de **90 segundos** (configurado internamente, máximo permitido de 180 segundos). Cada chamada recebe o menor valor entre o timeout por chamada e o tempo restante. Se uma chamada ultrapassar o prazo, a execução é marcada como `pipeline_timeout`, as etapas seguintes são marcadas como ignoradas e a síntese final não é chamada. O adaptador recebe um timeout reduzido, mas o limite efetivo depende de o transporte HTTP/provedor respeitar esse timeout; nenhuma interrupção forçada de código externo é simulada.
+
+
+Skill discovery uses literal case-insensitive text matching rather than SQL wildcard semantics. API search terms containing '%' or '_' are treated as ordinary text. Internal selection limits are strict: at most 10 skills and 12,000 total instruction characters; invalid numeric types, negative values and oversized values are rejected. Approved skill instructions are hash-checked on every load.
+
+
+### Revisão estruturada por claim
+
+O Reviewer produz uma avaliação por claim do Analyst usando índice zero-based, status `supported`, `unsupported`, `uncertain` ou `conflicting` e nota de até 60 caracteres. A API valida cobertura 1:1; avaliações ausentes, duplicadas ou fora do intervalo falham. `supported` sem evidência fornecida é rejeitado. Reviewer não cria claims novas nesse estágio.
+
+Na síntese, claims `unsupported` e `conflicting` são removidas de forma determinística, mesmo sem exigir source filtering. Claims `uncertain` continuam identificadas. Eventos metadata-only indicam se o Reviewer usou provider/model diferente do Analyst. Essa diversidade não comprova veracidade e não substitui revisão humana.
+
+
+### Atividade dos agentes na interface
+
+`GET /api/v1/agents/activity` retorna no máximo 150 eventos `agent.llm_*` e `tool.started/completed/failed/denied` da conta autenticada. A resposta contém somente metadados permitidos: agente/provider/model, nome da ferramenta, permission/risk, decisão, estado, duração, contagens de caracteres e códigos de falha/motivo. Prompts, saídas dos modelos, argumentos/resultados de ferramentas e eventos de outras contas são excluídos no servidor. A auditoria de ferramenta aplica sua própria allowlist antes de persistir os detalhes.
+
+
+The Agents screen uses the sanitized `GET /api/v1/agents/activity` route rather than the general activity feed. The server returns at most 100 specialist LLM events for the authenticated owner and filters event details through an allowlist. It does not return prompts, model response text, retrieved context, tool arguments or tool results. Individual tool-call activity has not yet been added to this screen.
+
+
+A aprovação de uma proposta revalida o SHA-256 das instruções sob transação de escrita. Se o conteúdo tiver sido alterado depois da criação, o endpoint falha com erro de integridade e mantém a proposta como pendente. A listagem de propostas informa `integrity_ok`; a interface desabilita a aprovação quando o valor é falso.
+
+
+### Eventos de worker na atividade de agentes
+
+`GET /api/v1/agents/activity` também inclui eventos de jobs. A consulta faz JOIN entre `worker_job_events` e `worker_jobs`, sempre filtrando por `worker_jobs.owner_id`. Retorna somente ID/tipo/estado do job, tentativa e códigos/motivos limitados. Não seleciona nem serializa `payload` ou `result`. A UI apresenta esses eventos junto aos de LLM e ferramentas. Os testes de API e navegador verificam isolamento por proprietário e ausência de conteúdo privado.

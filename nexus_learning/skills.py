@@ -17,6 +17,7 @@ class Skill:
 
 class SkillRegistry:
     MAX_INSTRUCTIONS = 12000
+    MAX_SKILLS_PER_MESSAGE = 10
     def __init__(self, engine):
         self.engine = engine
         with engine.db() as c:
@@ -40,30 +41,94 @@ class SkillRegistry:
         return sid
 
     def approve(self, skill_id, *, owner_id, approved):
-        if approved is not True: raise PermissionError("explicit approval required")
+        if approved is not True:
+            raise PermissionError("explicit approval required")
         with self.engine.db() as c:
             c.execute("BEGIN IMMEDIATE")
-            changed=c.execute("UPDATE runtime_skills SET status='approved',updated_at=? WHERE id=? AND status='proposed'",
-                              (now(),skill_id))
-            if not changed.rowcount: raise KeyError(skill_id)
+            row = c.execute(
+                "SELECT status,instructions,content_hash FROM runtime_skills WHERE id=?",
+                (skill_id,),
+            ).fetchone()
+            if not row or row["status"] != "proposed":
+                raise KeyError(skill_id)
+            digest = hashlib.sha256(row["instructions"].encode("utf-8")).hexdigest()
+            if digest != row["content_hash"]:
+                raise ValueError("skill integrity validation failed")
+            c.execute(
+                "UPDATE runtime_skills SET status='approved',updated_at=? WHERE id=? AND status='proposed'",
+                (now(), skill_id),
+            )
             c.execute("INSERT INTO runtime_skill_events VALUES(?,?,?,?,?)",
-                      (uid("ske"),skill_id,"approved",owner_id,now()))
+                      (uid("ske"), skill_id, "approved", owner_id, now()))
+
+    def proposals(self, limit=20):
+        """Return bounded owner-reviewable metadata for proposed text-only skills."""
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 50:
+            raise ValueError("skill proposal limit must be between 1 and 50")
+        with self.engine.db() as c:
+            rows = c.execute(
+                "SELECT id,name,version,description,instructions,status,content_hash,created_at "
+                "FROM runtime_skills WHERE status='proposed' "
+                "ORDER BY created_at ASC,id ASC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            digest = hashlib.sha256(item["instructions"].encode("utf-8")).hexdigest()
+            item["integrity_ok"] = digest == item.pop("content_hash")
+            result.append(item)
+        return result
+
+    def reject(self, skill_id, *, owner_id, confirmed):
+        if confirmed is not True:
+            raise PermissionError("explicit rejection required")
+        with self.engine.db() as c:
+            c.execute("BEGIN IMMEDIATE")
+            changed = c.execute(
+                "UPDATE runtime_skills SET status='rejected',updated_at=? "
+                "WHERE id=? AND status='proposed'",
+                (now(), skill_id),
+            )
+            if not changed.rowcount:
+                raise KeyError(skill_id)
+            c.execute("INSERT INTO runtime_skill_events VALUES(?,?,?,?,?)",
+                      (uid("ske"), skill_id, "rejected", owner_id, now()))
 
     def discover(self, query="", limit=20):
-        if not isinstance(query,str) or len(query)>300: raise ValueError("invalid skill query")
-        limit=max(1,min(int(limit),50)); pattern="%"+query.strip()+"%"
+        if not isinstance(query, str) or len(query) > 300:
+            raise ValueError("invalid skill query")
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 50:
+            raise ValueError("skill discovery limit must be between 1 and 50")
+        needle = query.strip().casefold()
         with self.engine.db() as c:
-            rows=c.execute("SELECT name,version,description,status FROM runtime_skills WHERE status='approved' AND (name LIKE ? OR description LIKE ?) ORDER BY name,created_at DESC LIMIT ?",
-                           (pattern,pattern,limit*3)).fetchall()
-        seen=set(); unique=[]
+            rows = c.execute(
+                "SELECT name,version,description,status FROM runtime_skills "
+                "WHERE status='approved' ORDER BY name,created_at DESC"
+            ).fetchall()
+        seen = set()
+        unique = []
         for row in rows:
-            if row["name"] not in seen:
-                seen.add(row["name"]); unique.append(dict(row))
-            if len(unique)>=limit: break
+            name = row["name"]
+            if name in seen:
+                continue
+            if needle and needle not in name.casefold() and needle not in row["description"].casefold():
+                continue
+            seen.add(name)
+            unique.append(dict(row))
+            if len(unique) >= limit:
+                break
         return unique
 
     def select_for_message(self, message, *, owner_id, max_skills=2, max_chars=5000):
-        if not isinstance(message,str) or not message.strip(): return []
+        if (isinstance(max_skills, bool) or not isinstance(max_skills, int)
+                or not 0 <= max_skills <= self.MAX_SKILLS_PER_MESSAGE):
+            raise ValueError("max_skills is outside the supported range")
+        if (isinstance(max_chars, bool) or not isinstance(max_chars, int)
+                or not 0 <= max_chars <= self.MAX_INSTRUCTIONS):
+            raise ValueError("max_chars is outside the supported range")
+        if not isinstance(message, str) or not message.strip() or max_skills == 0 or max_chars == 0:
+            return []
         terms={w.lower() for w in re.findall(r"[\w-]{3,}",message,flags=re.UNICODE)}
         with self.engine.db() as c:
             rows=c.execute("SELECT name,description FROM runtime_skills WHERE status='approved'").fetchall()

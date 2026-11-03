@@ -40,6 +40,7 @@ class ProviderBudget:
         with engine.db() as c:
             c.executescript('''CREATE TABLE IF NOT EXISTS provider_budget_settings(
               id INTEGER PRIMARY KEY CHECK(id=1),enabled INTEGER NOT NULL DEFAULT 0,
+              mode TEXT NOT NULL DEFAULT 'cost',
               daily_calls INTEGER NOT NULL DEFAULT 0,daily_tokens INTEGER NOT NULL DEFAULT 0,
               daily_usd REAL NOT NULL DEFAULT 0,task_calls INTEGER NOT NULL DEFAULT 0,
               task_tokens INTEGER NOT NULL DEFAULT 0,task_usd REAL NOT NULL DEFAULT 0,
@@ -52,22 +53,25 @@ class ProviderBudget:
               CREATE INDEX IF NOT EXISTS idx_provider_usage_date ON provider_usage(created_at,task_id);
             ''')
             columns={r['name'] for r in c.execute('PRAGMA table_info(provider_budget_settings)')}
+            if 'mode' not in columns: c.execute("ALTER TABLE provider_budget_settings ADD COLUMN mode TEXT NOT NULL DEFAULT 'cost'")
             for name in ('task_calls','task_tokens','task_usd'):
                 if name not in columns: c.execute(f'ALTER TABLE provider_budget_settings ADD COLUMN {name} '+('REAL' if name=='task_usd' else 'INTEGER')+' NOT NULL DEFAULT 0')
             c.execute("INSERT OR IGNORE INTO provider_budget_settings(id,updated_at) VALUES(1,'')")
     def settings(self):
         with self.engine.db() as c: return dict(c.execute('SELECT * FROM provider_budget_settings WHERE id=1').fetchone())
-    def update(self,*,enabled,daily_calls,daily_tokens,daily_usd,task_calls,task_tokens,task_usd,input_price,output_price):
+    def update(self,*,enabled,daily_calls,daily_tokens,daily_usd,task_calls,task_tokens,task_usd,input_price,output_price,mode='cost'):
         if not isinstance(enabled,bool): raise ValueError('enabled must be boolean')
+        if mode not in {'cost','free_quota'}: raise ValueError('invalid budget mode')
         for value,low,high in ((daily_calls,0,10000),(daily_tokens,0,100_000_000),(task_calls,0,1000),(task_tokens,0,10_000_000)):
             if isinstance(value,bool) or not isinstance(value,int) or not low<=value<=high: raise ValueError('invalid usage limit')
         for value in (daily_usd,task_usd,input_price,output_price):
             if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not 0<=value<=100000: raise ValueError('invalid price or budget')
-        if enabled and (daily_calls<1 or daily_tokens<1 or daily_usd<=0 or task_calls<1 or task_tokens<1 or task_usd<=0): raise ValueError('enabled budget requires positive daily and per-task limits')
-        if enabled and (input_price<=0 or output_price<=0): raise ValueError('enabled model budget requires explicit nonzero input and output rates')
+        if enabled and (daily_calls<1 or daily_tokens<1 or task_calls<1 or task_tokens<1): raise ValueError('enabled budget requires positive call and token limits')
+        if enabled and mode == 'cost' and (daily_usd<=0 or task_usd<=0 or input_price<=0 or output_price<=0): raise ValueError('cost mode requires positive budgets and explicit rates')
+        if enabled and mode == 'free_quota' and (daily_usd!=0 or task_usd!=0 or input_price!=0 or output_price!=0): raise ValueError('free quota mode does not accept monetary prices')
         with self.engine.db() as c:
-            c.execute('UPDATE provider_budget_settings SET enabled=?,daily_calls=?,daily_tokens=?,daily_usd=?,task_calls=?,task_tokens=?,task_usd=?,input_usd_per_million=?,output_usd_per_million=?,updated_at=? WHERE id=1',
-              (int(enabled),daily_calls,daily_tokens,float(daily_usd),task_calls,task_tokens,float(task_usd),float(input_price),float(output_price),now()))
+            c.execute('UPDATE provider_budget_settings SET enabled=?,mode=?,daily_calls=?,daily_tokens=?,daily_usd=?,task_calls=?,task_tokens=?,task_usd=?,input_usd_per_million=?,output_usd_per_million=?,updated_at=? WHERE id=1',
+              (int(enabled),mode,daily_calls,daily_tokens,float(daily_usd),task_calls,task_tokens,float(task_usd),float(input_price),float(output_price),now()))
         return self.settings()
     def usage(self):
         today=datetime.now(timezone.utc).date().isoformat()+'%'
@@ -81,11 +85,14 @@ class ProviderBudget:
             return False
         cfg=self.settings()
         required=('daily_calls','daily_tokens','daily_usd','task_calls','task_tokens','task_usd')
-        if not cfg['enabled'] or not all(cfg.get(key,0)>0 for key in required):
+        if not cfg['enabled'] or not all(cfg.get(key,0)>0 for key in ('daily_calls','daily_tokens','task_calls','task_tokens')):
             return False
-        if cfg.get('input_usd_per_million',0)<=0 or cfg.get('output_usd_per_million',0)<0:
+        free_mode = cfg.get('mode','cost') == 'free_quota'
+        if free_mode and (getattr(provider,'provider_name','') != 'gemini' or getattr(provider,'model','') != 'gemini-2.5-flash'):
             return False
-        estimate=(input_tokens*cfg['input_usd_per_million']+
+        if not free_mode and (not all(cfg.get(key,0)>0 for key in ('daily_usd','task_usd')) or cfg.get('input_usd_per_million',0)<=0 or cfg.get('output_usd_per_million',0)<0):
+            return False
+        estimate=0.0 if free_mode else (input_tokens*cfg['input_usd_per_million']+
                   output_tokens*cfg['output_usd_per_million'])/1_000_000
         today=datetime.now(timezone.utc).date().isoformat()+'%'
         with self.engine.db() as c:
@@ -95,9 +102,9 @@ class ProviderBudget:
                 FROM provider_usage WHERE created_at LIKE ?""",(today,)).fetchone()
         return (usage['calls']<cfg['daily_calls']
                 and usage['tokens']+input_tokens+output_tokens<=cfg['daily_tokens']
-                and usage['usd']+estimate<=cfg['daily_usd']
+                and (free_mode or usage['usd']+estimate<=cfg['daily_usd'])
                 and input_tokens+output_tokens<=cfg['task_tokens']
-                and estimate<=cfg['task_usd'])
+                and (free_mode or estimate<=cfg['task_usd']))
 
     def can_reserve_batch(self, provider, requests, *, task_id):
         """Read-only preflight for a bounded multi-call task; each call still reserves atomically."""
@@ -119,11 +126,12 @@ class ProviderBudget:
             return False
         cfg = self.settings()
         required = ("daily_calls", "daily_tokens", "daily_usd", "task_calls", "task_tokens", "task_usd")
-        if (not cfg["enabled"] or not all(cfg.get(key, 0) > 0 for key in required)
-                or cfg.get("input_usd_per_million", 0) <= 0
-                or cfg.get("output_usd_per_million", 0) <= 0):
+        free_mode = cfg.get('mode','cost') == 'free_quota'
+        if (not cfg['enabled'] or not all(cfg.get(key,0)>0 for key in ('daily_calls','daily_tokens','task_calls','task_tokens'))
+                or (not free_mode and (not all(cfg.get(key,0)>0 for key in ('daily_usd','task_usd')) or cfg.get('input_usd_per_million',0)<=0 or cfg.get('output_usd_per_million',0)<=0))
+                or (free_mode and (getattr(provider,'provider_name','')!='gemini' or getattr(provider,'model','')!='gemini-2.5-flash'))):
             return False
-        estimate = (input_tokens * cfg["input_usd_per_million"] +
+        estimate = 0.0 if free_mode else (input_tokens * cfg["input_usd_per_million"] +
                     output_tokens * cfg["output_usd_per_million"]) / 1_000_000
         today = datetime.now(timezone.utc).date().isoformat() + "%"
         with self.engine.db() as c:
@@ -138,10 +146,10 @@ class ProviderBudget:
         count = len(requests)
         return (daily["calls"] + count <= cfg["daily_calls"]
                 and daily["tokens"] + input_tokens + output_tokens <= cfg["daily_tokens"]
-                and daily["usd"] + estimate <= cfg["daily_usd"]
+                and (free_mode or daily["usd"] + estimate <= cfg["daily_usd"])
                 and task["calls"] + count <= cfg["task_calls"]
                 and task["tokens"] + input_tokens + output_tokens <= cfg["task_tokens"]
-                and task["usd"] + estimate <= cfg["task_usd"])
+                and (free_mode or task["usd"] + estimate <= cfg["task_usd"]))
     def _reserve(self,provider,input_tokens,output_tokens,task_id):
         with self.engine.db() as c:
             c.execute('BEGIN IMMEDIATE')
@@ -149,17 +157,26 @@ class ProviderBudget:
             # concurrent budget disable/reduction serialize before or after the
             # reservation, never leave it using stale limits.
             cfg=dict(c.execute('SELECT * FROM provider_budget_settings WHERE id=1').fetchone())
-            if not cfg['enabled'] or not all(cfg[k]>0 for k in ('daily_usd','daily_calls','daily_tokens','task_usd','task_calls','task_tokens')):
+            free_mode = cfg.get('mode','cost') == 'free_quota'
+            if not cfg['enabled'] or not all(cfg[k]>0 for k in ('daily_calls','daily_tokens','task_calls','task_tokens')):
                 raise ProviderBudgetExceededError()
-            if cfg['input_usd_per_million']<=0: raise ProviderConfigurationError()
-            estimate=(input_tokens*cfg['input_usd_per_million']+output_tokens*cfg['output_usd_per_million'])/1_000_000
-            if estimate<=0: estimate=1e-12
+            if free_mode:
+                if getattr(provider,'provider_name','')!='gemini' or getattr(provider,'model','')!='gemini-2.5-flash':
+                    raise ProviderBudgetExceededError()
+                estimate=0.0
+            else:
+                if not all(cfg[k]>0 for k in ('daily_usd','task_usd')) or cfg['input_usd_per_million']<=0:
+                    raise ProviderBudgetExceededError()
+                estimate=(input_tokens*cfg['input_usd_per_million']+output_tokens*cfg['output_usd_per_million'])/1_000_000
+                if estimate<=0: estimate=1e-12
             usage_id=uid('usage'); stamp=now(); day=datetime.now(timezone.utc).date().isoformat()+'%'
             effective_task=task_id or usage_id
             daily=c.execute('SELECT COUNT(*) calls,COALESCE(SUM(input_tokens+output_tokens),0) tokens,COALESCE(SUM(COALESCE(actual_usd,estimated_usd)),0) usd FROM provider_usage WHERE created_at LIKE ?',(day,)).fetchone()
             task=c.execute('SELECT COUNT(*) calls,COALESCE(SUM(input_tokens+output_tokens),0) tokens,COALESCE(SUM(COALESCE(actual_usd,estimated_usd)),0) usd FROM provider_usage WHERE task_id=? AND created_at LIKE ?',(effective_task,day)).fetchone()
-            if (daily['calls']+1>cfg['daily_calls'] or daily['tokens']+input_tokens+output_tokens>cfg['daily_tokens'] or daily['usd']+estimate>cfg['daily_usd']
-                or task['calls']+1>cfg['task_calls'] or task['tokens']+input_tokens+output_tokens>cfg['task_tokens'] or task['usd']+estimate>cfg['task_usd']):
+            if (daily['calls']+1>cfg['daily_calls'] or daily['tokens']+input_tokens+output_tokens>cfg['daily_tokens']
+                or (not free_mode and daily['usd']+estimate>cfg['daily_usd'])
+                or task['calls']+1>cfg['task_calls'] or task['tokens']+input_tokens+output_tokens>cfg['task_tokens']
+                or (not free_mode and task['usd']+estimate>cfg['task_usd'])):
                 raise ProviderBudgetExceededError()
             c.execute("INSERT INTO provider_usage VALUES(?,?,?,?, 'reserved',?,?,?,NULL,?)",
                 (usage_id,effective_task,getattr(provider,'provider_name','unknown'),getattr(provider,'model','unknown'),input_tokens,output_tokens,estimate,stamp))
@@ -167,7 +184,7 @@ class ProviderBudget:
     def _settle(self,usage_id,cfg,input_tokens,output_tokens,actual_in=None,actual_out=None,state='settled'):
         a=input_tokens if not isinstance(actual_in,int) or actual_in<0 else actual_in
         b=output_tokens if not isinstance(actual_out,int) or actual_out<0 else actual_out
-        actual=(a*cfg['input_usd_per_million']+b*cfg['output_usd_per_million'])/1_000_000
+        actual=0.0 if cfg.get('mode','cost')=='free_quota' else (a*cfg['input_usd_per_million']+b*cfg['output_usd_per_million'])/1_000_000
         with self.engine.db() as c: c.execute('UPDATE provider_usage SET state=?,input_tokens=?,output_tokens=?,actual_usd=? WHERE id=?',(state,a,b,actual,usage_id))
     def generate(self,provider,messages,*,max_tokens=800,timeout=30,task_id=None,tools=None):
         input_estimate=estimate_chat_input_tokens(messages, tools)

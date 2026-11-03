@@ -38,7 +38,7 @@ class SpecialistAwareProvider(RecordingProvider):
         if len(self.calls) <= 3:
             import json
             agent = ("architect", "analyst", "reviewer")[len(self.calls) - 1]
-            return ModelResponse(json.dumps({"summary": agent + " result", "items": []}),
+            return ModelResponse(json.dumps({"summary": agent + " result", "items": [], "claims": []}),
                                  self.provider_name, self.model)
         return ModelResponse(self.response, self.provider_name, self.model)
 
@@ -58,9 +58,9 @@ class APITests(unittest.TestCase):
     def tearDown(self):
         self.engine.close()
 
-    def request(self, path, method="GET", body=None, token=None, host="127.0.0.1"):
+    def request(self, path, method="GET", body=None, token=None, host="127.0.0.1", query=""):
         raw = b"" if body is None else json.dumps(body).encode()
-        environ = {"REQUEST_METHOD": method, "PATH_INFO": path, "QUERY_STRING": "",
+        environ = {"REQUEST_METHOD": method, "PATH_INFO": path, "QUERY_STRING": query,
                    "CONTENT_LENGTH": str(len(raw)), "CONTENT_TYPE": "application/json",
                    "wsgi.input": io.BytesIO(raw), "HTTP_HOST": host,
                    "HTTP_AUTHORIZATION": "Bearer " + token if token else "",
@@ -83,6 +83,91 @@ class APITests(unittest.TestCase):
         self.assertTrue(hidden["status"].startswith("404"))
         self.assertFalse(self.app._owns_session(session_id, "another-user"))
         self.assertEqual(self.request("/api/v1/auth/me", token=self.owner)["body"]["username"], "owner")
+
+    def _free_gemini_app(self):
+        class GeminiSimulator:
+            provider_name = "gemini"
+            model = "gemini-2.5-flash"
+
+            def __init__(self):
+                self.calls = []
+
+            def generate(self, messages, *, max_tokens=800, timeout=30):
+                from nexus_learning.providers.base import ModelResponse
+                self.calls.append(("generate", messages))
+                return ModelResponse("Resposta Gemini simulada.", self.provider_name,
+                                     self.model, input_tokens=20, output_tokens=5)
+
+            def stream_generate(self, messages, *, max_tokens=800, timeout=60,
+                                cancel_event=None):
+                self.calls.append(("stream", messages))
+                yield "Resposta "
+                yield "Gemini simulada."
+
+        engine = LearningEngine(":memory:")
+        provider = GeminiSimulator()
+        app = NexusAPI(engine, provider)
+        app.auth.create_user("owner", "correct horse battery staple")
+        token = app.auth.login("owner", "correct horse battery staple")["access_token"]
+        budget = self._request_for_app(app, "/api/v1/usage/budget", "POST", {
+            "confirm": True, "enabled": True, "mode": "free_quota",
+            "daily_calls": 10, "daily_tokens": 5000, "daily_usd": 0,
+            "task_calls": 5, "task_tokens": 5000, "task_usd": 0,
+            "input_usd_per_million": 0, "output_usd_per_million": 0}, token)
+        if not budget["status"].startswith("200"):
+            engine.close()
+            self.fail(f"could not configure simulated free quota: {budget}")
+        response = self._request_for_app(app, "/api/v1/sessions", "POST", {}, token)
+        session_id = response["body"]["id"]
+        return engine, provider, app, token, session_id
+
+    @staticmethod
+    def _request_for_app(app, path, method, body, token):
+        raw = json.dumps(body).encode()
+        environ = {"REQUEST_METHOD": method, "PATH_INFO": path, "QUERY_STRING": "",
+                   "CONTENT_LENGTH": str(len(raw)), "CONTENT_TYPE": "application/json",
+                   "wsgi.input": io.BytesIO(raw), "HTTP_HOST": "127.0.0.1",
+                   "HTTP_AUTHORIZATION": "Bearer " + token,
+                   "SERVER_NAME": "127.0.0.1", "SERVER_PORT": "8765", "wsgi.url_scheme": "http"}
+        captured = {}
+        def start(status, headers):
+            captured["status"] = status
+            captured["headers"] = dict(headers)
+        payload = b"".join(app(environ, start))
+        captured["body"] = (json.loads(payload) if
+            captured["headers"].get("Content-Type", "").startswith("application/json") else payload)
+        return captured
+
+    def test_free_quota_chat_sends_authenticated_message_to_gemini_simulator(self):
+        engine, provider, app, token, session_id = self._free_gemini_app()
+        try:
+            response = self._request_for_app(app,
+                f"/api/v1/sessions/{session_id}/messages", "POST",
+                {"content": "Olá, responda em português."}, token)
+            self.assertTrue(response["status"].startswith("200"), response["body"])
+            self.assertEqual(response["body"]["message"]["content"], "Resposta Gemini simulada.")
+            self.assertEqual(len(provider.calls), 1)
+            self.assertEqual(provider.calls[0][0], "generate")
+            usage = app.provider_budget.usage()["today"]
+            self.assertEqual(usage[0]["provider"], "gemini")
+            self.assertEqual(usage[0]["calls"], 1)
+        finally:
+            engine.close()
+
+    def test_free_quota_stream_sends_message_to_gemini_simulator(self):
+        engine, provider, app, token, session_id = self._free_gemini_app()
+        try:
+            response = self._request_for_app(app,
+                f"/api/v1/sessions/{session_id}/messages/stream", "POST",
+                {"content": "Olá, faça streaming."}, token)
+            self.assertTrue(response["status"].startswith("200"), response["status"])
+            self.assertIn(b"event: done", response["body"])
+            self.assertIn("Resposta Gemini simulada.", response["body"].decode())
+            self.assertEqual([call[0] for call in provider.calls], ["stream"])
+            usage = app.provider_budget.usage()["today"]
+            self.assertEqual(usage[0]["calls"], 1)
+        finally:
+            engine.close()
 
     def test_chat_persists_messages_task_and_retrieves_only_eligible_memory(self):
         sid = self.request("/api/v1/sessions", "POST", {}, self.owner)["body"]["id"]
@@ -121,6 +206,89 @@ class APITests(unittest.TestCase):
         self.assertIn("Compare sources",json.dumps(self.provider.messages))
         self.assertTrue(any("untrusted procedural suggestions" in message["content"]
                             for message in self.provider.messages))
+
+    def test_skill_proposals_are_owner_authenticated_and_approved_explicitly(self):
+        created = self.request("/api/v1/skills", "POST", {
+            "name": "research-brief",
+            "version": "1.0.0",
+            "description": "Research source evidence",
+            "instructions": "Use cited sources and mark uncertainty.",
+        }, self.owner)
+        self.assertTrue(created["status"].startswith("201"), created)
+        skill_id = created["body"]["id"]
+
+        unauthenticated = self.request("/api/v1/skills/proposals")
+        self.assertTrue(unauthenticated["status"].startswith("401"))
+
+        proposals = self.request("/api/v1/skills/proposals", token=self.owner)
+        self.assertTrue(proposals["status"].startswith("200"), proposals)
+        self.assertEqual([row["id"] for row in proposals["body"]], [skill_id])
+        self.assertEqual(proposals["body"][0]["instructions"],
+                         "Use cited sources and mark uncertainty.")
+        self.assertTrue(proposals["body"][0]["integrity_ok"])
+
+        approved = self.request(f"/api/v1/skills/{skill_id}/approve", "POST",
+                                {"confirm": True}, self.owner)
+        self.assertTrue(approved["status"].startswith("200"), approved)
+        self.assertEqual(self.request("/api/v1/skills/proposals", token=self.owner)["body"], [])
+
+    def test_tampered_skill_proposal_is_blocked_by_api_approval(self):
+        created = self.request("/api/v1/skills", "POST", {
+            "name": "tamper-check",
+            "version": "1.0.0",
+            "description": "A proposal for integrity testing",
+            "instructions": "Original instructions for review.",
+        }, self.owner)
+        self.assertTrue(created["status"].startswith("201"), created)
+        skill_id = created["body"]["id"]
+        with self.engine.db() as c:
+            c.execute("UPDATE runtime_skills SET instructions=? WHERE id=?",
+                      ("Altered after proposal", skill_id))
+
+        proposals = self.request("/api/v1/skills/proposals", token=self.owner)
+        self.assertFalse(proposals["body"][0]["integrity_ok"])
+        approval = self.request(f"/api/v1/skills/{skill_id}/approve", "POST",
+                                {"confirm": True}, self.owner)
+        self.assertTrue(approval["status"].startswith("400"), approval)
+        remaining = self.request("/api/v1/skills/proposals", token=self.owner)["body"]
+        self.assertEqual(remaining[0]["status"], "proposed")
+        self.assertFalse(remaining[0]["integrity_ok"])
+
+    def test_skill_proposal_can_be_rejected_only_with_explicit_confirmation(self):
+        created = self.request("/api/v1/skills", "POST", {
+            "name": "temporary-skill",
+            "version": "1.0.0",
+            "description": "A temporary proposed skill",
+            "instructions": "Draft instructions for owner review.",
+        }, self.owner)
+        skill_id = created["body"]["id"]
+        pending = self.request("/api/v1/skills/proposals", token=self.owner)
+        self.assertEqual([row["id"] for row in pending["body"]], [skill_id])
+
+        denied = self.request(f"/api/v1/skills/{skill_id}/reject", "POST",
+                              {"confirm": False}, self.owner)
+        self.assertTrue(denied["status"].startswith("403"))
+        self.assertEqual(len(self.request("/api/v1/skills/proposals", token=self.owner)["body"]), 1)
+
+        rejected = self.request(f"/api/v1/skills/{skill_id}/reject", "POST",
+                                {"confirm": True}, self.owner)
+        self.assertTrue(rejected["status"].startswith("200"), rejected)
+        self.assertEqual(rejected["body"]["status"], "rejected")
+        self.assertEqual(self.request("/api/v1/skills/proposals", token=self.owner)["body"], [])
+        self.assertEqual(self.request("/api/v1/skills", token=self.owner,
+                                         query="query=temporary")["body"], [])
+
+    def test_skill_discovery_endpoint_reads_query_string(self):
+        research = self.app.skills.propose(
+            "research-brief", "1.0.0", "Research source evidence", "Compare sourced evidence.")
+        review = self.app.skills.propose(
+            "code-review", "1.0.0", "Review software changes", "Check code regressions.")
+        self.app.skills.approve(research, owner_id="owner", approved=True)
+        self.app.skills.approve(review, owner_id="owner", approved=True)
+
+        response = self.request("/api/v1/skills", token=self.owner, query="query=research")
+        self.assertTrue(response["status"].startswith("200"), response)
+        self.assertEqual([item["name"] for item in response["body"]], ["research-brief"])
 
     def test_chat_executes_allowlisted_model_tool_through_policy_and_returns_result(self):
         import os
@@ -181,6 +349,150 @@ class APITests(unittest.TestCase):
                 "SELECT details FROM api_activity WHERE event LIKE 'agent.llm_call_%'").fetchall()]
         self.assertEqual(len(records), 6)
         self.assertNotIn("architect result", json.dumps(records))
+
+    def test_agent_activity_endpoint_is_authenticated_isolated_and_metadata_only(self):
+        owner_user = self.app.auth.user_for_token(self.owner)
+        self.app.agents.record(owner_user["id"], "agent.llm_call_completed", {
+            "agent_id": "reviewer",
+            "provider": "ollama",
+            "model": "review-model",
+            "status": "completed",
+            "duration_ms": 123,
+            "input_chars": 456,
+            "output_chars": 78,
+            "task_id": "task_private_12345678",
+            "prompt": "PRIVATE PROMPT MUST NOT BE RETURNED",
+            "response": "PRIVATE MODEL RESPONSE MUST NOT BE RETURNED",
+            "tool_result": {"secret": "PRIVATE TOOL DATA"},
+        })
+        # Simulate an activity row owned by another local identity without
+        # creating a second login account (the product supports one local owner).
+        self.app.agents.record("different-owner-id", "agent.llm_call_completed", {
+            "agent_id": "analyst", "provider": "ollama", "model": "other-user-model",
+        })
+        self.app.tools._audit(owner_user["id"], "tool.completed", "knowledge.claims", {
+            "permission": "READ", "risk": "READ", "decision": "allowed",
+            "duration_ms": 17, "arguments": "PRIVATE TOOL ARGUMENT",
+            "result": "PRIVATE TOOL RESULT",
+        })
+        self.app.tools._audit("different-owner-id", "tool.completed", "private.tool", {
+            "permission": "READ", "risk": "READ", "decision": "allowed",
+        })
+        job_id = self.app.queue.enqueue(
+            "learning.stats", {"private_payload": "PRIVATE JOB PAYLOAD"},
+            owner_id=owner_user["id"],
+        )
+        claimed = self.app.queue.claim(owner_id=owner_user["id"])
+        self.assertEqual(claimed["id"], job_id)
+        self.app.queue.complete(
+            job_id, {"private_result": "PRIVATE JOB RESULT"},
+            lease_token=claimed["lease_token"],
+        )
+        self.app.queue.enqueue(
+            "learning.stats", {"private_payload": "OTHER USER JOB"},
+            owner_id="different-owner-id",
+        )
+
+        unauthenticated = self.request("/api/v1/agents/activity")
+        self.assertTrue(unauthenticated["status"].startswith("401"))
+        response = self.request("/api/v1/agents/activity", token=self.owner)
+        self.assertTrue(response["status"].startswith("200"), response)
+        self.assertEqual(len(response["body"]), 5)
+        by_event = {event["event"]: event for event in response["body"]}
+        event = by_event["agent.llm_call_completed"]
+        self.assertEqual(event["details"]["agent_id"], "reviewer")
+        self.assertEqual(event["details"]["provider"], "ollama")
+        self.assertEqual(event["details"]["duration_ms"], 123)
+        tool_event = by_event["tool.completed"]
+        self.assertEqual(tool_event["details"]["tool"], "knowledge.claims")
+        self.assertEqual(tool_event["details"]["permission"], "READ")
+        self.assertEqual(tool_event["details"]["duration_ms"], 17)
+        self.assertNotIn("arguments", tool_event["details"])
+        self.assertNotIn("result", tool_event["details"])
+        job_events = [event for event in response["body"] if event["event"].startswith("job.")]
+        self.assertEqual({event["event"] for event in job_events},
+                         {"job.queued", "job.claimed", "job.completed"})
+        completed_job = next(event for event in job_events if event["event"] == "job.completed")
+        self.assertEqual(completed_job["details"]["kind"], "learning.stats")
+        self.assertEqual(completed_job["details"]["state"], "completed")
+        self.assertEqual(completed_job["details"]["job_id"], job_id)
+        serialized = json.dumps(response["body"])
+        self.assertNotIn("PRIVATE PROMPT", serialized)
+        self.assertNotIn("PRIVATE MODEL RESPONSE", serialized)
+        self.assertNotIn("PRIVATE TOOL DATA", serialized)
+        self.assertNotIn("PRIVATE TOOL ARGUMENT", serialized)
+        self.assertNotIn("PRIVATE TOOL RESULT", serialized)
+        self.assertNotIn("PRIVATE JOB PAYLOAD", serialized)
+        self.assertNotIn("PRIVATE JOB RESULT", serialized)
+        self.assertNotIn("OTHER USER JOB", serialized)
+        self.assertNotIn("other-user-model", serialized)
+        self.assertNotIn("private.tool", serialized)
+
+    def test_opt_in_specialists_can_use_independent_provider_models(self):
+        import os
+        from unittest.mock import patch
+        from nexus_learning.providers.base import ModelResponse
+
+        class StageProvider:
+            provider_name = "ollama"
+            def __init__(self, model, summary):
+                self.model = model
+                self.summary = summary
+                self.calls = 0
+            def generate(self, messages, *, max_tokens=800, timeout=30):
+                self.calls += 1
+                role = messages[0]["content"].lower()
+                payload = {"summary": self.summary, "items": [], "claims": []}
+                if "analyst specialist" in role:
+                    payload["claims"] = [{"text": "uncited observation", "evidence_ids": []}]
+                if "reviewer specialist" in role:
+                    payload["reviews"] = [{"claim_index": 0, "assessment": "unsupported",
+                                          "note": "No source was supplied."}]
+                return ModelResponse(json.dumps(payload), self.provider_name, self.model)
+
+        main = RecordingProvider()
+        main.provider_name = "ollama"
+        main.model = "main-model"
+        selected = {
+            "architect-model": StageProvider("architect-model", "architect"),
+            "analyst-model": StageProvider("analyst-model", "analyst"),
+            "reviewer-model": StageProvider("reviewer-model", "reviewer"),
+        }
+        self.app.provider_manager.injected_provider = main
+        with self.engine.db() as c:
+            c.execute("UPDATE provider_settings SET provider='ollama',model=? WHERE id=1",
+                      (main.model,))
+        original_build = self.app.provider_manager.build
+
+        def build(name, model=None):
+            if name == "ollama" and model == main.model:
+                return main
+            if name == "ollama" and model in selected:
+                return selected[model]
+            return original_build(name, model)
+
+        config = json.dumps({
+            "architect": "ollama:architect-model",
+            "analyst": "ollama:analyst-model",
+            "reviewer": "ollama:reviewer-model",
+        })
+        sid = self.request("/api/v1/sessions", "POST", {}, self.owner)["body"]["id"]
+        with patch.dict(os.environ, {"NEXUS_MULTIAGENT_ENABLED": "true",
+                                     "NEXUS_AGENT_MODELS": config}):
+            with patch.object(self.app.provider_manager, "build", side_effect=build):
+                reply = self.request(f"/api/v1/sessions/{sid}/messages", "POST",
+                                     {"content": "Analise e planeje uma melhoria"}, self.owner)
+
+        self.assertTrue(reply["status"].startswith("200"), reply["body"])
+        self.assertEqual([selected[name].calls for name in selected], [1, 1, 1])
+        self.assertEqual(len(main.messages), 4)  # runtime system, skill/context, deliverables and final user turn
+        final_context = json.dumps(main.messages, ensure_ascii=False)
+        self.assertIn("architect", final_context)
+        self.assertIn("analyst", final_context)
+        self.assertIn("reviewer", final_context)
+        self.assertIn("unsupported", final_context)
+        self.assertIn("claims_rejected_by_review", final_context)
+        self.assertNotIn("uncited observation", final_context)
 
     def test_opt_in_specialists_skip_simple_conversation(self):
         import os

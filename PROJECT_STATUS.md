@@ -1,9 +1,40 @@
 # Project Status
 
-**Stage:** local authenticated application with persistent learning cycles and read-only integrations on Windows/Python 3.13.17. This checkout contains uncommitted local work; no changes were committed or pushed. No real provider or external research calls were made in this continuation.
-**Implementation:** Python/SQLite learning core, local WSGI API, browser UI, persistent session history, contextual retrieval, opt-in adapters and routing, confirmed research, fail-closed budget controls, and a local resilient worker are covered by offline tests. An opt-in LLM specialist pipeline now runs Architect → Analyst → Reviewer before advanced/research replies; it is tool-less, bounded, auditable and disabled by default. This remains a local MVP, not a production-ready or remotely hosted assistant.
+## Free Gemini quota audit — 2026-11-03 (local, not pushed)
 
-## Current verified state - 2026-11-02 (continuation round)
+- Synchronized `nexus/remote-continuation` with `origin/nexus/remote-continuation` at `e219e3af7b083e0c13f7138ba4c5878ac722fda3`; the local review branch was preserved. The `free_quota` implementation commits are present.
+- Added authenticated API integration coverage for ordinary chat and SSE using a simulated `gemini/gemini-2.5-flash`, configured through the budget API. Both paths reached the simulator and recorded usage with zero USD. Unit coverage confirms all other models/providers are denied and automatic routing does not call a paid fallback.
+- Fixed the browser status label so `provider_budget_exceeded` is reported as “Orçamento bloqueou a chamada” instead of “Provider indisponível”. The original safe budget error remains visible.
+- Fixed Windows test cleanup for SQLite connections and made POSIX-shell/symlink tests skip when the host lacks those capabilities.
+- Local verification: 242 standard tests passed (12 expected skips), compileall passed using a temporary bytecode cache, and Playwright/Chromium E2E passed 10/10. No real Gemini call or paid provider call was made.
+- GitHub Actions for the base `e219e3a` passed on both push and PR runs. These runs do not include the current local changes. PR #3 remains open and targets `nexus/review-nov-02`; no merge was made.
+- Device status remains unverified: the Galaxy J6+ SQLite budget settings and selected model were not read. The reproduced valid configuration works; the on-device budget error therefore still needs a UI check of mode, enabled state, call/token limits, selected exact model, and current usage. Local quota limits do not establish the provider account's billing behavior.
+
+## Current remote snapshot — 2026-11-02
+
+- **Published source:** branch `nexus/review-nov-02`, commit `16991c3aaf030f2ff9ef9233b61253c100a82538`. This is a review branch; it is not merged into `main`.
+- **Verified at publication:** local Codex reported 183 unit tests passing, 5 optional E2E tests skipped, `compileall` passing and `git diff --check` passing. GitHub Actions had not yet run for this commit.
+- **Application state:** authenticated local Python/SQLite WSGI app with browser UI, contextual memory, research confirmation, bounded worker, provider routing and allowlisted READ tool calling. It is not cloud-hosted and remains loopback-only; the PC can be off while the repository is reviewed, but the app itself is not remotely accessible.
+- **Providers:** native bounded tool-call adapters exist for Ollama, OpenAI-compatible providers, Gemini and Anthropic. Validation used mocks; no real provider generations or external searches were made in the published round. SSE deliberately withholds model tools while preserving cancellation.
+- **Skills:** registry/API, proposal and explicit approval, version/hash integrity checks, relevant on-demand loading and injection into synchronous and SSE chat are implemented. Skills remain untrusted text and cannot grant tools or permissions.
+- **Specialists:** Architect → Analyst → Reviewer pipeline is opt-in, sequential, bounded, tool-less and metadata-audited. In the published commit all specialists use the same selected provider/model. Independent model selection, structured evidence verification and stronger delegation are still pending in that published snapshot.
+- **Not production-ready:** no cloud deployment/TLS, remote worker, multi-user isolation, safe code-execution sandbox, automated backup/restore or completed operational monitoring. Do not expose the local API to the public internet.
+- **Secrets:** `.env`, local databases and logs were excluded from Git. The published tree passed a pattern scan for common credential formats; that scan is not a guarantee that every secret format is absent.
+
+## Active remote continuation — 2026-11-02
+
+- **Remote source of truth:** branch `nexus/remote-continuation`; PR #3 targets `nexus/review-nov-02`, not `main`. Latest validated code head: `7a207d5967d1f4b0e542f522b8671f70651d8a1b`. PR remains open and unmerged.
+- **Latest CI:** GitHub Actions passed on head `7a207d5`: 216 unit tests in Python 3.11, 216 in Python 3.12, and 8/8 Playwright/Chromium browser E2E tests. Compilation passed in both Python jobs.
+- **Skills:** authenticated proposal listing, proposal creation, explicit approval and rejection, audit events, literal search, strict limits and SHA-256 integrity checks are implemented. The browser UI shows full instructions before approval/rejection and has a searchable approved list. Approved skills are loaded on demand into synchronous and SSE chat; they remain untrusted text and cannot grant tools or execute code.
+- **Agent/tool activity:** the Agentes screen shows specialist roster and recent LLM pipeline events plus tool.started/completed/failed/denied events. `GET /api/v1/agents/activity` scopes to the signed-in owner and server-filters an allowlist of metadata; prompts, model outputs, tool arguments and tool results are never returned by this endpoint. Job/worker activity is not yet integrated in this screen.
+- **Specialists:** `NEXUS_AGENT_MODELS` supports independent provider/model configuration for Architect, Analyst and Reviewer. ProviderManager preserves remote opt-in, allowlist, credential and budget controls. The Reviewer emits bounded assessments by claim; unsupported/conflicting claims are withheld before synthesis. Model review is not independent factual verification.
+- **Still pending/blocked:** durable stage checkpoint/resume and same-trust-lane fallback; semantic skill-conflict review; complete evidence provenance and human verification; real sandboxed execution (blocked because no validated isolation runtime is available); cloud/TLS deployment, remote worker, backups and production identity.
+- **External use:** no real provider inference, Tavily search or paid API call was made by the remote implementation/CI. The app remains local loopback-only and is not accessible just because the repository is on GitHub or the PC is off.
+- **Secrets:** `.env`, databases and logs remain excluded from Git. A pattern scan is not a complete guarantee that every secret format is absent.
+
+The entries below are historical development snapshots. They must not override this current remote summary.
+
+## Historical snapshot — earlier continuation (2026-11-02)
 - Worker tests now cover competing independent processes, idempotent enqueue across processes, stale-token fencing, active lease renewal during long handlers, terminal expiry events, recovery after service reconstruction, and task/link transaction recovery.
 - Browser E2E uses Playwright in a temporary Python environment with a temporary Chromium install; 4 tests cover login failure/success, main navigation, streaming/history/new session, logout/relogin, mobile navigation, topic/cycle creation and declining external research confirmation.
 - E2E surfaced and fixed the learning page's shifted `listRows` arguments. Cycle answers now advance the idempotency generation, persist owner context into the checkpoint, and save consented memory atomically with the answer.
@@ -249,3 +280,109 @@ O caminho SSE continua usando transporte streaming e cancelável; chamadas de fe
 Validação desta fatia: novos testes offline exercitam schemas, execução API autenticada, continuidade do modelo, negação de tool sensível, limites, resultados extensos, parsing Ollama/OpenAI-compatible, IDs exclusivos e preservação do SSE. Não foram realizadas chamadas reais a providers nem Tavily. Consulte docs/UNIVERSAL_TOOL_CALLING.md.
 
 Limites que permanecem: não existe sandbox de código/arquivos porque não há executor desse tipo; os papéis Architect/Analyst/Reviewer continuam sequenciais, usam o mesmo provider e não chamam ferramentas; Gemini/Anthropic ainda não têm protocolo nativo de tool calling; integração por streaming aguarda transporte cancelável e eventos de progresso da ferramenta em SSE.
+
+
+## Evidence policy update — latest remote CI
+
+- Structured claims are now filtered before final synthesis whenever source records are present: only claims with a reference ID supplied in the request are passed as explicitly source-linked claims; unreferenced claims are withheld and counted.
+- The Reviewer is instructed to flag factual statements without supplied source IDs in review items. Source linkage still does not establish source reliability or truth; summaries/items are untrusted analysis.
+- CI on the previous evidence-claims contract and browser fixture (commit `373a55e803269ad9489d6ea4b26ce228e7738965`) passed: 190 unit tests in Python 3.11, 190 in 3.12, and all 5 browser E2E tests. This new deterministic withholding policy is not yet validated by CI.
+
+
+## Bounded delegation update — pending CI
+
+- Specialist pipeline now has a global 90-second deadline (constructor accepts 1–180 seconds), passes each provider the remaining time, and turns an overrun into `pipeline_timeout`. Later specialists are marked skipped and no final synthesis is invoked after an overrun.
+- The transport/provider must respect its timeout; this is not a forced process kill. Per-stage call remains bounded by existing provider timeout and the global deadline.
+- New tests verify timeout bounds and that a slow first stage prevents later stage calls. CI for this delta is pending.
+
+
+## Specialist execution deadline — validated by CI
+
+- Global specialist pipeline deadline: 90 seconds default, constructor maximum 180 seconds. Each specialist gets the remaining time, capped by the existing per-call timeout.
+- A stage that returns after the deadline is converted to `pipeline_timeout`; later specialists are skipped and final synthesis does not run.
+- Latest CI commit `029389e9a7ff3781ca0ec00770e2f7eaf1585927`: 195 unit tests passed on Python 3.11 and 195 on Python 3.12; 5/5 Playwright/Chromium E2E tests passed; compilation succeeded.
+- This timeout is cooperative through the provider transport's timeout parameter, not a hard process kill. Durable stage resume and same-trust-lane fallback remain unfinished.
+
+
+## Skills hardening — pending CI
+
+- Skill discovery now performs literal, case-insensitive substring filtering in Python instead of interpreting SQL LIKE wildcard characters. Discovery limits must be strict integers from 1 to 50.
+- On-demand selection now validates `max_skills` (0–10) and `max_chars` (0–12000), rejecting booleans, negative or oversized values before retrieving instruction text.
+- Added tests for literal wildcard queries, invalid limits and detection of approved instruction content changed after its stored SHA-256 hash.
+- This update does not add tools or execution permissions to skills. CI for the delta is pending.
+
+
+## Skills hardening — validated by CI
+
+- Approved-skill discovery now uses literal case-insensitive matching, so `%` and `_` are not SQL wildcards.
+- Strict integer bounds now apply to discovery and on-demand selection; invalid booleans, negative values and oversized limits fail before loading.
+- A stored SHA-256 mismatch after approval is rejected.
+- CI head `182f59ea06897a9e4eaafff1e1866597b51fe2aa`: 199 unit tests passed on Python 3.11 and 199 on Python 3.12; 5/5 Playwright/Chromium browser E2E passed.
+- Skill administration UI and semantic conflict review remain pending. Skills are still untrusted text; no permissions/tools are granted.
+
+
+## P2-02 structured Reviewer assessments — pending CI
+
+- Reviewer output now has a typed assessment for every Analyst claim: `supported`, `unsupported`, `uncertain`, or `conflicting`, with a zero-based claim index and a note capped at 100 characters.
+- Parser requires exact one-to-one coverage of all Analyst claims and rejects missing/duplicate/out-of-range indices, invalid assessment values, and `supported` without an evidence ID.
+- Reviewer cannot author new factual claims in this stage. When the Reviewer marks a claim `unsupported` or `conflicting`, the final synthesis serializer withholds it deterministically, including when source-link filtering is disabled. The final model is instructed not to restate those claims as facts.
+- Activity metadata indicates whether Reviewer provider/model differs from Analyst's. A different model is only a second model opinion, not independent truth verification or human approval.
+- The implementation uses the same bounded, sequential, tool-less pipeline and global deadline. CI for this delta is pending.
+
+
+## Reviewer schema size adjustment — pending CI
+
+- Bounded each specialist response to a 160-character summary, up to two 100-character items, and at most one 50-character claim. Reviewer notes are capped at 60 characters.
+- The smaller schema reduces the worst-case preflight prompt footprint; default specialist input budget remains unchanged. This preserves conservative request bounds rather than inflating provider context limits.
+- CI is pending.
+
+
+## P2-02 structured Reviewer — validated by CI
+
+- Reviewer returns a typed assessment for each Analyst claim: `supported`, `unsupported`, `uncertain` or `conflicting`, with a zero-based index and note capped at 60 characters.
+- Parser enforces exact one-to-one coverage, rejects duplicate/missing/out-of-range indexes and invalid statuses, and rejects `supported` when the Analyst claim has no supplied source ID.
+- The Reviewer cannot create new factual claims in this stage. The synthesis serializer deterministically withholds `unsupported` and `conflicting` Analyst claims even when source-link filtering is disabled; uncertain claims remain labelled.
+- The distinct Reviewer model marker is metadata only. A second model opinion is not independent factual verification, human review or action approval.
+- GitHub Actions head `0ff391c0fd4642d6d1792c310b91d9a01ece1db5`: 203 unit tests passed on Python 3.11 and 203 passed on Python 3.12 (5 optional E2E tests skipped in each standard discovery run); Playwright/Chromium passed 5/5. Compile step passed in both unit-test jobs.
+- Fixed an undefined index in the API preflight placeholder and updated the API integration assertion to verify that a rejected claim is absent from final synthesis.
+
+
+## P2-04 — specialist activity UI (pending CI)
+
+- The Agentes view now presents the registered specialist roster plus recent model-pipeline events, including provider/model, stage, duration, input/output character counts, error/reason and whether Reviewer uses a distinct model.
+- Added authenticated `GET /api/v1/agents/activity`, returning at most 60 `agent.llm_*` events for the current user only. The server parses and filters event details through a strict allowlist; prompt text, model output, tool results and unrelated activity are not returned.
+- Added API tests for authentication, cross-user isolation and metadata redaction. Browser rendering uses DOM/textContent helpers, not HTML injection.
+- CI pending.
+
+
+## Skills approval integrity — pending CI
+
+- Approval now re-reads proposed instructions and stored SHA-256 inside the write transaction before changing status.
+- A changed proposal fails closed and remains `proposed`; the proposals endpoint returns an `integrity_ok` boolean for the owner UI.
+- The Skills page displays the integrity state and disables approval when the hash does not match.
+- Added unit/API/Playwright tests for tampering and explicit approval. CI pending.
+
+
+## P2-04 agent/tool/worker observability — validated
+
+- `GET /api/v1/agents/activity` returns authenticated owner-scoped LLM, tool and worker-job event metadata.
+- LLM/tool events are field-allowlisted and bounded. Worker events are joined through `worker_jobs.owner_id`; the route never selects `payload` or `result`. Job kind, ID, state, bounded attempt/error metadata and timestamp are exposed.
+- The Agentes view renders specialist, tool and worker events with DOM text nodes; prompts, model outputs, tool arguments/results and worker payload/results are not rendered.
+- API isolation/privacy tests and browser E2E explicitly inject private payloads and verify they are absent from the response and UI.
+- GitHub Actions head `9224957e2623c344223b9ad39bc4cd6423965127`: 216 unit tests passed on Python 3.11 and 216 on Python 3.12 (8 optional E2E skipped in standard discovery); Playwright/Chromium passed 8/8.
+- Remaining improvement: correlate worker and specialist events more completely by task/session, without exposing private payloads.
+
+
+## P2-01 checkpoint/resume design gate
+
+A dedicated design contract now exists at `docs/SPECIALIST_CHECKPOINTS.md`. It defines owner-scoped run/stage records, a bounded state machine, leases/fencing, explicit resume authorization, same-trust-lane enforcement, budget revalidation and an `interrupted_unknown` state to prevent automatic duplicate billing after ambiguous provider outcomes. This is documentation only; implementation remains pending.
+
+
+## P3-01 SQLite backup/restore — implementation slice (CI pending)
+
+- Added `nexus_learning.backup` with SQLite online-backup snapshots, integrity checks, temporary-file publication and explicit overwrite controls.
+- Restore refuses to replace an existing database unless `--overwrite` and a separate new `--safety-backup` are supplied. The current database is copied and integrity-checked before replacement.
+- Symbolic-link database paths are rejected. The restore source is validated before destination mutation; the staged restored database is checked again before atomic replacement.
+- Added unit tests for backup, overwrite refusal/consent, safety backup, invalid snapshots, same-path rejection, missing source and symlink rejection.
+- Added `docs/DATABASE_BACKUP.md` with Windows commands and operational guidance. Stop API/worker before restoring over the live database.
+- GitHub Actions head `0fd07dc420241a32fcc3f347cefe39eff8eaa553`: 226 unit tests passed on Python 3.11 and 226 on Python 3.12 (8 optional E2E skipped in standard discovery); Playwright/Chromium passed 8/8. This does not complete P3-01: versioned schema migrations and an operational restore drill remain.
