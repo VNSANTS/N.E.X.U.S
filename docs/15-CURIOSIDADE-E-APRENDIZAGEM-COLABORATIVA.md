@@ -223,3 +223,26 @@ O código original está no histórico preservado, branch:
 - Infraestrutura de execução ainda não implementada; PC desligado = não realiza pesquisas.
 
 **Status:** direção de pesquisa registrada; não há worker ativado e nenhuma alteração no código do MARK.
+
+
+## 13. Decisão: agendamento adaptativo C, horário + ociosidade do PC (2026-11-23)
+
+**Escolha explícita:** combinar janelas periódicas de pesquisa com momentos em que o computador esteja ocioso, ajustando automaticamente a execução à disponibilidade de recursos e **priorizando o uso do computador pelo usuário**.
+
+### Regras funcionais
+1. **Agenda:** permitir ciclos agendados, evitando manter estudos contínuos sem objetivo.
+2. **Ociosidade:** aproveitar oportunidades em que o PC esteja livre, mesmo fora da hora agendada, observando os limites definidos.
+3. **Preempção:** se o usuário voltar a utilizar o computador, se um processo prioritário precisar de CPU/RAM/rede ou se um recurso exceder os limites, não iniciar novos ciclos e pausar os que forem pausáveis com checkpoint consistente.
+4. **Retomada:** quando voltar a existir capacidade e orçamento, continuar do checkpoint sem repetir ações externas ou consultas cobradas indevidamente.
+5. **Prioridades:** comandos interativos, áudio de conversa e controle de dispositivos têm precedência sobre investigação; evitar concorrência com tarefas intensivas autorizadas.
+6. **Transparência:** registrar quando, por qual motivo e com quais fontes/limites cada ciclo começou, pausou ou terminou.
+7. **Controle humano:** oferecer pausar estudos, silenciar notificações, restringir temas e revisar orçamento; sem uso ilimitado da internet, sem fallback pago.
+8. **Energia e disponibilidade:** PC desligado, suspenso ou worker parado não pesquisa; quando religado, avalia tarefas pendentes, não inventa atividade passada.
+
+### Parâmetros ainda a decidir
+- Intervalo entre ciclos e janelas permitidas.
+- Como detectar ociosidade e quais limites de CPU/RAM/rede aplicar, com testes no hardware real.
+- Número de buscas/fontes/tokens por dia e regras de silêncio.
+- Formato e momento de apresentar resultados e perguntas.
+
+**Estado:** especificação somente; nenhuma tarefa ou serviço agendado, nenhum código MARK alterado.

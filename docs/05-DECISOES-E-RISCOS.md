@@ -110,3 +110,18 @@ Atualizado em 2026-11-23.
 - Aprendizado humano continua orientado a perguntas relevantes e memória com consentimento, sem transformar perspectivas em fatos universais.
 - Proporção, frequência, limites de orçamento e notificações permanecem em aberto. A escolha **não concede acesso irrestrito** à internet, contas, câmeras ou dados privados.
 - Especificação em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md); **nenhuma implementação no MARK**.
+
+
+## D-016 — Pesquisa agendada + ociosidade, adaptação contínua (2026-11-23)
+- **Escolha explícita: alternativa C.** O NEXUS deve combinar horários periódicos, oportunidades de ociosidade e disponibilidade de CPU/RAM/rede, pausando a pesquisa quando o usuário precisar dos recursos do PC.
+- Preferência por tarefas interativas, áudio e comandos do usuário. Estudos pausados deverão retomar a partir de checkpoints sem duplicar consultas/efeitos externos.
+- Frequências, limites de recursos e orçamento **ainda não foram definidos**, dependem de testes no hardware real. Sem horários, valores ou percentuais inventados.
+- PC desligado/suspenso e worker parado **não realizam pesquisa**. Nenhuma automação foi criada.
+- Regras em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Documental.**
+
+## D-017 — Voz universal: Sukuna (2026-11-23)
+- **Escolha explícita:** a voz do NEXUS deve ser **especificamente a voz de Sukuna (Jujutsu Kaisen)** como referência de timbre e interpretação, preservada consistentemente em todas as falas do PC, J6+ e demais saídas futuras.
+- A personalidade NEXUS v1.0 continua independente da voz: não adotar automaticamente a personalidade do personagem.
+- **Pendente:** qual interpretação é desejada (japonês original ou dublagem em português brasileiro). Ainda não se sabe se a voz exata é viável/licenciável nas ferramentas do MARK. Validar direitos/autorizações, qualidade PT-BR e tecnologia TTS antes de prometer reprodução.
+- Não substituir silenciosamente a voz por outra; caso uma solução exata seja inviável ou não autorizada, oferecer opções e pedir decisão ao usuário.
+- Requisito detalhado em [docs/16-VOZ-UNIVERSAL-SUKUNA.md](16-VOZ-UNIVERSAL-SUKUNA.md). **Sem geração/clone de voz, sem áudio ou código importado.**
