@@ -37,3 +37,6 @@ Leitura inicial em **2026-11-23**; commits indicam snapshots, não versões reco
 7. Atualizar NOTICE e testes de regressão.
 
 **Regra:** uso pessoal não anula condições de licença. Não copiar código sem licença ou recursos proprietários apenas porque estão públicos.
+
+## Complemento da pesquisa (2026-11-23)
+A comparação ampliada de OpenClaw, go2rtc, VoiceAssistantPhone, TailWispr, AndroidMic, Mic2Bluetooth, Home Assistant Android, scrcpy e sherpa-onnx está no [docs/09-OUTROS-REPOSITORIOS-TRIAGEM.md](09-OUTROS-REPOSITORIOS-TRIAGEM.md). O relatório de pesquisa está no [docs/12-PESQUISA-2026-11-23-RESULTADO.md](12-PESQUISA-2026-11-23-RESULTADO.md).

@@ -38,3 +38,9 @@ Atualizado em 2026-11-23.
 - Validação de requisitos do Sign in with ChatGPT para uso com o projeto (não pressupor que Plus = API OpenAI gratuita).
 - Decidir plataforma final do Companion: web/PWA para protótipo ou APK nativo para integração de áudio/foreground.
 - Decidir, após teste, quais módulos externos realmente superam o que MARK já entrega.
+
+## D-008 — Pesquisa sem implementação (2026-11-23)
+- Este repositório permanece **somente como registro de decisões, fontes, testes e hipóteses** até o MARK original passar pela homologação no Windows. Não importar código nem fazer deploy nesta etapa.
+- A segunda inspeção acrescentou MLV-012 a MLV-019 e novos candidatos de voz/Android/câmera; consultar docs/08 a docs/12.
+- Para o J6+, priorizar teste PWA com HTTPS privado e botão de falar; considerar APK somente se necessário. Não habilitar a flag do Chrome que aceita origens inseguras como solução.
+- Estudos de outros projetos **não equivalem a decisão de adotar dependências**. Código sem licença pública identificada não será copiado.

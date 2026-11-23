@@ -27,6 +27,13 @@ Um assistente de IA pessoal, com MARK LVII no PC e, em fase posterior, um **NEXU
 - [Roteiro de instalação e homologação](docs/07-PRIMEIRO-TESTE.md)
 - [Origens e aviso de licenciamento](NOTICE.md)
 
+### Pesquisa aprofundada de 23/11/2026
+- [08 PESQUISA APROFUNDADA MARK](docs/08-PESQUISA-APROFUNDADA-MARK.md)
+- [09 OUTROS REPOSITORIOS TRIAGEM](docs/09-OUTROS-REPOSITORIOS-TRIAGEM.md)
+- [10 EXPERIMENTOS EVIDENCIAS](docs/10-EXPERIMENTOS-EVIDENCIAS.md)
+- [11 COMPANION CONEXAO E ANDROID](docs/11-COMPANION-CONEXAO-E-ANDROID.md)
+- [12 PESQUISA 2026 11 23 RESULTADO](docs/12-PESQUISA-2026-11-23-RESULTADO.md)
+
 ## Historial e fontes
 
 - Branch de arquivo do projeto antigo: [archive/nexus-before-mark-lvii-2026-11-23](https://github.com/VNSANTS/N.E.X.U.S/tree/archive/nexus-before-mark-lvii-2026-11-23).
