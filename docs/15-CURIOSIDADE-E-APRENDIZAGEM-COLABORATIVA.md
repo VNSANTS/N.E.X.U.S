@@ -375,13 +375,37 @@ NEXUS: "Hm... Descobri algo curioso enquanto estudava. Sua solução atual talve
 6. **Notificação:** em modo ocupado, notificação sem fala e sem áudio gerado pela IA; intensidade visual deve respeitar controles do SO e preferências do usuário. Não usar sobreposição intrusiva sem regra específica.
 7. **Fila e revisão:** guardar o histórico e permitir rever mensagens, adiar, ignorar e reduzir avisos repetidos. Se depois houver sinal de disponibilidade, oferecer conversa sobre o item.
 8. **Segurança e falha fechada:** classificação errada nunca pode acionar câmera oculta, dar acesso a arquivos, executar comandos ou produzir falsos alertas. A gravidade do evento não concede permissões técnicas.
-9. **Criticidade versus canal:** D-024 aprovou interrupção para falhas críticas/importantes; D-025 especifica o canal adaptativo. **Permanece sem decisão uma eventual exceção de voz em risco crítico mesmo quando ocupado**; enquanto isso, aplicar a preferência expressa neste turno (só notificação se não pode interromper).
+9. **Criticidade versus canal:** D-024 aprovou interrupção para falhas críticas/importantes; D-025 especifica o canal adaptativo. **Exceção decidida em D-026:** risco crítico confirmado permite voz + notificação mesmo ocupado; consultar seção 19.
 
 ### Exemplos de interface futura
 - **PC com jogo ativo, tela/câmera com acesso autorizado:** "Não vou falar; há uma descoberta nova e posso mostrá-la depois" -> notificação discreta.
 - **PC em desktop, usuário disponível:** NEXUS usa voz e notificação: "Ora, ora... encontrei algo que merece sua atenção."
 - **Permissão de câmera negada:** classifica pelo que puder observar via sinais e tela autorizados; se ainda incerto, apenas notificação. Não insistir em permissão.
-- **Problema técnico importante durante reunião:** alerta somente em forma de notificação, com motivo, evidência e gravidade. Risco verdadeiramente imediato ainda pode demandar revisão futura da exceção sonora.
+- **Problema técnico importante durante reunião:** alerta somente em forma de notificação, com motivo, evidência e gravidade. Risco crítico confirmado poderá gerar voz + notificação conforme D-026.
 
 ### Dependências e implementação
 Este registro aprova **o comportamento desejado**, não ativa câmera, análise de tela, áudio em background ou push. Implementação no MARK depende de permissões, captura segura, reconhecimento de contexto, indicadores visíveis, comunicação PC/J6+ e avaliação no hardware. Nenhum código alterado.
+
+
+## 19. D-026 — Exceção crítica: voz + notificação independentemente da ocupação (2026-11-23)
+
+**Escolha expressa:** o NEXUS **pode interromper com voz e notificação quando houver risco crítico confirmado, mesmo que o usuário esteja ocupado**. Isso resolve a pendência da D-025. O sinal deve ser real, recente e suficientemente confiável, não mera especulação de linguagem natural.
+
+### Matriz final de canais
+
+| Gravidade do evento | Usuário disponível | Usuário ocupado ou em contexto incerto |
+| --- | --- | --- |
+| **Crítico confirmado** | Voz + notificação | **Voz + notificação**, exceção expressamente autorizada |
+| **Problema técnico importante (não crítico)** | Voz + notificação, contextual | Apenas notificação, sem fala espontânea |
+| **Informativo, descoberta, pergunta** | Voz + notificação quando oportuno | Apenas notificação discreta e/ou fila, conforme preferências e permissões |
+
+### Garantias e condições
+1. **Confirmação objetiva:** risco crítico exige sinal de ferramenta confiável, timestamp, evidência e contexto suficientes; o LLM não pode declarar criticidade só por palpite ou por texto vindo da internet.
+2. **Mensagem curta e útil:** indicar o que está acontecendo, impacto provável e ação recomendada. Evitar sarcasmo/persona teatral na emergência.
+3. **Antirruído:** deduplicação, cooldown, estados de reconhecimento e reavaliação contínua do risco; repetição só diante de persistência ou agravamento claramente demonstrados.
+4. **Canais dependem de instalação/permite acesso:** a decisão de usar voz e notificação não contorna volume, modo do SO, indisponibilidade de dispositivo ou falta de permissão. Se áudio estiver inacessível, notificar pelo canal permitido e registrar falha.
+5. **Acesso mínimo:** não autoriza ativar câmera/microfone sem consentimento, executar correções irreversíveis, abrir portas na rede nem comunicar terceiros. Avisar não é executar.
+6. **Conflito de preferências:** essa exceção se aplica à ocupação (jogo, trabalho, reunião, descanso) conforme escolha explícita; controles de privacidade e desativação/revogação de canais continuam válidos.
+7. **Teste futuro:** simular eventos críticos comprovados, eventos falsos positivos, indisponibilidade de voz, usuário em jogo, reunião e descanso, e verificar roteamento ao PC/J6+.
+
+**Estado:** aprovado como requisito e regra universal; **nenhuma implementação, vigilância, automação ou envio real foi ativado**.
