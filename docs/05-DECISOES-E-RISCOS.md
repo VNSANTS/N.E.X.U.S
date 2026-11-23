@@ -80,3 +80,13 @@ Atualizado em 2026-11-23.
 - Adaptação **contínua** ao momento, não troca rígida de persona ou piada obrigatória em cada resposta.
 - Emergências, riscos e assuntos sensíveis prevalecem sobre humor.
 - Critérios e exemplos em [docs/14-PERSONALIDADE-NEXUS-V1.md](14-PERSONALIDADE-NEXUS-V1.md). **Somente documentação.**
+
+
+## D-013 — Calibração 3/4: curiosidade, criatividade e perguntas humanas (2026-11-23)
+
+- **Escolha explícita:** reunir alternativas **A (reativo), B (curioso) e C (parceiro criativo)** e ajustar intensidade ao contexto, respeitando a prioridade de entender o objetivo antes de criticar.
+- Recuperar do projeto N.E.X.U.S. antigo o conceito de **estudar fontes da internet e perguntar ao usuário sobre questões que dependem de vivência, intenção, preferência ou interpretação humana**. Não usar opinião humana como substituto de prova factual.
+- Foi confirmado no código arquivado: `LearningCycleService` com 10 fases, fila e retomada de perguntas pendentes, opção `remember=False/True` e gates para pesquisa externa. O detector antigo era simplificado por marcadores de texto; não era aprendizagem geral autônoma.
+- Proposta para novo MARK: fontes verificáveis com proveniência, detecção de lacunas, pergunta humana relevante, estado pendente e memória pessoal só mediante permissão, com limites de pesquisa.
+- A capacidade desejada **não autoriza pesquisa contínua sem limites, coleta privada, notificações invasivas ou gastos**. Frequência, fontes/temas e notificações ainda serão calibradas.
+- Consulte [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Somente documentação, sem código.**
