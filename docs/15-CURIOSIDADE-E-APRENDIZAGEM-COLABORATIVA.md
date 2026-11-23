@@ -246,3 +246,24 @@ O código original está no histórico preservado, branch:
 - Formato e momento de apresentar resultados e perguntas.
 
 **Estado:** especificação somente; nenhuma tarefa ou serviço agendado, nenhum código MARK alterado.
+
+
+## 14. Decisão: intensidade de pesquisa com autonomia adaptativa (2026-11-23)
+
+**Escolha explícita do usuário:** alternativa C: **o NEXUS pesquisa bastante quando houver recursos disponíveis, desacelera conforme a carga do PC e respeita um orçamento diário**. Complementa a decisão de pesquisa por horários e ociosidade.
+
+### Comportamento planejado
+1. Durante janelas habilitadas e momentos de baixa carga, pode continuar os ciclos de estudos, priorizando relevância e novidades.
+2. Monitora consumo de CPU, RAM, disco/rede e disponibilidade dos recursos efetivamente observáveis; reduz a concorrência com outras tarefas conforme limite configurado.
+3. Se o usuário voltar a usar o computador ou houver demanda interativa (voz, controles, trabalho, jogos), **pausa com checkpoint** ou adia o próximo ciclo; não degrada intencionalmente a experiência principal.
+4. Antes de cada etapa com provedor, fonte ou custo, verifica o **orçamento diário** de chamadas/tokens/recursos. Ao alcançar limites, suspende novos trabalhos até o próximo período permitido ou reajuste explícito.
+5. **Gasto financeiro adicional padrão: zero**. Nunca habilitar API paga, assinatura ou fallback cobrado sem autorização separada.
+6. Mantém registros de tempo, motivo do início/pausa, fontes, resultados e uso. Retoma tarefas sem duplicar chamadas ou efeitos não confirmados.
+7. Evita pesquisas repetidas/inúteis mesmo se houver tempo ocioso; autonomia adaptativa não equivale a laço sem fim sem controle.
+
+### Decisões que permanecem abertas
+- **Valores** de orçamento diário de consultas/tokens/CPU/RAM/rede, duração e frequência, a aferir no PC real e na disponibilidade dos provedores.
+- Critério objetivo de ociosidade do sistema, prioridade relativa entre pesquisa e tarefas de baixa prioridade.
+- Forma de apresentar achados e perguntas humanas e política de notificações.
+
+**Status:** requisito de comportamento aprovado; execução real não implementada. Não há serviço ou agendamento ativo.
