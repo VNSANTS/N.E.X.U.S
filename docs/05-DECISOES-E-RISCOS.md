@@ -318,3 +318,14 @@ O problema não é a palavra por si, mas **a falta de conexão com o ato de fala
 - Cada agente terá acesso apenas às ferramentas e dados autorizados na Central (D-031/D-032), independentemente de ter sido escolhido pela coordenação.
 - Resultado e argumentos seguem D-033 e D-034. Se nenhum especialista adequado estiver disponível, não simular competência; adaptar cobertura com o que existir, pesquisar fontes autorizadas ou explicar lacuna, sem instalar ferramentas automaticamente.
 - Detalhes em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md). **Somente documentação; MARK original não alterado.**
+
+
+## D-038 — Skill de seleção do melhor especialista por tarefa (2026-11-23)
+
+- **Escolha personalizada expressa pelo proprietário:** "Uma skill que define qual é melhor pra cada coisa", em resposta à pergunta sobre como avaliar e selecionar especialistas.
+- Criar futuramente uma capacidade/skill lógica de **roteamento inteligente de tarefas** (nome de trabalho: `nexus-specialist-router`). Ela interpreta objetivo, subtarefas, domínio, criticidade, requisitos de ferramentas e recursos disponíveis; escolhe o(s) especialista(s) existente(s) mais adequado(s) e explica de modo auditável o motivo da escolha.
+- A seleção deverá combinar **competências verificadas/cadastradas** com **desempenho real observado** onde houver evidências (precisão, resultados confirmados, falhas, segurança, tempo, consumo de tokens/CPU/RAM). Dados insuficientes não permitem afirmar com certeza quem é "o melhor"; preferir avaliações e testes comparáveis.
+- Para tarefas simples, usar resposta direta; para complexas, montar equipe mínima e complementar, em conformidade com D-036/D-037, com debate D-033 e apresentação D-034.
+- Melhorar o roteamento com histórico e feedback do proprietário sem reescrever autonomamente os próprios privilégios, instalar novos agentes ou alterar política de segurança da Central; manter override manual, revisão e possibilidade de desligar aprendizado.
+- O termo "skill" representa aqui um **módulo de decisão/orquestração a implementar**, não uma skill já instalada ou operacional. Nenhuma autorização adicional, execução ou custo foi concedido.
+- Especificação em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md). **Documentação apenas, MARK original inalterado.**
