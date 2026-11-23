@@ -307,3 +307,14 @@ O problema não é a palavra por si, mas **a falta de conexão com o ato de fala
 - **Permissões:** a participação ou concordância do conselho não habilita ações fora das categorias autorizadas na futura Central (D-031/D-032).
 - Critérios numéricos e roteamento dos especialistas ainda dependem de projeto/testes. Especificação em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md).
 - **Somente documentação:** nenhum código MARK alterado.
+
+
+## D-037 — Equipe dinâmica de especialistas existentes conforme o problema (2026-11-23)
+
+- **Escolha explícita do usuário: alternativa B.** O conselho do NEXUS deverá **selecionar dinamicamente, dentre especialistas já configurados/disponíveis, apenas os adequados ao problema atual**, em vez de usar equipe fixa.
+- Um coordenador identifica as áreas de conhecimento, dependências, risco e necessidade de contraditório; escolhe papéis que acrescentem perspectivas efetivas (por exemplo, programação, segurança, infraestrutura, pesquisa, finanças) sem acionar todos por padrão.
+- **Não está autorizada a criação autônoma de novos especialistas por esta decisão**; a alternativa C foi oferecida, mas não escolhida. Ampliar catálogo ou modificar agentes exigirá decisão própria e permissões da Central.
+- **Papéis não equivalem a modelos separados**: podem ser executados por um mesmo provedor em sequência, usando cotas e limites da D-021 e roteamento da D-036.
+- Cada agente terá acesso apenas às ferramentas e dados autorizados na Central (D-031/D-032), independentemente de ter sido escolhido pela coordenação.
+- Resultado e argumentos seguem D-033 e D-034. Se nenhum especialista adequado estiver disponível, não simular competência; adaptar cobertura com o que existir, pesquisar fontes autorizadas ou explicar lacuna, sem instalar ferramentas automaticamente.
+- Detalhes em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md). **Somente documentação; MARK original não alterado.**
