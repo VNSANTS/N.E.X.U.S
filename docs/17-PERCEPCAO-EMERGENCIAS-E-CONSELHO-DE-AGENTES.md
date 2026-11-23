@@ -126,3 +126,32 @@ O MARK LVII original **não foi instalado nem homologado** no Windows. Nenhum se
 **Aprovado:** percepção sob demanda, intenção de alerta visual forte, escalonamento de voz seguro para presença em casa, possibilidade de despertar em crítico, debate de agentes na maioria dos problemas.
 
 **Pendente:** limites numéricos e de invasividade, confirmação segura por voz, classificação de emergência, canais e **níveis de ações que agentes podem executar sem consultar**. Este documento é de arquitetura desejada, não um protocolo já funcional.
+
+
+## H. D-031: autonomia de execução por categoria (2026-11-23)
+
+**Escolha explícita:** o usuário optou pela alternativa **C: autonomia por categoria**. O NEXUS poderá executar sem consulta repetida **apenas ações pertencentes a categorias que o usuário aprovar antecipadamente**, com limites claros. Não escolher categorias nem níveis automaticamente com base nesta resposta.
+
+### Política de execução obrigatória
+1. **Unidade de autorização:** `categoria + ação específica + recurso/dispositivo + contexto + limites + prazo de validade`. Categorias amplas não habilitam toda ferramenta relacionada.
+2. **Permissões de menor privilégio:** somente operações explicitamente permitidas, incluindo escopo de leitura/gravação, conta, pasta ou serviço; na ausência de correspondência, **negar e solicitar autorização**.
+3. **Conselho versus executor:** agentes deliberam e recomendam; um executor determinístico valida autorização independentemente dos prompts ou votação dos agentes.
+4. **Gates de impacto:** gravações, instalações, exclusões, mudanças de segurança, mensagens a terceiros e movimentação de dinheiro não são permitidas por inferência; precisarão de uma decisão própria e, quando apropriado, autorização pontual.
+5. **Limites:** frequência e tempo, uso de CPU/RAM, volume de dados, orçamento diário, impacto e reversibilidade; fallback pago desativado.
+6. **Auditoria:** registrar evidência que motivou a ação, permissão aplicada, comando real, resultado e rollback disponível; distinguir `enviado`, `executando`, `verificado` e `falhou`.
+7. **Revogação:** botão de pausa, desativação por categoria e dispositivo, expiração de tokens e revogação imediata; revogação deve impedir novas ações e cancelar trabalhos pendentes quando seguro.
+8. **Emergência:** o protocolo de alertas pode chamar o usuário, inclusive por voz em crítico confirmado, mas não concede privilégios adicionais ao executor.
+
+### Categorias candidatas para deliberação, ainda NÃO autorizadas
+- Diagnóstico e leitura de informações de sistema;
+- Ajustes reversíveis de baixo impacto;
+- Manutenção do PC e aplicativos;
+- Organização de arquivos e backups;
+- Segurança defensiva e resposta a incidentes;
+- Pesquisa, organização de conhecimento e recomendações;
+- Automação de contas, mensagens e serviços externos;
+- Gestão de outros dispositivos (J6+/Infinix/câmeras).
+
+**Próximo passo, uma categoria por vez:** decidir o que a categoria de **diagnóstico e leitura do sistema** pode acessar sem nova confirmação, separando metadados de arquivos/documentos privados.
+
+**Status:** apenas desenho e decisão de modelo de autorização; nenhuma categoria aprovada, nenhum código/permissão ativado no MARK.
