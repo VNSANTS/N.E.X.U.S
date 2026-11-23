@@ -152,6 +152,23 @@ O MARK LVII original **não foi instalado nem homologado** no Windows. Nenhum se
 - Automação de contas, mensagens e serviços externos;
 - Gestão de outros dispositivos (J6+/Infinix/câmeras).
 
-**Próximo passo, uma categoria por vez:** decidir o que a categoria de **diagnóstico e leitura do sistema** pode acessar sem nova confirmação, separando metadados de arquivos/documentos privados.
+**Diretriz posterior D-032:** adiar escolha de categorias e permissões específicas. O proprietário fará essa configuração **na Central de Controle do NEXUS**; não solicitar definições uma a uma nesta conversa.
 
 **Status:** apenas desenho e decisão de modelo de autorização; nenhuma categoria aprovada, nenhum código/permissão ativado no MARK.
+
+
+## I. D-032: Central de Controle como ponto de autorização (2026-11-23)
+
+O proprietário decidiu: **"Isso aí eu defino na central"**. O grau de acesso para diagnóstico e as demais categorias da D-031 devem ser ajustados por ele na futura **Central de Controle**, não escolhidos agora via chat.
+
+### Requisitos da Central (proposta decorrente da decisão)
+- **Categorias claramente identificadas:** diagnóstico, manutenção, arquivos/backup, segurança, automação, dispositivos, pesquisa e outras adicionadas com controle do proprietário.
+- **Permissão por ação e recurso:** mostrar exatamente qual ação pode ser feita, em quais dispositivos/pastas/contas, se acessa apenas metadados ou conteúdo, em quais condições e por quanto tempo.
+- **Controles simples:** conceder/negar, pausar, revogar, expirar permissões, visualizar status e histórico de execuções e tentativas negadas.
+- **Confirmação e segurança:** configuração sensível requer autenticação; agentes podem sugerir alterações, mas **não podem aprová-las ou ampliar privilégios por conta própria**.
+- **Padrões:** negar tudo o que ainda não tiver sido expressamente aprovado; configurações de tela, câmera, áudio e localização são permissões específicas por fonte/dispositivo.
+- **Transparência:** explicar riscos, alcance e exemplos antes de habilitar um acesso, com linguagem compreensível.
+- **Desempenho:** política de permissões não deve depender de modelo pesado; verificar regras em código independente da deliberação da IA.
+- **Registro:** nome do autorizador, escopo, versão, data, expiração, motivo do uso, resultado e revogação.
+
+**Não foi concedida nenhuma autorização operacional.** Os detalhes visuais da Central e de cada categoria ficam para fase futura. O MARK original segue intocado.
