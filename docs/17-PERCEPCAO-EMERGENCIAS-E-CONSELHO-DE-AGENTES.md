@@ -250,3 +250,28 @@ O proprietário decidiu: **"Isso aí eu defino na central"**. O grau de acesso p
 **Invariantes:** respostas objetivas D-034; debates argumentativos D-033; nenhuma autoelevação de permissões D-031/D-032; percepção e alertas D-025/D-026. Níveis e gatilhos numéricos somente após testes no hardware, não inventados agora.
 
 **Estado:** diretriz de arquitetura aprovada; sem código modificado ou conselho real em execução.
+
+
+## M. D-037 — Seleção dinâmica de especialistas segundo a tarefa (2026-11-23)
+
+**Decisão do usuário: alternativa B.** O NEXUS deverá formar um conselho **dinâmico**, convocando especialistas existentes de acordo com problema, complexidade, risco e contexto. **Não** foi aprovada a criação autônoma de novos especialistas.
+
+### Roteamento proposto
+1. **Descrever a tarefa:** tema principal, subproblemas, risco, evidências necessárias e limites de tempo e recursos.
+2. **Identificar competências:** mapear aos especialistas que de fato existem e estão habilitados. Exemplos meramente ilustrativos: diagnóstico de software, segurança defensiva, programação, conhecimento/documentação, análise financeira.
+3. **Escolher a equipe mínima útil:** selecionar especialidades com funções complementares e contraponto crítico quando justificável; evitar chamar papéis redundantes ou todos os disponíveis.
+4. **Orquestrar:** executar sequencialmente ou com paralelismo limitado pelo PC/provedores, respeitando orçamentos diários e eventual urgência. Uma especialidade lógica não requer necessariamente um modelo distinto.
+5. **Debater:** confrontar argumentos e provas segundo D-033; coordenador sintetiza solução e incertezas. Exibir explicação adaptativa D-034.
+6. **Verificar autorizações:** a seleção de agente não muda escopos de ferramentas, permissões por dispositivo ou categoria definidos na Central D-032.
+7. **Tratar lacunas:** sem especialista correspondente, evitar fingir domínio; quando apropriado, pesquisar fontes autorizadas, usar apoio genérico com ressalvas ou perguntar ao proprietário. Não instalar, criar ou promover agentes sem decisão própria.
+
+### Critérios de avaliação futura
+- Precisão da escolha de competências versus a tarefa;
+- Consumo de RAM, CPU, tempo e chamadas em contraste com equipe fixa;
+- Redução efetiva de erros, argumentos complementares e rastreabilidade;
+- Casos em que o problema muda de domínio e pede troca de especialistas;
+- Ausência de novos agentes criados sem aprovação e de permissões elevadas.
+
+**Pendência natural de projeto:** como acompanhar a qualidade dos especialistas ao longo do tempo para melhorar a seleção sem degradar a privacidade e desempenho.
+
+**Status:** requisito aprovado documentalmente; não há conselho/orquestrador dinâmico implantado nem alteração no MARK.
