@@ -193,3 +193,12 @@ Atualizado em 2026-11-23.
 - Alertas devem informar origem e confiança do sinal e evitar repetição; falar sobre uma falha não autoriza corrigir automaticamente ou mexer em dispositivos sem permissões.
 - **Ainda pendente:** canal e intensidade de cada interrupção (voz, notificação, escalonamento), deduplicação, horário e fontes integradas. Sem monitoramento real implementado.
 - Detalhes em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Somente documentação, código MARK intocado.**
+
+
+## D-025 — Regra universal de comunicação adaptativa por tela e câmera (2026-11-23)
+
+- **Escolha explícita:** aplicável a todas as comunicações espontâneas. NEXUS deve interpretar o contexto do usuário usando **tela e câmeras autorizadas**, junto a sinais do sistema, para determinar se uma interrupção é adequada.
+- **Pode interromper:** combinar **voz da identidade NEXUS** e notificação. **Não pode interromper:** **somente notificação**, sem fala da IA. **Indisponibilidade/incerteza contextual:** adotar modo conservador só notificação.
+- Não presumir câmera sempre ativa: captação visual/tela exige permissão específica, indicador, revogação e tratamento mínimo dos dados. Preferir sinais baratos antes de captura visual pesada; preservar recursos do PC e J6+.
+- D-023 (respeitar atividade/descanso) e D-024 (importância de riscos e problemas) continuam orientando **quando e o que** alertar; D-025 determina **como**, com um ponto a esclarecer: se risco crítico deve excepcionalmente gerar voz mesmo com usuário indisponível.
+- Nenhum monitoramento, captura, permissão, síntese de voz, worker ou notificação foi ativado. Detalhes em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md).
