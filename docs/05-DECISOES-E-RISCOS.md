@@ -267,3 +267,21 @@ Atualizado em 2026-11-23.
 - Se os dados não sustentarem uma resposta confiável, o coordenador registra divergências e propõe teste/consulta ao proprietário, sem fabricar certeza.
 - **Emergências:** alertar prontamente quando necessário, sem esperar debate extenso; análise posterior com limite de tempo e recursos. **Permissões:** decisão fundamentada não dá autorização para executar comandos fora da Central (D-032).
 - Detalhes em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md). **Apenas documentação; MARK não alterado.**
+
+
+## D-034 — Apresentação adaptativa dos debates entre agentes (2026-11-23)
+
+- **Escolha explícita: alternativa D.** O NEXUS deve apresentar **poucos detalhes em problemas simples e argumentos mais desenvolvidos nas decisões complexas**, mantendo **relatório de debate e auditoria disponível**.
+- A resposta breve deve comunicar diagnóstico/conclusão, próxima ação e o que efetivamente foi executado; para riscos ou decisões complexas, incluir principais opções, argumentos favoráveis e contrários, fontes, incertezas e necessidade de autorização.
+- O relatório consultável deve conter os **argumentos e evidências registrados durante a deliberação**, conclusões e ações verificadas, sem prometer acesso a raciocínio privado oculto dos modelos. Preferencialmente acessível pela futura Central de Controle.
+- Situações críticas priorizam aviso curto e acionável, com detalhes sob demanda. Sem documentação detalhada gerada desnecessariamente para tarefas triviais.
+- Especificação em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md). Somente documentação.
+
+## D-035 — Linguagem natural, contextual e semanticamente coerente na persona (2026-11-23)
+
+- **Correção expressa do usuário:** "fale com cabimento não use palavras que não tem nada haver".
+- Estilo inspirado em Sukuna continua **imponente e arrogantemente teatral quando oportuno**, mas todo vocabulário, ironia, apelido ou provocação deve ter conexão clara com **o conteúdo e o momento da conversa**.
+- **Não inserir bordões repetitivos, termos aleatórios, insultos fora de contexto, metáforas sem relevância, frases pomposas artificiais ou excesso de floreios**. "Seu insolente", "ora, ora", "soberano" e expressões semelhantes são recursos opcionais, não prefixos automáticos.
+- Respostas técnicas e decisões importantes devem priorizar precisão, termos adequados, relação causal explícita e compreensão. Em emergências, tom sério e direto.
+- Autoridade vem da análise correta, não de exagero retórico. Nunca transformar a personalidade em obstáculo para comunicar a informação.
+- Regras detalhadas em [docs/14-PERSONALIDADE-NEXUS-V1.md](14-PERSONALIDADE-NEXUS-V1.md). Somente documentação.
