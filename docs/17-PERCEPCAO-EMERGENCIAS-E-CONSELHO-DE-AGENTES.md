@@ -275,3 +275,40 @@ O proprietário decidiu: **"Isso aí eu defino na central"**. O grau de acesso p
 **Pendência natural de projeto:** como acompanhar a qualidade dos especialistas ao longo do tempo para melhorar a seleção sem degradar a privacidade e desempenho.
 
 **Status:** requisito aprovado documentalmente; não há conselho/orquestrador dinâmico implantado nem alteração no MARK.
+
+
+## N. D-038 — Skill de roteamento adaptativo de especialistas (2026-11-23)
+
+**Resposta livre do usuário à decisão de avaliação:** "Uma skill que define qual é melhor pra cada coisa".
+
+### Intenção funcional
+Construir, depois da homologação do MARK original, a skill lógica **`nexus-specialist-router`** para selecionar o especialista ou a equipe mais adequada **a cada tarefa**. A skill integra competência e desempenho real, em vez de apenas classificar agentes por uma pontuação global.
+
+### Entradas
+- Objetivo e contexto da tarefa, domínio e subdomínios, risco, urgência, incerteza e permissões necessárias;
+- Catálogo dos especialistas **existentes** com competências declaradas, provas/testes, ferramentas e recursos realmente disponíveis;
+- Histórico de desempenho **verificável e contextualizado**: qualidade da solução, resultados confirmados, problemas corrigidos, feedback do proprietário, falhas, custo e latência;
+- Preferências e limites da Central de Controle (D-032), recursos do PC e orçamento diário (D-021).
+
+### Processo
+1. Classificar tarefa por tema, complexidade, risco e finalidade. Não confundir necessidade de expertise com necessidade de conselho completo.
+2. Eliminar candidatos indisponíveis, sem capacidade comprovada ou sem permissão necessária; **nunca elevar permissão apenas para viabilizar uma escolha**.
+3. Para cada candidato, estimar adequação ao **tipo específico de problema**, confiança baseada em amostras comparáveis, taxa de sucesso, qualidade/segurança, eficiência e limitações. Não usar somente votos ou impressões de outros LLMs como qualidade.
+4. Selecionar o candidato ou equipe mínima complementar, com revisor divergente quando justificado; respeitar D-036/D-037 e não criar especialistas novos automaticamente.
+5. Verificar resultados por teste/telemetria autorizada e feedback. Aprimorar gradualmente o **roteamento e recomendações**, não os pesos do modelo por declaração.
+6. Em caso de histórico insuficiente ou desempenho inconclusivo, deixar a incerteza explícita, aplicar critérios de capacidade documentada e fazer teste controlado quando possível.
+7. Registrar escolha, motivos, resultado, custo, alternativa plausível, confiança, possibilidade de override e versão da política, para relatório consultável na Central.
+
+### Regras
+- **Sem placar universal infalível.** Um especialista pode se destacar em segurança e ser inadequado para design; decisões usam critérios específicos do domínio e o sucesso passado não garante resultado futuro.
+- **Dados do usuário protegidos:** não incluir conteúdos privados em placares compartilhados nem enviar arquivos a ferramentas externas sem consentimento.
+- **Manual override e travas:** o proprietário pode escolher um especialista, excluir um candidato ou desativar aprendizado por desempenho na Central.
+- **Custo zero e baixo consumo padrão:** o roteador em si deve ser leve e não exigir comparação exaustiva em toda mensagem.
+- **Capacidade não é permissão:** a skill decide quem examina uma tarefa, mas executor autorizado decide se alguma ação pode ocorrer.
+- **Estado:** somente requisito registrado. Não é alegação de skill já existente, instalada, testada ou executada.
+
+### Aceite futuro
+- Em cenários de programação, rede, escrita, análise de risco e pesquisa, selecionar especialidades relevantes e justificar em poucas palavras.
+- Recuperar de indisponibilidade/erro do candidato sem improvisar ferramenta paga; evitar múltiplas chamadas inúteis.
+- Demonstrar melhoria por comparação de resultados verificados, não por opinião dos próprios agentes.
+- Não realizar ação não autorizada, não degradar significativamente RAM/CPU e não criar novo agente autonomamente.
