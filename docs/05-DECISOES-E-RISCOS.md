@@ -257,3 +257,13 @@ Atualizado em 2026-11-23.
 - Ao configurar, mostrar claramente o impacto de cada permissão e permitir pausá-la ou retirá-la.
 - **Não insistir em decisões individuais de categorias nesta etapa de planejamento**. A futura interface será onde o usuário fará esse ajuste.
 - Ref.: [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md). **Somente especificação, MARK intocado.**
+
+
+## D-033 — Divergências entre agentes resolvidas por debate fundamentado (2026-11-23)
+
+- **Escolha explícita do usuário:** **"Debate com argumentos"**, equivalente à alternativa B: agentes devem confrontar hipóteses, riscos e evidências antes da síntese.
+- **Sem votação majoritária automática:** a resposta mais bem justificada prevalece, mesmo que minoritária. Um coordenador sintetiza razões, evidências, contraindicações, incertezas e conclusão.
+- Cada agente deve apresentar argumento verificável, criticar propostas de modo construtivo e considerar contrapontos; consenso do mesmo modelo não significa independência ou correção.
+- Se os dados não sustentarem uma resposta confiável, o coordenador registra divergências e propõe teste/consulta ao proprietário, sem fabricar certeza.
+- **Emergências:** alertar prontamente quando necessário, sem esperar debate extenso; análise posterior com limite de tempo e recursos. **Permissões:** decisão fundamentada não dá autorização para executar comandos fora da Central (D-032).
+- Detalhes em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md). **Apenas documentação; MARK não alterado.**
