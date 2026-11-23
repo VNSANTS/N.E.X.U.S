@@ -1,6 +1,6 @@
-# Experimentos e critérios de decisão (a serem executados no PC)
+# Experimentos e critérios de decisão do MARK LVII
 
-Este é um **plano de testes, não um histórico de testes aprovados**. A data de pesquisa é 2026-11-23 e o MARK LVII original ainda não foi executado neste trabalho.
+Este documento reúne **plano de testes** e, a partir de 2026-11-23, **observações preliminares da primeira execução no PC feitas pelo usuário**. Não confundir screenshot ou relato com homologação completa.
 
 ## Etapa G0 — Base original (obrigatória)
 | ID | Verificação | Prova mínima | Prioridade |
@@ -67,3 +67,21 @@ Resultado possível para cada candidato: **ACEITAR**, **ADIAR**, **REJEITAR** ou
 - Sem expor câmera ou painel via Tailscale Funnel / portas públicas.
 - Sem informar êxito de comandos quando dispositivos estiverem offline.
 - Sem apagar dados pessoais para 'testar desempenho'.
+
+
+## Primeira execução observada — 2026-11-23, captura enviada pelo usuário
+
+**Evidência:** screenshot fornecido na conversa, não republicado no GitHub; usuário relatou estar estudando Immanuel Kant e pediu ao assistente que passasse a conversar em português. O conteúdo da tela confirma interface aberta e resposta textual em português. Esta é uma observação visual, não uma auditoria da instalação.
+
+| Verificação | Observação direta | Estado |
+| --- | --- | --- |
+| G0-02: interface inicializa | Janela `JARVIS — MARK LVII` visível, com painel principal e sem erro visível na captura | **PARCIAL**: abertura visual comprovada; logs/inicialização limpa e estabilidade não verificados |
+| G0-03: conversa em PT-BR | Resposta textual do JARVIS explicando Kant em português, após pergunta em português | **PARCIAL**: resposta textual observada; abrir apps, ferramentas e comandos não testados |
+| G0-04: áudio | Painel mostra `MUTED` e `MIC MUTED` | **PENDENTE**: captura não comprova transmissão nem resposta falada |
+| G0-08: recursos | Indicadores exibidos no painel: CPU 54%, MEMORY 57% na captura | **AMOSTRA INSTANTÂNEA**, não benchmark nem média |
+| Provedor / voz | Status exibido `ENGINE GEMINI LIVE` e `VOICE CHARON` | **CONFIGURAÇÃO EXIBIDA**, não validação independente de áudio/provedor |
+| Localização | Conversa em português; alguns rótulos do painel ainda em inglês | **PARCIAL**: conversa em PT-BR, sem evidência de UI inteiramente traduzida |
+
+**Pendências para encerrar baseline:** SHA do MARK e versões do ambiente; logs sem segredos; diálogo por voz desmutado e roteamento de áudio; RAM/CPU em ociosidade e durante uso; testes de ferramentas inofensivas, memória, navegador, permissões e sessão do dashboard.
+
+**Regra de registro:** não promover estes estados parciais a PASS integral até os testes correspondentes. A implementação do NEXUS e integrações sensíveis continuam bloqueadas pela Fase 0.
