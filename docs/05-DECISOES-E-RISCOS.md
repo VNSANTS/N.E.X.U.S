@@ -351,3 +351,17 @@ O proprietário especificou: **"Dados sensíveis e credenciais se autorizado pod
 - **Credenciais:** cofre separado da memória comum, controles de acesso e criptografia; leitura/uso por agentes requer escopo próprio e não é consequência automática da autorização para **salvar**.
 - **Controle:** listar indicadores da existência de segredo sem revelar seu valor, revogar permissão, rotacionar e apagar credenciais; excluir tokens de logs e backups inseguros.
 - Não presumir que os recursos já existem no MARK; são requisitos para implementação futura.
+
+
+## D-040 — Chat do NEXUS pode usar credenciais com processamento local isolado (2026-11-23)
+
+- **Escolha explícita do usuário:** "O mesmo vale pro chat quero possa mandar senhas e ele trabalhar com ela sem expor elas a um serviço externo se necessário usar um modelo local pra trabalhar só nessa parte de senha".
+- **Requisito:** permitir que o usuário forneça senhas e tokens ao **chat próprio do NEXUS** para tarefas autorizadas, **sem enviar esses valores para provedores externos de IA, pesquisa, telemetria, transcrição ou logs**.
+- Fluxo de segredos deve ser identificado e segregado **localmente antes de qualquer chamada externa**. Preferir **campo seguro no chat**, substituindo valor por referência opaca na conversa. Colagem livre requer detecção local, que nunca terá garantia perfeita.
+- O processamento do segredo é local: preferir executor determinístico com cofre; **se IA for indispensável, usar modelo executado localmente no PC**. Se indisponível, não há fallback externo para trabalhar com o segredo.
+- **Destino de autenticação é exceção delimitada:** quando usuário autorizar login no serviço X, o executor pode entregar a credencial **diretamente ao endpoint legítimo de X**, nunca a um serviço externo de IA ou terceiro não autorizado.
+- **Guardar** credencial persiste **desligado por padrão**, como D-039; autorização para usar no login e para armazenar são permissões separadas, definidas na Central D-032. Retirar da memória após uso pontual quando tecnicamente possível.
+- Não revelar senhas em fala, chat, relatório, histórico, embedding ou parâmetros de URL. Proteção exige autenticação do chat/Companion e bloqueio de saída técnica, não apenas instruções textuais ao LLM.
+- Este pedido refere-se ao **futuro NEXUS local**, não garante sigilo local para senhas enviadas ao ChatGPT ou outros chats hospedados.
+- Documento específico: [docs/18-CHAT-LOCAL-E-COFRE-DE-CREDENCIAIS.md](18-CHAT-LOCAL-E-COFRE-DE-CREDENCIAIS.md).
+- **Somente documentação**; nenhum cofre, modelo local ou proteção já foi implementado.

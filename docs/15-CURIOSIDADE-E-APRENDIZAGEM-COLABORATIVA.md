@@ -461,3 +461,14 @@ Esta nova escolha **prevalece** sobre os trechos anteriores de memória pessoal 
 - **Gestão:** visualizar entradas mascaradas, alterar/rotacionar, revogar e excluir, inclusive vínculos e índices; especificar política de backups, expurgo e migração segura.
 - **Condição de não implantação:** se ainda não houver cofre seguro e controles confiáveis, a opção de persistir credenciais permanece indisponível, não se improvisa um arquivo texto.
 - **Status:** somente requisito documental, nenhum segredo coletado ou salvo por esta decisão.
+
+
+## 22. D-040 — Tratamento seguro de credenciais fornecidas pelo chat
+
+O usuário quer enviar credenciais ao **chat do NEXUS** para que este execute operações autorizadas, preservando segredo **dentro do PC/Companion próprio**. **Nenhum valor secreto deve alcançar LLM remoto, busca, memória semântica, histórico comum, logs, analytics ou TTS externo.** Uma ferramenta local preferencialmente usa credencial sem expor o valor nem ao próprio LLM; quando a interpretação requer IA, usar **modelo local** para essa parte.
+
+- Sanitizar/segregar entrada antes de enviá-la ao orquestrador externo; oferecer componente seguro de senha na interface do chat, além de filtro de texto local, reconhecendo que colagem livre é mais arriscada.
+- Autorização para **usar** login no serviço alvo não equivale a consentimento para **guardar**, nem a permissionamento geral de credenciais. Uso direto pelo executor no serviço de autenticação legítimo pode ser necessário e deve ser limitado à tarefa.
+- Dados de senha persistidos apenas no cofre criptografado e autorizado; padrão desabilitado. Nenhuma recuperação por nuvem ou fallback para API externa em caso de falha do modelo local.
+- Logs, transcrições, TTS e relatórios não reproduzem segredos; testar interceptação, prompt injection, fallback, Android/PC, histórico e exclusão.
+- **Detalhamento técnico:** [docs/18-CHAT-LOCAL-E-COFRE-DE-CREDENCIAIS.md](18-CHAT-LOCAL-E-COFRE-DE-CREDENCIAIS.md). **Somente requisito futuro**.
