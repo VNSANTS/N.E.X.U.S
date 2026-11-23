@@ -225,3 +225,28 @@ O proprietário decidiu: **"Isso aí eu defino na central"**. O grau de acesso p
 - **Consumo adaptativo:** não exigir debate longo nem gerar relatório volumoso para comandos triviais, respeitando CPU, RAM, tokens e custo.
 
 **Status:** requisito de apresentação aprovado, nenhuma interface ou serviço implementado.
+
+
+## L. D-036 — Convocação do conselho proporcional à complexidade e ao risco (2026-11-23)
+
+**Decisão expressa: alternativa B.** O NEXUS deverá responder diretamente às solicitações simples e convocar o conselho **quando a complexidade, a incerteza ou as consequências tornarem úteis argumentos e revisão especializados**. Não empregar debates por rotina nem usar obrigatoriamente sempre um segundo agente.
+
+### Política de roteamento proposta
+| Classe da tarefa | Acionamento | Exemplos ilustrativos |
+| --- | --- | --- |
+| Simples, baixo impacto e baixa incerteza | Resposta direta pelo NEXUS, sem conselho | Definição de conceito, esclarecimento curto, consulta simples |
+| Média complexidade ou informação incompleta | Resposta direta com checagem de evidências/revisão pontual **quando útil** | Dúvida técnica localizada, comparação simples |
+| Alta complexidade, risco relevante ou contradição entre evidências | Conselho de papéis relevantes: investigação, estratégia, crítica e síntese, com debate fundamentado | Diagnóstico de falha complexa, escolha de arquitetura, resposta a incidente |
+| Crítico confirmado e urgente | **Alertar imediatamente**, depois deliberação limitada pelo prazo do evento; não retardar comunicação | Risco iminente a dados com sinal confirmado |
+
+### Critérios a observar
+- Complexidade em etapas, dependências e fontes;
+- Risco do resultado estar errado e impacto de uma ação;
+- Reversibilidade e escopo de permissões;
+- Contradições e qualidade da evidência disponível;
+- Urgência e tempo permitido;
+- Limites de CPU/RAM/tokens e orçamento diário D-021.
+
+**Invariantes:** respostas objetivas D-034; debates argumentativos D-033; nenhuma autoelevação de permissões D-031/D-032; percepção e alertas D-025/D-026. Níveis e gatilhos numéricos somente após testes no hardware, não inventados agora.
+
+**Estado:** diretriz de arquitetura aprovada; sem código modificado ou conselho real em execução.
