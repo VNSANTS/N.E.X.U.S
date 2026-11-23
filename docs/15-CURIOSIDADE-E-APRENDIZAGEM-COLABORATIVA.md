@@ -323,3 +323,32 @@ NEXUS: "Hm... Descobri algo curioso enquanto estudava. Sua solução atual talve
 - Cadência mínima e agrupamento de descobertas.
 
 **Status:** regra documental aprovada, sem implementação no MARK.
+
+
+## 17. Decisão: interrupção autorizada por riscos graves e problemas técnicos importantes (2026-11-23)
+
+**Escolha explícita: alternativa C.** O NEXUS pode **interromper atividades em andamento** quando houver **riscos graves ou problemas técnicos importantes**, mesmo que o usuário esteja jogando, trabalhando, reunido ou descansando. Esta é a exceção delimitada à regra D-023 de não interromper por descobertas comuns.
+
+### Classificação de notificações proposta
+- **Crítico / risco grave:** risco iminente de perda de dados, incidente de segurança comprovado, falha com consequências graves, ameaça à integridade de recursos do usuário. Pode interromper imediatamente nos canais autorizados, com mensagem curta e indicação de evidência e ação recomendada.
+- **Importante / problema técnico relevante:** falha que afeta serviço ou atividade importante (por exemplo, backup falhando, disco com alerta de integridade confiável, aplicação crítica indisponível, tarefa autorizada interrompida). Pode interromper, mas com proporcionalidade; preferir alerta breve/discreto quando a resolução não for urgente naquele minuto.
+- **Informativo / curiosidade / estudo:** enfileirar até momento oportuno, sem interromper jogos, reuniões, trabalho ou descanso.
+
+### Regras e salvaguardas
+1. **Evidência e contexto:** cada alerta deve citar o sinal concreto que o disparou, o recurso afetado, a gravidade, a certeza e o impacto provável. Não alegar intrusão apenas por heurística fraca.
+2. **Escalonamento proporcional:** para incidentes importantes não urgentes, notificação discreta antes de voz intrusiva quando adequado. Riscos graves podem usar uma comunicação direta, segundo as permissões/canais que o usuário definir.
+3. **Antirruído:** agrupar alertas repetidos, cooldown, confirmação de leitura e estado de resolução; não transformar toda exceção em emergência.
+4. **Sem execução irrestrita:** alertar e recomendar é distinto de executar correções; exclusão, isolamento, reinício, acesso a arquivos ou alteração de permissões seguem controles próprios.
+5. **Não perturbe / descanso:** alertas informativos sempre respeitam silêncio; as exceções importantes/críticas seguem a política de gravidade selecionada, e a configuração fina dos canais fica pendente.
+6. **Transparência operacional:** não fingir monitoramento de recursos, segurança ou sensores não integrados; sem evento observado não existe alerta em tempo real.
+7. **Falha de sensor ou fonte:** dizer que não há confirmação e não afirmar que está tudo seguro ou em perigo.
+
+### Exemplos
+- **Crítico:** "Detectei sinais confirmados de falha de armazenamento com risco de perda de dados. Recomendo interromper gravações até verificar o estado. Fonte: diagnóstico do disco."
+- **Importante:** "O backup automático falhou e não há cópia recente confirmada. Preciso chamar sua atenção para revisarmos isso."
+- **Informativo:** "Encontrei um artigo interessante." → aguardar momento apropriado.
+
+### Questão operacional a decidir a seguir
+**Como o NEXUS deve interromper?** Voz imediatamente, notificação visual, ou escala gradual por gravidade. Ainda não se definiram horários/canais nem confiabilidade das integrações; não inventar recursos ativos.
+
+**Status:** requisito documental aprovado, nenhum alerta real ativado, MARK não alterado.
