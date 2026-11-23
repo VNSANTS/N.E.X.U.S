@@ -384,3 +384,17 @@ O proprietário especificou: **"Dados sensíveis e credenciais se autorizado pod
 - Respeitar orçamento, CPU/RAM, Central e risco de duplicações. Alertas críticos não esperam o debate.
 - Relatar estado real e checkpoint seguro. Detalhes em [docs/19-RECUPERACAO-INTELIGENTE-DE-FALHAS.md](19-RECUPERACAO-INTELIGENTE-DE-FALHAS.md).
 - **Conclui as três decisões conceituais finais combinadas.** Próxima etapa: homologação do MARK original no Windows. Nenhum código alterado.
+
+
+## D-043 — Produto final JARVIS sobre MARK LVII funcional, preservando todo planejamento (2026-11-23)
+
+**Nova orientação explícita do proprietário:** "as coisas que agente organizou vamos fazer mas o nome vai ser jarvis e em cima edessa desse aqui".
+
+- **Nome do produto/assistente final: JARVIS.** Não utilizar NEXUS como identidade exibida do assistente ou nome de produto em novas funcionalidades. O antigo nome **NEXUS** nos arquivos históricos identifica a fase de planejamento anterior; decisões D-001 a D-042 continuam aprovadas como **requisitos do JARVIS**, salvo incompatibilidade técnica demonstrada ou alteração expressa posterior.
+- **Base de código:** desenvolver sobre **FatihMakes/Mark-LVII**, cuja instalação original está **rodando no PC do usuário**, preservando seu Gemini Live, voz, interface e baixa latência relatada. Não recriar um assistente do zero.
+- **Resultados relatados pelo proprietário:** respostas rápidas em português e diálogo por microfone/voz funcionando. Evidência visual da interface já registrada em `docs/10-EXPERIMENTOS-EVIDENCIAS.md`; falta validar logs, SHA, recursos, ferramentas e segurança. O sucesso relatado do áudio é preliminar e não equivale a teste instrumental.
+- **Permanecem no escopo:** persona contextual (antes chamada NEXUS), voz desejada condicionada a viabilidade/licença, conselho dinâmico, skill roteadora de especialistas, memória adaptativa, pesquisas proativas, segurança/credenciais locais, Central de Controle, recuperação inteligente, Companion Galaxy J6+, possíveis integrações Infinix/câmeras. Rebatizar referências futuras de módulos e UI conforme JARVIS; nomes internos de documentos/skills antigos são identificadores históricos até migração segura.
+- **Estratégia de implementação:** proteger a instalação original que já funciona; confirmar `git status --short`, commit e branch, criar ramo/cópia de trabalho isolada, aplicar mudanças pequenas e testáveis, com rollback. **Não substituir o motor Gemini Live** nem sacrificar velocidade sem comparação de desempenho real.
+- **Repositório de documentação:** por enquanto **`VNSANTS/N.E.X.U.S` mantém seu nome GitHub existente** para preservar links/histórico e evitar alteração administrativa não solicitada. É um **local temporário de especificações**, não a identidade do produto. Decidir nome e local do fork/código após constatar o estado da instalação no Windows.
+- **Licença:** origem MARK LVII indicada como CC BY-NC 4.0; verificar obrigações de atribuição, modificações e restrições não comerciais antes de distribuir ou comercializar.
+- **Estado:** somente requisitos/documentação atualizados; nenhum arquivo do MARK instalado no PC foi alterado por esta decisão.
