@@ -246,3 +246,14 @@ Atualizado em 2026-11-23.
 - Ações executadas sob uma categoria aprovada deverão ser verificadas e relatadas: **o que foi feito, por qual motivo, com qual autorização, qual evidência de resultado e como reverter**.
 - Integração conceitual com D-029 (conselho de agentes) e D-030 (emergências). Especificação em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md).
 - **Só documentação**: nenhuma permissão operacional ou código MARK foi alterado.
+
+
+## D-032 — Configurar permissões de autonomia na Central de Controle (2026-11-23)
+
+- **Decisão expressa:** o proprietário **não quer definir agora, em conversa, os níveis de acesso de diagnóstico ou outras categorias**. Ele definirá isso posteriormente **na Central de Controle do NEXUS**.
+- A Central deverá expor categorias de ação, permissões e recursos afetados, confirmação/negação, limites de uso, histórico e revogação, sem depender de comandos técnicos no chat.
+- **Estado padrão seguro:** nenhuma categoria de execução obtém autorização por esta conversa; telas, câmeras, arquivos, comandos e serviços externos demandam consentimentos próprios.
+- Alterações de permissões na Central devem exigir autenticação apropriada e não poderão ser feitas autonomamente pelo próprio conselho de agentes.
+- Ao configurar, mostrar claramente o impacto de cada permissão e permitir pausá-la ou retirá-la.
+- **Não insistir em decisões individuais de categorias nesta etapa de planejamento**. A futura interface será onde o usuário fará esse ajuste.
+- Ref.: [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md). **Somente especificação, MARK intocado.**
