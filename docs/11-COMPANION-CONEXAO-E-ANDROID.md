@@ -53,3 +53,14 @@ O dashboard já coleta microfone via getUserMedia, converte PCM para 16 kHz e en
 - Android foreground service com microfone: https://developer.android.com/develop/background-work/services/fgs/service-types
 - Android media output routing: https://developer.android.com/media/platform/output
 - Código de referência: https://github.com/VirtualyMichael/VoiceAssistantPhone (NÃO copiar sem licença)
+
+
+## Comunicação adaptativa universal planejada (D-025, 2026-11-23)
+
+O usuário aprovou que o NEXUS determine a possibilidade de interromper com base em **tela e câmera autorizadas**, mais contexto de atividade do sistema. Se disponível, **voz + notificação**; se ocupado, **somente notificação**. Sob incerteza de contexto, adotar notificação apenas.
+
+- No PC, usar contexto de apps/jogos/fullscreen/atividade primeiro; captura de tela e webcam apenas com permissões específicas e indicadores. Evitar gravação ou streaming contínuo sem necessidade.
+- J6+ é inicialmente um Companion de voz; não presumir acesso às câmeras do PC, do Infinix ou do próprio J6. Cada origem necessita autorização por dispositivo; o controle multidispositivo deve preservar escopos por conta/aparelho.
+- Captura e classificação exigem consentimento e engenharia de privacidade, baixo consumo de energia, limites de frames/dados, opção de pausar e nenhum envio de dados pessoais para um provedor não autorizado.
+- Integração de saída de áudio e notificações ainda depende de implementação/testes. Sem falsa alegação de observação contínua ou de que as interfaces já funcionam.
+- A potencial exceção de voz para evento crítico quando o usuário está ocupado permanece pendente de decisão.
