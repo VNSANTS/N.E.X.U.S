@@ -85,3 +85,13 @@ Resultado possível para cada candidato: **ACEITAR**, **ADIAR**, **REJEITAR** ou
 **Pendências para encerrar baseline:** SHA do MARK e versões do ambiente; logs sem segredos; diálogo por voz desmutado e roteamento de áudio; RAM/CPU em ociosidade e durante uso; testes de ferramentas inofensivas, memória, navegador, permissões e sessão do dashboard.
 
 **Regra de registro:** não promover estes estados parciais a PASS integral até os testes correspondentes. A implementação do NEXUS e integrações sensíveis continuam bloqueadas pela Fase 0.
+
+
+## Confirmação adicional do proprietário — voz e velocidade (2026-11-23)
+
+O usuário confirmou diretamente após a primeira captura: **"o mic ta funcionando e responde super rapido"** e especificou que seguirá usando o **JARVIS/MARK LVII**, expandindo sobre essa base.
+
+- **G0-04 áudio:** antes estava pendente por conta da screenshot `MUTED`. Atualizar para **FUNCIONA CONFORME RELATO**: microfone capta, o JARVIS responde; falta teste instrumentado com logs, métricas e roteamento de dispositivos.
+- **G0-08 latência:** **rápida conforme percepção do proprietário**; não há tempo medido em milissegundos, não registrar valor numérico.
+- **Escopo de upgrade:** desempenho atual (percebido) é referência a preservar; medir antes/depois de cada nova ferramenta e regredir mudanças que prejudiquem responsividade.
+- **Fase 0 restante:** commit/branch do upstream instalado, `git status`, CPU/RAM e latência em repouso/uso, segurança, ferramentas, memória, painel. A captura anterior com `MUTED` não contradiz o relato posterior de teste de voz.
