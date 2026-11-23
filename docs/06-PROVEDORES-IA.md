@@ -24,3 +24,10 @@ A assinatura ChatGPT Plus **não é automaticamente uma chave nem franquia ilimi
 - Mensagem clara para quota ou permissão insuficiente.
 - Nenhuma cobrança implícita.
 - Ferramentas não executam sem validação do core.
+
+
+## D-042 — Recuperação inteligente quando um provedor falhar (2026-11-23)
+
+O usuário aprovou recuperação por diagnóstico, correção autorizada e alternativa gratuita **já habilitada**. Sem pagamento automático, sem novas permissões concedidas pelos agentes e sem expor senhas a modelos remotos. Retentativas têm limite, checkpoints não contêm segredos e ações não idempotentes exigem verificação antes de repetição. Se não houver alternativa, informar erro e preservar progresso.
+
+Documento: [docs/19-RECUPERACAO-INTELIGENTE-DE-FALHAS.md](19-RECUPERACAO-INTELIGENTE-DE-FALHAS.md).
