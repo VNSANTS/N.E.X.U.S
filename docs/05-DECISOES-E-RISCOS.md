@@ -234,3 +234,15 @@ Atualizado em 2026-11-23.
 - Priorizar alerta imediato e contenção segura antes de debate demorado; consultar agentes de modo curto e rastreável. Evento importante não crítico respeita regras contextuais D-025.
 - Não iniciar câmera/microfone sem permissão, impedir saída do usuário, alterar hardware/serviços sem autorização nem fabricar medições.
 - Especificação e critérios de teste em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md). **Sem implementação do MARK.**
+
+
+## D-031 — Autonomia por categoria, com permissões antecipadas específicas (2026-11-23)
+
+- **Decisão explícita do usuário: alternativa C.** O NEXUS terá **autonomia por categoria**, não uma autorização global: o proprietário poderá aprovar antecipadamente **tipos específicos de ações** para os agentes executarem sem pedir confirmação a cada ocorrência.
+- A aprovação futura deve ser **granular**: categoria, ações permitidas, dispositivos/contas afetados, condições, limites de frequência/tempo/custo, reversibilidade, registro de auditoria e revogação simples.
+- O executor independente do LLM deverá validar a política a cada ação. **Debate, consenso ou votação de agentes não altera permissões**; ferramentas não recebem novos privilégios por sugestão dos modelos.
+- **Nenhuma categoria de execução foi autorizada neste turno.** Definir e aprovar as categorias uma de cada vez; por padrão, negar ações não cobertas explicitamente pela política. Acesso a tela/câmera também tem consentimento próprio.
+- Atividades de risco elevado (destruição de dados, gastos, compartilhamento de dados privados, alterações de segurança/credenciais, ações em terceiros) exigem confirmação específica ou regras futuras expressas e adequadas; não inferir licença irrestrita desta decisão.
+- Ações executadas sob uma categoria aprovada deverão ser verificadas e relatadas: **o que foi feito, por qual motivo, com qual autorização, qual evidência de resultado e como reverter**.
+- Integração conceitual com D-029 (conselho de agentes) e D-030 (emergências). Especificação em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md).
+- **Só documentação**: nenhuma permissão operacional ou código MARK foi alterado.
