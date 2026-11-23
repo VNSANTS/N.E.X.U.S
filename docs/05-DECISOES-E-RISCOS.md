@@ -329,3 +329,15 @@ O problema não é a palavra por si, mas **a falta de conexão com o ato de fala
 - Melhorar o roteamento com histórico e feedback do proprietário sem reescrever autonomamente os próprios privilégios, instalar novos agentes ou alterar política de segurança da Central; manter override manual, revisão e possibilidade de desligar aprendizado.
 - O termo "skill" representa aqui um **módulo de decisão/orquestração a implementar**, não uma skill já instalada ou operacional. Nenhuma autorização adicional, execução ou custo foi concedido.
 - Especificação em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md). **Documentação apenas, MARK original inalterado.**
+
+
+## D-039 — Memória adaptativa com consentimento para dados sensíveis (2026-11-23)
+
+- **Escolha explícita: alternativa B.** O NEXUS deverá **memorizar automaticamente informações úteis não sensíveis** para melhorar continuidade e personalização, permitindo **revisão, correção, exclusão e desativação** pela Central de Controle.
+- **Dados sensíveis ou privados exigem autorização específica e compreensível** antes de persistência. Não inferir permissão para senhas, credenciais, números de documentos, imagens privadas, dados de saúde, opiniões íntimas, informações de terceiros ou segredos por mera presença no contexto.
+- A memória deve guardar fatos úteis com **categoria, origem, data, contexto, confiança, motivo, prazo de revisão/expiração e histórico de alterações**, sem registrar indiscriminadamente transcrições integrais ou dados de fontes externas não confiáveis.
+- Registrar preferências/opiniões como **informações do proprietário**, não fatos universais; permitir corrigir erros, evitar duplicações e rejeitar coleta desnecessária.
+- Na Central: listar e pesquisar lembranças, inspecionar por que foram guardadas, editar/corrigir, apagar, pausar/desligar aprendizado e controlar autorizações específicas. Excluir cópias derivadas e versões persistidas dentro das possibilidades técnicas, com política explícita de backups.
+- **Segurança:** criptografia e controle de acesso quando viáveis; não divulgar memória à web/agentes externos sem permissão; política de retenção detalhada e prazos ficam para fase de configuração/testes.
+- **Esta decisão refina/substitui referências anteriores a "toda memória pessoal somente com opt-in"**: a opção aprovada agora permite memória automática de dados não sensíveis úteis, mantendo opt-in para dados sensíveis. Não altera permissão de câmera, microfone ou leitura de arquivos.
+- Especificação em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Somente documentação; MARK não alterado.**
