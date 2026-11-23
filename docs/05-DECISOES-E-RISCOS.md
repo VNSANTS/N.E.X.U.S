@@ -57,3 +57,10 @@ Atualizado em 2026-11-23.
 - Questões **a discutir**, ainda não decididas: nível de proatividade, forma de tratamento, frequência de intervenções e voz sintética. A personalidade não concede privilégios; autorização de ferramentas é política técnica separada.
 
 **Implementação adiada:** criar especificação/persona e testes de conversação somente após a homologação do MARK original. Esta decisão não implica mudança no código.
+
+## D-010 — Persona NEXUS v1.0: 35 características aprovadas (2026-11-23)
+- O usuário selecionou **35 características** (J.A.R.V.I.S. 7; F.R.I.D.A.Y. 7; K.A.R.E.N. 3; E.D.I.T.H. 5; U.L.T.R.O.N. 7; VISÃO 4; DUM-E/U 2).
+- Elas foram traduzidas em comportamento observável, exemplos, limites, regras de prioridade e critérios de aceite em [docs/14-PERSONALIDADE-NEXUS-V1.md](14-PERSONALIDADE-NEXUS-V1.md).
+- A mistura é **uma única identidade coerente**: precisão + iniciativa + humor + criticidade + empatia, sem violência, autoridade própria, monitoramento silencioso ou falsos relatos de execução.
+- Proatividade, forma de tratamento, voz e frequência de intervenções permanecem abertas para discussão; a personalidade **não concede privilégios de ferramenta**.
+- **Somente documentação:** código MARK não foi modificado.

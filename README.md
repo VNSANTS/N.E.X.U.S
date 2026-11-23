@@ -26,6 +26,7 @@ Um assistente de IA pessoal, com MARK LVII no PC e, em fase posterior, um **NEXU
 - [Estudo sobre ChatGPT Plus e provedores](docs/06-PROVEDORES-IA.md)
 - [Roteiro de instalação e homologação](docs/07-PRIMEIRO-TESTE.md)
 - [Origens e aviso de licenciamento](NOTICE.md)
+- [NEXUS Persona v1.0: 35 características concretas](docs/14-PERSONALIDADE-NEXUS-V1.md)
 
 ### Pesquisa aprofundada de 23/11/2026
 - [08 PESQUISA APROFUNDADA MARK](docs/08-PESQUISA-APROFUNDADA-MARK.md)
