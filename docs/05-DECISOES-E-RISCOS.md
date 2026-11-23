@@ -200,5 +200,15 @@ Atualizado em 2026-11-23.
 - **Escolha explícita:** aplicável a todas as comunicações espontâneas. NEXUS deve interpretar o contexto do usuário usando **tela e câmeras autorizadas**, junto a sinais do sistema, para determinar se uma interrupção é adequada.
 - **Pode interromper:** combinar **voz da identidade NEXUS** e notificação. **Não pode interromper:** **somente notificação**, sem fala da IA. **Indisponibilidade/incerteza contextual:** adotar modo conservador só notificação.
 - Não presumir câmera sempre ativa: captação visual/tela exige permissão específica, indicador, revogação e tratamento mínimo dos dados. Preferir sinais baratos antes de captura visual pesada; preservar recursos do PC e J6+.
-- D-023 (respeitar atividade/descanso) e D-024 (importância de riscos e problemas) continuam orientando **quando e o que** alertar; D-025 determina **como**, com um ponto a esclarecer: se risco crítico deve excepcionalmente gerar voz mesmo com usuário indisponível.
+- D-023 (respeitar atividade/descanso) e D-024 (importância de riscos e problemas) continuam orientando **quando e o que** alertar; D-025 determina **como**; a exceção de voz para risco crítico foi aprovada posteriormente na D-026.
 - Nenhum monitoramento, captura, permissão, síntese de voz, worker ou notificação foi ativado. Detalhes em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md).
+
+
+## D-026 — Exceção de voz em evento crítico confirmado (2026-11-23)
+
+- **Escolha explícita:** riscos críticos confirmados **podem interromper por voz e notificação mesmo quando o usuário está ocupado**, inclusive em atividades que normalmente inibem fala espontânea.
+- A gravidade deve ter **evidência confiável, atual e rastreável**; hipótese do LLM, texto de página ou falso positivo não são confirmação.
+- **Matriz:** crítico confirmado -> voz + notificação independentemente da ocupação; importante não crítico -> voz + notificação se disponível, só notificação se ocupado; informativo -> respeitar contexto e priorizar fila/notificação discreta.
+- Mensagem crítica breve, séria e acionável; deduplicar alertas e não confundir avisar com autorização para corrigir/executar.
+- Revogação de permissão, dispositivo offline, volume e recursos realmente disponíveis não podem ser burlados. Implementação e teste ainda pendentes.
+- Detalhes: [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Somente documentação, código MARK inalterado.**
