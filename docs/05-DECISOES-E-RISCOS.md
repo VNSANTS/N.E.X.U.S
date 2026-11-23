@@ -154,3 +154,12 @@ Atualizado em 2026-11-23.
 - D-020 prevalece sobre a descrição anterior de "provocações leves" em D-019, sem modificar as outras 35 características.
 - Referência vocal permanece Francisco Júnior como Sukuna. Detalhes e diálogos na seção "Revisão de intensidade" de [docs/14-PERSONALIDADE-NEXUS-V1.md](14-PERSONALIDADE-NEXUS-V1.md).
 - **Apenas documentação, sem código MARK alterado.**
+
+
+## D-021 — Intensidade de estudo autônomo adaptativa, com orçamento diário (2026-11-23)
+
+- **Escolha explícita: C.** NEXUS deve usar significativamente o tempo/recurso ocioso para pesquisar, diminuir a intensidade conforme a carga e **respeitar um orçamento diário de recursos/chamadas**.
+- Deve priorizar usuário, sessões interativas, jogos, trabalho e voz. Pausar com checkpoint, retomar sem duplicar ações/consultas e registrar uso e motivo das pausas.
+- **Sem gastos adicionais automáticos**: fallback pago desligado; qualquer custo exige consentimento separado.
+- **Não foram fixados números** de ciclos, chamadas, tokens, uso de CPU/RAM ou horários: calibrar após medir o hardware e as ferramentas disponíveis.
+- Especificação: [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Somente documentação.**
