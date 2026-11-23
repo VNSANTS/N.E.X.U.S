@@ -63,4 +63,12 @@ O usuário aprovou que o NEXUS determine a possibilidade de interromper com base
 - J6+ é inicialmente um Companion de voz; não presumir acesso às câmeras do PC, do Infinix ou do próprio J6. Cada origem necessita autorização por dispositivo; o controle multidispositivo deve preservar escopos por conta/aparelho.
 - Captura e classificação exigem consentimento e engenharia de privacidade, baixo consumo de energia, limites de frames/dados, opção de pausar e nenhum envio de dados pessoais para um provedor não autorizado.
 - Integração de saída de áudio e notificações ainda depende de implementação/testes. Sem falsa alegação de observação contínua ou de que as interfaces já funcionam.
-- A potencial exceção de voz para evento crítico quando o usuário está ocupado permanece pendente de decisão.
+- **Exceção aprovada em D-026:** risco crítico confirmado deve tentar enviar voz + notificação mesmo se o usuário estiver ocupado, respeitando disponibilidade real de canais e permissões.
+
+
+### Complemento D-026: canal de alerta para risco crítico
+- Quando detectado evento **crítico confirmado por sinal confiável**, o NEXUS pode usar **voz + notificação** independentemente da ocupação do usuário.
+- Eventos apenas importantes respeitam a escolha adaptativa (somente notificação quando ocupado); achados informativos nunca usam voz em momento inoportuno.
+- Áudio indisponível: fallback por notificação permitida, sem alegar fala entregue. O Companion J6+ precisa de implementação e teste de roteamento Bluetooth, reconexão e status de entrega.
+- A exceção não concede permissão para gravação de tela/câmera/microfone nem executa correções automaticamente.
+- Somente especificação; nada implementado.
