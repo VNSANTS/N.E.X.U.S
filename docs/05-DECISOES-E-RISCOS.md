@@ -365,3 +365,22 @@ O proprietário especificou: **"Dados sensíveis e credenciais se autorizado pod
 - Este pedido refere-se ao **futuro NEXUS local**, não garante sigilo local para senhas enviadas ao ChatGPT ou outros chats hospedados.
 - Documento específico: [docs/18-CHAT-LOCAL-E-COFRE-DE-CREDENCIAIS.md](18-CHAT-LOCAL-E-COFRE-DE-CREDENCIAIS.md).
 - **Somente documentação**; nenhum cofre, modelo local ou proteção já foi implementado.
+
+
+## D-041 — Credenciais por texto/voz, .env opcional e IA local isolada (2026-11-23)
+
+- **Desejo do usuário:** informar senha por fala ou escrita no chat do NEXUS; salvar automaticamente no `.env` depois de autorização na Central; limpar o valor do histórico e dos buffers quando possível; usar modelo local pequeno para a parte secreta, deixando o modelo externo mais poderoso para questões sem o segredo.
+- **.env não é cofre:** geralmente armazena valores em texto puro. Permitir somente após **opt-in específico por projeto/variável, desligado por padrão**, com aviso e proteções de arquivo/ACL; manter cofre criptografado como opção recomendada. `.gitignore` não impede vazamento se o arquivo já foi versionado.
+- **Fluxo:** filtrar e separar segredos localmente **antes de qualquer envio à IA externa**. Para credenciais ditadas, usar STT local, nunca transcrição externa. O remoto recebe apenas contexto saneado e identificador opaco.
+- **Executor:** escrita `.env` preferencialmente por código local determinístico, sem necessidade de LLM; modelo local leve apenas quando uma instrução precisar de interpretação. Validar destino e formato; evitar logs, backups inseguros e sincronização não autorizada.
+- **Escopos diferentes:** autorizar armazenar não autoriza usar no login; autorizar usar não autoriza divulgar a terceiros. Somente enviar segredo diretamente ao serviço de autenticação legítimo quando necessário para uma ação permitida.
+- **Apagamento honesto:** remover valor do histórico comum e memória semântica, apagar buffers temporários quando viável, mas não prometer eliminação absoluta de RAM, swap, clipboard ou cópias anteriores.
+- **Falha local:** nunca aplicar fallback para IA remota na etapa secreta. Requisito em [docs/18-CHAT-LOCAL-E-COFRE-DE-CREDENCIAIS.md](18-CHAT-LOCAL-E-COFRE-DE-CREDENCIAIS.md). Nenhuma implementação foi feita.
+
+## D-042 — Recuperação inteligente de agentes e provedores (2026-11-23)
+
+- **Escolha explícita: alternativa C.** Analisar falha, tentar corrigir dentro das permissões, escolher alternativa autorizada e disponível; se não puder concluir, preservar progresso e avisar.
+- Repetições limitadas, com verificação dos efeitos anteriores antes de refazer ações. **Sem API paga automática**, sem credenciais expostas e sem transferência da etapa sensível para modelo externo.
+- Respeitar orçamento, CPU/RAM, Central e risco de duplicações. Alertas críticos não esperam o debate.
+- Relatar estado real e checkpoint seguro. Detalhes em [docs/19-RECUPERACAO-INTELIGENTE-DE-FALHAS.md](19-RECUPERACAO-INTELIGENTE-DE-FALHAS.md).
+- **Conclui as três decisões conceituais finais combinadas.** Próxima etapa: homologação do MARK original no Windows. Nenhum código alterado.
