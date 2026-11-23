@@ -100,3 +100,13 @@ Atualizado em 2026-11-23.
 - A aprovação da iniciativa **não é autorização operacional irrestrita**: ainda precisamos decidir escopo, frequência, limites de chamadas/custo, fontes, notificações e habilitação.
 - Worker local deve respeitar PC desligado, checkpoints, pausa e retomada. Não executar mudanças em dispositivos, código ou credenciais como resultado da pesquisa sem autorização apropriada.
 - Proposta registrada em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Somente documentação, sem alteração no MARK LVII.**
+
+
+## D-015 — Pesquisa autônoma com escopo misto (2026-11-23)
+
+- **Escolha explícita:** o NEXUS deve **priorizar interesses/projetos do usuário e também descobrir temas novos por iniciativa própria**.
+- Combinar utilidade imediata, exploração interdisciplinar e curiosidade livre; não reduzir a pesquisa a tópicos já mencionados, nem substituí-los por assuntos aleatórios.
+- Seleção de estudo deve ser explicável: por que escolheu o tema, qual lacuna pretende preencher e como ele se relaciona (ou não) aos objetivos do usuário.
+- Aprendizado humano continua orientado a perguntas relevantes e memória com consentimento, sem transformar perspectivas em fatos universais.
+- Proporção, frequência, limites de orçamento e notificações permanecem em aberto. A escolha **não concede acesso irrestrito** à internet, contas, câmeras ou dados privados.
+- Especificação em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md); **nenhuma implementação no MARK**.
