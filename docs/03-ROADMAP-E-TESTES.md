@@ -1,6 +1,6 @@
 # Roadmap técnico e critérios de aceite
 
-**Condição inicial:** projeto MARK LVII original ainda não instalado/testado. Portanto, o roadmap é uma lista de decisões e experimentos, não relatório de entregas.
+**Condição atual (D-043):** o MARK LVII original já foi instalado e executado no PC do proprietário; interface, conversa PT-BR e áudio foram relatados como funcionais, mas os demais itens de homologação estão pendentes. Este roadmap registra as etapas ainda necessárias, não uma implementação concluída.
 
 ## Fase 0 — Baseline e homologação (bloqueante)
 - [ ] Clonar MARK LVII sem alterações, fixar SHA do commit de origem.
@@ -68,3 +68,21 @@
 | T-14 | Stress | Medir RAM/CPU e latência; registrar baseline antes de otimizar |
 
 Cada mudança precisa de teste unitário e regressão correspondente. Valores numéricos de desempenho só serão estabelecidos após baseline real.
+
+
+## Atualização de direção — D-043: desenvolver JARVIS sobre o MARK original funcional
+
+**Decisão mais recente prevalece sobre o título/branding NEXUS nos documentos históricos:** produto final **JARVIS**, mantendo os requisitos aprovados no planejamento D-001 a D-042. A base de código será o **MARK LVII que o usuário instalou e está usando**, e não reconstrução do NEXUS do zero.
+
+**Baseline revisado (relato do proprietário em 2026-11-23):** interface abriu, resposta textual PT-BR apareceu na captura, microfone funciona e o usuário relata resposta falada muito rápida. Isso modifica a premissa inicial "não instalado": MARK original **já está executando no PC do usuário**. Itens ainda não verificados permanecem pendentes; não considerar Fase 0 inteiramente concluída.
+
+### Próximo ciclo no PC
+1. Confirmar pasta original, `git status --short`, `git rev-parse --short HEAD`, `git branch --show-current` e versões do ambiente; não publicar .env ou credenciais.
+2. Preservar instalação que já funciona e criar **ambiente/branch de desenvolvimento isolado**, com possibilidade de retornar ao original.
+3. Registrar baseline de áudio, PT-BR, latência, CPU/RAM em repouso e carga, navegação, ferramentas e segurança em arquivos fictícios.
+4. Priorizar **estabilidade e segurança P0** sem quebrar Gemini Live. Depois, adaptar personalidade e interface sob identidade JARVIS, memória, roteamento de agentes e demais funcionalidades aprovadas em etapas.
+5. Testar regressões e comparar recursos a cada mudança; sem trocar de motor/provedor apenas por preferência estética.
+
+**Escopo de marca:** novos textos, UX e futuro nome do assistente = JARVIS; títulos NEXUS já existentes são referências históricas de requisitos, não instrução para renomear o assistente de volta. Repositório GitHub atual permanece como está até decisão separada.
+
+**Estado:** plano atualizado, nada modificado no PC pelo conector GitHub.
