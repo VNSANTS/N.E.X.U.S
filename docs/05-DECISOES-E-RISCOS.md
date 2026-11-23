@@ -163,3 +163,12 @@ Atualizado em 2026-11-23.
 - **Sem gastos adicionais automáticos**: fallback pago desligado; qualquer custo exige consentimento separado.
 - **Não foram fixados números** de ciclos, chamadas, tokens, uso de CPU/RAM ou horários: calibrar após medir o hardware e as ferramentas disponíveis.
 - Especificação: [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Somente documentação.**
+
+
+## D-022 — Comunicação espontânea de pesquisas e perguntas (2026-11-23)
+- **Escolha explícita: alternativa A.** NEXUS deverá **compartilhar descobertas por iniciativa própria**, sem depender de o usuário solicitar relatório ou abrir o chat.
+- Iniciar conversas sobre estudos, novas informações úteis e perguntas humanas surgidas de lacunas investigativas. Informar fontes e separar hipótese de conclusão.
+- A personalidade continua a combinar arrojo teatral e sarcasmo contextual com competência real; iniciativa não significa interromper ilimitadamente.
+- **Ainda não decidido:** horários, exceções para trabalho/jogos, canais de notificação/voz, intensidade e pausa/silêncio.
+- Não autoriza envio a terceiros, microfone always-on, notificações invasivas ou acesso a dispositivos sem permissão; execução requer o futuro serviço conectado e ativo.
+- Detalhes em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Só documentação; nenhum código MARK foi alterado.**
