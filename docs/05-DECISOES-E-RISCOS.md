@@ -334,10 +334,20 @@ O problema não é a palavra por si, mas **a falta de conexão com o ato de fala
 ## D-039 — Memória adaptativa com consentimento para dados sensíveis (2026-11-23)
 
 - **Escolha explícita: alternativa B.** O NEXUS deverá **memorizar automaticamente informações úteis não sensíveis** para melhorar continuidade e personalização, permitindo **revisão, correção, exclusão e desativação** pela Central de Controle.
-- **Dados sensíveis ou privados exigem autorização específica e compreensível** antes de persistência. Não inferir permissão para senhas, credenciais, números de documentos, imagens privadas, dados de saúde, opiniões íntimas, informações de terceiros ou segredos por mera presença no contexto.
+- **Dados sensíveis e credenciais podem ser armazenados somente quando houver autorização específica, explícita e revogável para a finalidade e o item/categoria escolhidos**. Permissão inicial é **negada/desligada por padrão**, inclusive se uma senha/token aparecer na conversa. Não inferir autorização por mera exposição do dado. Credenciais ficam em **cofre de segredos protegido**, não em memória semântica comum ou em texto de logs.
 - A memória deve guardar fatos úteis com **categoria, origem, data, contexto, confiança, motivo, prazo de revisão/expiração e histórico de alterações**, sem registrar indiscriminadamente transcrições integrais ou dados de fontes externas não confiáveis.
 - Registrar preferências/opiniões como **informações do proprietário**, não fatos universais; permitir corrigir erros, evitar duplicações e rejeitar coleta desnecessária.
 - Na Central: listar e pesquisar lembranças, inspecionar por que foram guardadas, editar/corrigir, apagar, pausar/desligar aprendizado e controlar autorizações específicas. Excluir cópias derivadas e versões persistidas dentro das possibilidades técnicas, com política explícita de backups.
-- **Segurança:** criptografia e controle de acesso quando viáveis; não divulgar memória à web/agentes externos sem permissão; política de retenção detalhada e prazos ficam para fase de configuração/testes.
+- **Segurança:** para credenciais persistidas, **criptografia em repouso, acesso autenticado e escopos mínimos são pré-requisitos**, não recursos opcionais; idealmente cofre do sistema/armazenamento seguro local. Não exibir segredos em logs, relatórios ou respostas sem necessidade; não compartilhar com provedores/agentes/sites sem autorização separada. Se não houver cofre seguro disponível, **não salvar**. Retenção e prazos configuráveis na Central.
 - **Esta decisão refina/substitui referências anteriores a "toda memória pessoal somente com opt-in"**: a opção aprovada agora permite memória automática de dados não sensíveis úteis, mantendo opt-in para dados sensíveis. Não altera permissão de câmera, microfone ou leitura de arquivos.
 - Especificação em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Somente documentação; MARK não alterado.**
+
+
+### Esclarecimento D-039 — Dados sensíveis e credenciais com opt-in (2026-11-23)
+
+O proprietário especificou: **"Dados sensíveis e credenciais se autorizado pode salvar mas não vem permitido por padrão"**.
+- **Padrão:** não persistir dados sensíveis nem credenciais.
+- **Com autorização:** permitir armazenamento limitado à finalidade, item/conta/dispositivo e prazo indicado, desde que o mecanismo seguro já esteja disponível.
+- **Credenciais:** cofre separado da memória comum, controles de acesso e criptografia; leitura/uso por agentes requer escopo próprio e não é consequência automática da autorização para **salvar**.
+- **Controle:** listar indicadores da existência de segredo sem revelar seu valor, revogar permissão, rotacionar e apagar credenciais; excluir tokens de logs e backups inseguros.
+- Não presumir que os recursos já existem no MARK; são requisitos para implementação futura.
