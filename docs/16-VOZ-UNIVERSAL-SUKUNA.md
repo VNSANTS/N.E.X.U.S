@@ -2,7 +2,7 @@
 
 **Data da decisão:** 2026-11-23  
 **Status:** requisito de experiência aprovado pelo usuário; **não implementado nem testado** no MARK LVII.  
-**Referência solicitada literalmente:** **a voz de Sukuna, personagem de Jujutsu Kaisen**, e não somente uma voz masculina genérica. A exata interpretação de referência (japonês original ou dublagem brasileira) ainda precisa ser definida.
+**Referência solicitada literalmente:** **a voz de Sukuna, personagem de Jujutsu Kaisen**, e não somente uma voz masculina genérica. **Interpretação definida:** dublagem brasileira de Ryomen Sukuna por **Francisco Júnior**.
 
 ## Regra universal solicitada
 
@@ -15,7 +15,7 @@
 
 ## Fidelidade, direitos e segurança
 
-- **Preferência do usuário:** fidelidade à interpretação vocal específica que ele identificar (precisamos confirmar qual dublagem).
+- **Preferência do usuário:** fidelidade à interpretação vocal da **dublagem brasileira de Sukuna por Francisco Júnior**.
 - **Limite real:** não declarar que existe motor capaz de reproduzir exatamente essa voz antes de pesquisar disponibilidade/licenças e fazer teste perceptual. A forma de entrega deve respeitar permissões aplicáveis a gravações e voz de dubladores, direitos de execução e termos do fornecedor.
 - Evitar extração e clonagem não autorizadas de gravações comerciais ou da voz de um dublador real. Procurar uma licença/autorização adequada para a solução pretendida; se a reprodução exata não for possível, submeter alternativas com timbre/prosódia semelhantes **sem substituir sorrateiramente a preferência**.
 - O projeto permanece pessoal e experimental, mas uso privado não significa que toda amostra/voz esteja livre de direitos. Não publicar modelos de voz, samples derivados ou gravações de terceiros sem base legal/licença.
@@ -43,6 +43,16 @@
 
 ## Pendência única mais imediata
 
-**Qual Sukuna exatamente?** A versão dublada em **português brasileiro** ou a **voz original japonesa**? Isso muda a referência, o conjunto de gravações autorizadas e a seleção/avaliação de TTS. Se o usuário fornecer um áudio próprio/autorizado como referência, registrar apenas a informação técnica e permissão, sem publicar gravação no repositório.
+**Resolvido em 2026-11-23:** referência é **Francisco Júnior como Sukuna, na dublagem brasileira**. Pendem viabilidade técnica, direitos/autorizações e um teste de voz para aprovação. Não publicar áudio de referência ou modelo derivado sem permissão adequada.
 
 **Nenhum código do MARK LVII foi alterado nesta etapa.**
+
+
+## Dublagem escolhida, referência verificável (2026-11-23)
+
+- **Identidade vocal desejada:** Francisco Júnior no papel de **Ryomen Sukuna**, série **Jujutsu Kaisen**, áudio da **dublagem brasileira em português brasileiro**.
+- **Fontes de verificação:** [Dublapédia: elenco de Jujutsu Kaisen](https://dublapedia.com/wiki/Jujutsu_Kaisen), [JBox: Francisco Júnior](https://www.jbox.com.br/j-pedia/perfis/francisco-junior/), [DubFinder: Francisco Junior](https://dubfinder.app/pt/dubladores/francisco-junior/).
+- Não confundir com a interpretação de Junichi Suwabe na versão japonesa.
+- A identidade vocal desejada vale para todas as respostas faladas do NEXUS, inclusive Companion J6+, independentemente do modelo de linguagem.
+- **Compromisso de honestidade:** não afirmar que reproduzimos perfeitamente o ator antes de termos solução tecnicamente viável e direitos de uso assegurados. Não extrair amostras de episódios ou clonar a voz sem autorização adequada.
+- Fica pendente escolher tecnologia de voz, opções de licenciamento, qualidade perceptual e viabilidade no PC/J6+; o código do MARK não foi alterado.
