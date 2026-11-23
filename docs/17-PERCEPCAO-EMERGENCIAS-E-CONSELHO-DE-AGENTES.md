@@ -172,3 +172,41 @@ O proprietário decidiu: **"Isso aí eu defino na central"**. O grau de acesso p
 - **Registro:** nome do autorizador, escopo, versão, data, expiração, motivo do uso, resultado e revogação.
 
 **Não foi concedida nenhuma autorização operacional.** Os detalhes visuais da Central e de cada categoria ficam para fase futura. O MARK original segue intocado.
+
+
+## J. D-033: método deliberativo por argumentos e evidências (2026-11-23)
+
+**Escolha do usuário: "Debate com argumentos".** A divergência entre agentes será resolvida por **análise argumentativa fundamentada** e não por contagem de votos ou exigência de unanimidade.
+
+### Fluxo de deliberação especificado
+1. **Definir o problema e objetivo:** observações reais, critérios de sucesso e restrições impostas pelo proprietário.
+2. **Propostas independentes quando viáveis:** alternativas concretas, efeitos esperados, evidências e suposições explícitas.
+3. **Contraditório:** outro papel revisa causalidade, risco, erros de interpretação, custos, fragilidade das evidências e alternativas negligenciadas.
+4. **Réplica ou revisão:** agente proponente aceita correções, apresenta provas adicionais ou reformula a solução.
+5. **Síntese do coordenador:** selecionar alternativa melhor sustentada, explicar por que supera as demais, apresentar ressalvas e grau de confiança; **não impor resultado por maioria**.
+6. **Não resolvido:** reportar incertezas específicas, propor verificação de baixo risco ou encaminhar uma decisão ao usuário se necessária. Não simular acordo.
+7. **Execução restrita:** somente depois da autorização correspondente na Central de Controle, independentemente de consenso, placar ou força do argumento.
+
+### Critérios para decidir
+- Confiabilidade, verificabilidade e atualidade da evidência;
+- Segurança, reversibilidade e privacidade;
+- Probabilidade realista de resolver o problema e consequências;
+- Alinhamento com o objetivo informado pelo proprietário;
+- Custo financeiro zero por padrão, tempo, CPU/RAM/tokens e oportunidade de execução;
+- Grau de incerteza e possibilidade de testar antes.
+
+### Economia e urgência
+- Nem toda questão precisa de debate completo; proporcionalidade ao risco e à complexidade.
+- Evitar ciclos infinitos: limite de rodadas, tempo e tokens calibrado no PC.
+- Em eventos críticos confirmados, **primeiro avisar e aplicar contenção preaprovada se houver**, depois aprofundar discussão. Nunca atrasar alerta crítico para que o conselho termine a discussão.
+- Papéis distintos podem compartilhar o mesmo modelo, mas isso exige reconhecer a correlação entre erros; crítica baseada em fontes e ferramentas é preferível a teatro de opiniões.
+- Guardar trilha curta de argumentos e decisões auditáveis, **sem expor raciocínio privado oculto dos modelos**.
+
+### Exemplo
+- Agente investigador: "O backup falhou três vezes; os logs apontam falta de espaço."
+- Estrategista: "Liberar espaço parece viável, mas pode apagar conteúdo do usuário."
+- Revisor: "Melhor verificar arquivos temporários aprovados e disponibilidade de outra unidade, sem exclusão automática."
+- Coordenador: "A recomendação é diagnosticar o uso da unidade e solicitar permissão para qualquer exclusão fora do escopo autorizado; evidências indicam falta de espaço, mas não confirmam a melhor forma de liberar."
+- Executor: somente operações abrangidas por permissão configurada na Central.
+
+**Status:** escolha de método de deliberação registrada; política de permissões segue para a Central, sem código alterado.
