@@ -352,3 +352,36 @@ NEXUS: "Hm... Descobri algo curioso enquanto estudava. Sua solução atual talve
 **Como o NEXUS deve interromper?** Voz imediatamente, notificação visual, ou escala gradual por gravidade. Ainda não se definiram horários/canais nem confiabilidade das integrações; não inventar recursos ativos.
 
 **Status:** requisito documental aprovado, nenhum alerta real ativado, MARK não alterado.
+
+
+## 18. D-025: Política universal de interrupção adaptativa multimodal (2026-11-23)
+
+**Escolha expressa do usuário:** esta regra **vale para toda comunicação espontânea** do NEXUS, incluindo descobertas, perguntas, alertas informativos, técnicos e críticos. O NEXUS deve **usar informações visuais da tela e câmera autorizadas** para entender o que o usuário está fazendo e **se é apropriado interromper**. Se o contexto permitir, **pode falar usando a voz escolhida e enviar notificação**; se não permitir, **envia apenas notificação**, sem fala espontânea.
+
+### Tabela de decisão (regra de canal)
+| Situação avaliada | Meio de comunicação | Exemplo |
+| --- | --- | --- |
+| Disponível, sem atividade incompatível | Voz **e** notificação, quando houver saída e dispositivo autorizado | Conversa casual ou descoberta interessante |
+| Ocupado em jogo, programação concentrada, reunião, estudo ou descanso | **Somente notificação**, preferencialmente discreta, sem áudio da IA | Descoberta de pesquisa |
+| Contexto desconhecido (sem sinal, câmera/screen permission negada, falha) | **Somente notificação**, sem presumir disponibilidade | Agente não sabe o que usuário faz |
+| Evento importante/crítico | Preservar conteúdo e prioridade do alerta; **modo de interrupção quando usuário está ocupado segue a regra visual provisória; eventual exceção de voz para risco crítico ainda requer decisão específica** | Possível falha de disco |
+
+### Percepção e decisão
+1. **Fusão contextual:** sinais autorizados de aplicativo/tela ativa, estado de jogo/fullscreen, foco/teclado/entrada, modo Não Perturbe, horários, disponibilidade de dispositivo e, **quando autorizado**, câmera para entender atividades e presença. A tela do PC e câmeras não são intercambiáveis: cada fonte requer permissão própria.
+2. **Prioridade visual contextual:** olhar o que aparece na tela e, se útil, na câmera. Por exemplo, editor ativo ou jogo em fullscreen + interação frequente sinaliza concentração; câmera pode ajudar a interpretar se usuário está em reunião ou longe do PC, sem fazer inferência infalível.
+3. **Confiança e transparência:** indícios podem falhar; se houver dúvida, **não interromper por voz**. Informar a fonte da inferência quando for relevante. Não afirmar que "estou vendo" ou "sei que você está dormindo" sem acesso e evidência atuais.
+4. **Câmera, tela e privacidade:** obter consentimento explícito, separado e revogável para observação contextual; indicador visível de captura; opção de pausar/cancelar; escopo e taxa de amostragem mínimos, não gravação contínua por padrão; retenção temporária preferida; evitar transmitir frames a provedores externos sem permissão e necessidade.
+5. **Custos e bateria:** prefira sinais leves do sistema e frames ocasionais antes de usar análise visual frequente; reduzir amostragem no J6+ e em hardware fraco; monitoramento de contexto não deve exigir câmera/microfone sempre ligados.
+6. **Notificação:** em modo ocupado, notificação sem fala e sem áudio gerado pela IA; intensidade visual deve respeitar controles do SO e preferências do usuário. Não usar sobreposição intrusiva sem regra específica.
+7. **Fila e revisão:** guardar o histórico e permitir rever mensagens, adiar, ignorar e reduzir avisos repetidos. Se depois houver sinal de disponibilidade, oferecer conversa sobre o item.
+8. **Segurança e falha fechada:** classificação errada nunca pode acionar câmera oculta, dar acesso a arquivos, executar comandos ou produzir falsos alertas. A gravidade do evento não concede permissões técnicas.
+9. **Criticidade versus canal:** D-024 aprovou interrupção para falhas críticas/importantes; D-025 especifica o canal adaptativo. **Permanece sem decisão uma eventual exceção de voz em risco crítico mesmo quando ocupado**; enquanto isso, aplicar a preferência expressa neste turno (só notificação se não pode interromper).
+
+### Exemplos de interface futura
+- **PC com jogo ativo, tela/câmera com acesso autorizado:** "Não vou falar; há uma descoberta nova e posso mostrá-la depois" -> notificação discreta.
+- **PC em desktop, usuário disponível:** NEXUS usa voz e notificação: "Ora, ora... encontrei algo que merece sua atenção."
+- **Permissão de câmera negada:** classifica pelo que puder observar via sinais e tela autorizados; se ainda incerto, apenas notificação. Não insistir em permissão.
+- **Problema técnico importante durante reunião:** alerta somente em forma de notificação, com motivo, evidência e gravidade. Risco verdadeiramente imediato ainda pode demandar revisão futura da exceção sonora.
+
+### Dependências e implementação
+Este registro aprova **o comportamento desejado**, não ativa câmera, análise de tela, áudio em background ou push. Implementação no MARK depende de permissões, captura segura, reconhecimento de contexto, indicadores visíveis, comunicação PC/J6+ e avaliação no hardware. Nenhum código alterado.
