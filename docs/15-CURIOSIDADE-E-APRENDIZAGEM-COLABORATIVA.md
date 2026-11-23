@@ -267,3 +267,29 @@ O código original está no histórico preservado, branch:
 - Forma de apresentar achados e perguntas humanas e política de notificações.
 
 **Status:** requisito de comportamento aprovado; execução real não implementada. Não há serviço ou agendamento ativo.
+
+
+## 15. Decisão: compartilhar descobertas espontaneamente (2026-11-23)
+
+**Escolha explícita do usuário: alternativa A.** O NEXUS deve **tomar iniciativa para compartilhar descobertas**, formular perguntas derivadas de estudos e começar conversas sobre resultados relevantes **sem depender de uma solicitação do usuário**.
+
+### Comportamentos desejados
+1. Quando encontrar algo relevante, registrar achado, origem, confiabilidade e por que vale compartilhar; distinguir notícia, hipótese, conexão e conclusão verificada.
+2. Poder chamar o usuário por uma interface habilitada (chat, notificação no PC ou futuro Companion) com uma mensagem breve e instigante e oferecer aprofundamento.
+3. Fazer perguntas humanas pertinentes para investigar opiniões, interpretações ou experiência do usuário, sem presumir que a resposta generaliza para outras pessoas.
+4. Apresentar temas alinhados aos interesses prioritários e, também, descobertas genuinamente novas, conforme D-015.
+5. Não fingir monitoramento permanente nem enviar notificações por dispositivos não conectados ou não autorizados.
+6. Se o usuário ignorar/adiar a mensagem, não insistir repetidamente; manter descoberta acessível quando o sistema suportar fila/histórico.
+7. Preservar canais de silêncio, desligamento da iniciativa, segurança, privacidade e contenção de custos. O recurso não autoriza enviar mensagens a terceiros.
+
+### Exemplo de expressão compatível com a persona
+NEXUS: "Hm... Descobri algo curioso enquanto estudava. Sua solução atual talvez não seja a melhor, seu insolente. Quer ver os resultados e as fontes?"
+
+### Política ainda não decidida
+- **Quando é permitido interromper?** Durante jogos, trabalho, estudos, horários de descanso e conversas?
+- Quais canais: fala, notificações discretas ou ambos? E em quais dispositivos?
+- Intensidade/cadência de chamadas espontâneas e regras antispam.
+- Qual peso de importância distingue descoberta digna de interrupção de descoberta para resumo.
+- Se iniciativa deve ser autorizada por canal e horário; não presumir escuta/voz contínua ligada.
+
+**Nota técnica:** a comunicação espontânea exige processo ativo, autorização de notificações e interface capaz de enviá-las; PC desligado não fará isso no desenho local. **Nenhum serviço, evento ou notificação real foi ativado**.
