@@ -212,3 +212,25 @@ Atualizado em 2026-11-23.
 - Mensagem crítica breve, séria e acionável; deduplicar alertas e não confundir avisar com autorização para corrigir/executar.
 - Revogação de permissão, dispositivo offline, volume e recursos realmente disponíveis não podem ser burlados. Implementação e teste ainda pendentes.
 - Detalhes: [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Somente documentação, código MARK inalterado.**
+
+
+## D-027 — Observação inteligente sob demanda (2026-11-23)
+- **Escolha explícita:** alternativa **B**. Usar sinais leves de atividade e consultar telas/câmeras autorizadas somente quando necessário para compreender o contexto. Privacidade, indicador, revogação e custo de CPU/RAM continuam obrigatórios.
+
+## D-028 — Interrupção visual e áudio de emergência com adaptação à distância e ao sono (2026-11-23)
+- **Pedido expresso:** conforme gravidade, tentar "congelar a tela"; se o usuário estiver longe do PC mas em casa, aumentar a voz para que ouça; se estiver dormindo, acordá-lo, possivelmente por voz, para pedir uma decisão.
+- **Interpretação técnica preferível:** alerta visual temporário e fechável em vez de congelamento real do SO/processos; alternativa deve ser testada em tela cheia/jogo. Não travar comandos ou impedir o usuário de resolver a situação.
+- **Volume:** saída realmente disponível, escalonamento gradual, teto seguro, atenção a fones e restauração, sem garantia de audibilidade.
+- **Descanso:** só crítico confirmado justifica tentar acordar; não confundir ausência de atividade com certeza de sono; tentativas limitadas, nenhuma promessa se PC/worker desligado.
+- **Voz de decisão:** possível como objetivo, mas reconhecimento e comandos consequenciais exigirão autenticação e confirmação apropriadas.
+
+## D-029 — Conselho de agentes para debater respostas e reduzir consultas ao usuário (2026-11-23)
+- **Pedido expresso:** agentes de IA devem discutir a melhor resposta e, na maioria dos casos, responder/resolver com mínima intervenção humana.
+- **Requisito:** coordenar investigador, estrategista, revisor crítico, decisor e executor de ferramentas sujeito a política; escalonar agentes/rodadas à complexidade e orçamento, em preferência por execução sequencial no PC modesto.
+- Consenso de agentes não prova correção nem equivale a autorização. A fronteira de **ações automáticas reversíveis ou de impacto** ainda precisa de decisão específica; nenhuma permissão ampliada foi concedida agora.
+
+## D-030 — Protocolo integrado de urgência e resposta humana (2026-11-23)
+- Um incidente crítico **confirmado** pode superar a regra de silêncio D-026, exibir visual de alta prioridade e tentar voz/volume adequado inclusive em descanso; perguntar ao usuário apenas se realmente precisar de uma escolha não delegada.
+- Priorizar alerta imediato e contenção segura antes de debate demorado; consultar agentes de modo curto e rastreável. Evento importante não crítico respeita regras contextuais D-025.
+- Não iniciar câmera/microfone sem permissão, impedir saída do usuário, alterar hardware/serviços sem autorização nem fabricar medições.
+- Especificação e critérios de teste em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md). **Sem implementação do MARK.**

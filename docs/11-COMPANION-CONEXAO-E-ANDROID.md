@@ -72,3 +72,12 @@ O usuário aprovou que o NEXUS determine a possibilidade de interromper com base
 - Áudio indisponível: fallback por notificação permitida, sem alegar fala entregue. O Companion J6+ precisa de implementação e teste de roteamento Bluetooth, reconexão e status de entrega.
 - A exceção não concede permissão para gravação de tela/câmera/microfone nem executa correções automaticamente.
 - Somente especificação; nada implementado.
+
+
+## D-027 a D-030 — Contexto sob demanda e respostas de emergência, requisitos futuros
+
+- Escolha do usuário: analisar tela/câmera apenas quando os sinais leves de atividade não bastarem, sempre com autorização por fonte, indicador visível e revogação.
+- Um risco crítico confirmado pode solicitar visual forte e voz no PC/J6+; testar camadas de janela, tela cheia, notificações e fallback, **sem suspender processo Windows nem capturar controle irremovível**.
+- Volume de aviso pode ser elevado gradualmente só em saída disponível e com teto seguro configurado, respeitando fones, Bluetooth e restauração.
+- Acionar usuário fora do PC/descansando exige serviço conectado e ativo, presença/contexto autorizados e comunicação bidirecional já testada. Desligado/offline não há alerta local; voz de confirmação requer proteção contra reconhecimento incorreto.
+- Conselho de agentes deve debater, mas não consegue autoaprovar comandos, instalar apps ou abrir acesso a sensores. Veja [17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md).

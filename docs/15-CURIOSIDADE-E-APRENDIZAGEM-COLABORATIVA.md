@@ -409,3 +409,14 @@ Este registro aprova **o comportamento desejado**, não ativa câmera, análise 
 7. **Teste futuro:** simular eventos críticos comprovados, eventos falsos positivos, indisponibilidade de voz, usuário em jogo, reunião e descanso, e verificar roteamento ao PC/J6+.
 
 **Estado:** aprovado como requisito e regra universal; **nenhuma implementação, vigilância, automação ou envio real foi ativado**.
+
+
+## 20. D-027 a D-030 — Percepção sob demanda, alerta visual forte, voz de alcance e conselho de agentes (2026-11-23)
+
+O usuário escolheu expressamente a **alternativa B de observação inteligente**, com análise de tela/câmera só quando necessário e mediante autorização específica. Acrescentou requisitos de emergência: dependendo do risco, deseja "congelar a tela"; se estiver longe do PC mas em casa, aumentar volume da voz para ouvi-lo; se estiver dormindo, poder acordá-lo e obter decisão por voz; e, como regra geral, deseja agentes de IA **debatendo a melhor resposta e solucionando/respondendo por ele na maioria das situações**.
+
+**Interpretação técnica segura:** "congelar tela" é requisito de **interrupção visual perceptível**, implementável de preferência como alerta temporário de alta prioridade, não suspensão forçada de threads/processos/teclado. Volume só com teto seguro, alteração proporcional, restauração e dispositivo correto. Tentativa de despertar só em crítico confirmado, sem garantia, com política antirruído. Uso de voz para decisões importantes demanda confirmação/autenticação confiável.
+
+**Conselho de agentes:** investigadores, estrategista, revisor, coordenador e executor sujeito a política; escolher quantidade conforme complexidade, não modelos pesados simultâneos por padrão. Deliberar não concede privilégios; classificação de ações automaticamente permitidas **ainda em aberto**.
+
+Detalhes e testes em [17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md). **Estado: documentação apenas; nenhuma função em execução.**
