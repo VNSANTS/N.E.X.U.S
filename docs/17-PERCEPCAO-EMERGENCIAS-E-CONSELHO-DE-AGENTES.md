@@ -210,3 +210,18 @@ O proprietário decidiu: **"Isso aí eu defino na central"**. O grau de acesso p
 - Executor: somente operações abrangidas por permissão configurada na Central.
 
 **Status:** escolha de método de deliberação registrada; política de permissões segue para a Central, sem código alterado.
+
+
+## K. D-034 — Saída adaptativa dos debates (2026-11-23)
+
+**Escolha explícita:** apresentação adaptativa: **respostas simples, pouca explicação; decisões complexas, mais argumentos; relatório completo disponível**.
+
+### Formato sugerido conforme complexidade
+- **Simples:** resposta objetiva em 1–3 frases, diagnóstico/resultado, ação feita ou ainda não feita; sem encenar debate.
+- **Intermediário:** explicação sucinta da solução escolhida, alternativa rejeitada mais relevante, evidência e eventual ação/risco.
+- **Complexo ou impactante:** resumo executivo, opções comparadas, principais argumentos a favor/contra, evidências, incerteza, ação autorizada e resultado confirmado. Relatório completo acessível na Central quando implementada.
+- **Crítico em andamento:** alerta imediato, curto e acionável; detalhes disponíveis após o primeiro aviso, sem atrasar respostas de urgência.
+- **Relatório auditável:** registrar propostas argumentativas, objeções, fontes, decisão, permissão aplicada, ações verificadas, falhas e resolução; distinguir justificativas e evidências observáveis de raciocínio privado interno de modelos.
+- **Consumo adaptativo:** não exigir debate longo nem gerar relatório volumoso para comandos triviais, respeitando CPU, RAM, tokens e custo.
+
+**Status:** requisito de apresentação aprovado, nenhuma interface ou serviço implementado.
