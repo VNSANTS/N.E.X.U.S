@@ -197,3 +197,29 @@ O código original está no histórico preservado, branch:
 4. Retenção dos resultados e privacidade.
 
 **Status:** iniciativa autônoma aprovada como comportamento; **não implementada nem ativada** no MARK LVII.
+
+
+## 12. Decisão: escopo misto, interesses prioritários + exploração aberta (2026-11-23)
+
+**Escolha explícita do usuário:** combinar A e B: **priorizar os próprios interesses e projetos e, por iniciativa do NEXUS, explorar assuntos novos fora das áreas habituais**. Não restringir toda pesquisa a palavras-chave já conhecidas, nem substituir os objetivos do usuário por curiosidades aleatórias.
+
+### Regra prática de seleção de tema
+1. **Prioridade principal:** dúvidas, lacunas, dependências e novidades diretamente úteis aos projetos e interesses manifestados pelo usuário (por exemplo, IA, programação, tecnologia, segurança e empreendedorismo quando forem relevantes).
+2. **Exploração interdisciplinar:** investigar assuntos novos e relacioná-los a problemas, perguntas ou perspectivas já surgidas; permitir descobertas não previstas.
+3. **Valor da descoberta:** favorecer temas que possam gerar conhecimento verificável, conexões inesperadas, novas perguntas relevantes ou soluções concretas.
+4. **Diversidade deliberada:** não repetir indefinidamente um único assunto; pesquisar também ideias fora das preferências habituais, mas sem impor interesses.
+5. **Relevância e transparência:** registrar por que um estudo foi escolhido, suas fontes, data, limite e categoria: `prioridade pessoal`, `conexão interdisciplinar` ou `exploração livre`.
+6. **Perguntas humanas:** se encontrar uma lacuna dependente de interpretação, vivência ou preferência, perguntar de modo pontual; não extrapolar experiências individuais para fatos universais.
+7. **Controle do usuário:** poder destacar, silenciar ou vetar temas quando o recurso estiver implementado. Assuntos sensíveis ou dados privados não entram automaticamente como fontes de pesquisa.
+
+### Exemplo
+- **Prioridade:** pesquisa sobre alternativas leves e gratuitas para reconhecimento de voz no J6+.
+- **Conexão nova:** estudar acústica/psicoacústica para melhorar interrupção e reconhecimento em ambiente barulhento.
+- **Exploração livre:** investigar um assunto científico ou filosófico pouco discutido, produzindo síntese curta e uma pergunta útil, sem se afirmar como prioridade do usuário.
+
+### Ainda não decidido
+- Porcentagem de tempo/ciclos entre interesses e novidades; nenhuma proporção numérica é inferida desta decisão.
+- Frequência, períodos de silêncio, orçamento, quantidade máxima de perguntas e modo de notificações.
+- Infraestrutura de execução ainda não implementada; PC desligado = não realiza pesquisas.
+
+**Status:** direção de pesquisa registrada; não há worker ativado e nenhuma alteração no código do MARK.
