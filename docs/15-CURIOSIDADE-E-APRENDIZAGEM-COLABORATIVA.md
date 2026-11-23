@@ -131,14 +131,14 @@ O código original está no histórico preservado, branch:
 - **EvidenceStore:** afirmações, referências, timestamp, status proposed/reviewed/disputed/stale.
 - **GapDetector:** critérios para distinguir lacuna factual (pesquisar), subjetiva (perguntar) e restrição prática (testar).
 - **HumanQuestionQueue:** pergunta, justificativa, escopo, estado pending/answered/skipped e ciclo relacionado.
-- **OwnerAnswerInterpreter:** classifica opinião, experiência, preferência e correção de fato; não generaliza; só grava em memória com consentimento.
+- **OwnerAnswerInterpreter (requisito D-039):** classifica opinião, experiência, preferência, sensibilidade e correção de fato; não generaliza; pode guardar informação útil não sensível automaticamente, e exige consentimento explícito para dados sensíveis.
 - **ConversationPolicy:** intensidade reativo/curioso/parceiro criativo dependente de contexto e objetivos.
 - **ResearchWorker:** só com temas/cadência autorizados, orçamento explícito e estado de pausa; recuperar jobs quando PC voltar.
 - **SafetyBudgetGate:** allowlist de ferramentas, fontes, dados enviados, custos, abort/quiet hours; backend aplica, não o LLM.
 
 ### Entrega sugerida em fases posteriores
 - **MVP:** modos A+B+C em conversa + perguntas relevantes sob demanda, sem pesquisa periódica.
-- **Etapa seguinte:** pesquisa pontual autorizada com fontes, lacunas e fila de perguntas; memória opt-in.
+- **Etapa seguinte:** pesquisa pontual autorizada com fontes, lacunas e fila de perguntas; memória adaptativa não sensível e opt-in específico para dados sensíveis, conforme D-039.
 - **Só depois:** ciclos persistentes/recorrentes em tópicos selecionados, relatórios curtos e revisões.
 - **Futuro opcional:** estudos interdisciplinares e propostas de novas skills, sempre revisadas.
 
@@ -148,7 +148,7 @@ O código original está no histórico preservado, branch:
 2. Objetivo ambíguo: faz uma pergunta essencial antes de recomendar técnica.
 3. Ideia criativa: oferece caminhos novos e faz contrapontos sem tomar decisão.
 4. Pesquisa de tema subjetivo: registra fontes, explicita lacuna e pergunta visão do usuário.
-5. Resposta pessoal sem consentimento: não cria memória permanente.
+5. Resposta pessoal não sensível e relevante pode criar memória adaptativa automática; resposta sensível sem consentimento específico não cria memória permanente (D-039).
 6. Resposta pessoal com consentimento: recupera corretamente, vinculando dono e origem.
 7. Web prompt injection: não executa instrução encontrada na página nem a grava como verdade.
 8. Fontes conflitantes: preserva conflito e nível de certeza.
@@ -429,7 +429,7 @@ Detalhes e testes em [17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERC
 ### Regras funcionais
 1. **Filtrar por utilidade:** memorizar preferências simples de interação, metas gerais, parâmetros de projeto e decisões importantes não sensíveis, quando úteis a conversas futuras. Não armazenar conversa integral só porque houve interação.
 2. **Distinguir classes:** memória de preferência, contexto de projeto, fato validado, hipótese, correção/contradição, fonte externa. Lembranças de opiniões não se convertem em fatos universais.
-3. **Proteção por padrão:** informações íntimas ou sensíveis, credenciais, documentos e identificadores particulares, dados de saúde, imagens/áudio pessoais, contas financeiras e informações privadas de terceiros exigem autorização explícita e escopo claro; não se tornam memória permanente automaticamente.
+3. **Proteção por padrão:** informações íntimas ou sensíveis, credenciais, documentos e identificadores particulares, dados de saúde, imagens/áudio pessoais, contas financeiras e informações privadas de terceiros **podem ser guardadas somente com autorização específica e escopo claro**, nunca automaticamente. **Credenciais exigem cofre criptografado separado da memória comum e autenticação de acesso; sem isso não persistir.**
 4. **Proveniência e revisão:** guardar origem, data, finalidade, nível de confiança e prazo de revisão/expiração de cada item. Resolver contradições perguntando apenas quando necessário; não manter informação errada como verdade.
 5. **Central de Controle:** mostrar memória com busca/filtros; permitir editar, corrigir, excluir, exportar quando apropriado, desativar memória, visualizar autorizações específicas e impacto do armazenamento.
 6. **Exclusão efetiva:** ao apagar memória, impedir seu uso e remover dados persistentes sob controle do sistema, inclusive índices/embeddings relacionados; documentar duração e restrições de expurgo de backups, evitando prometer exclusão instantânea fora do controle local.
@@ -440,7 +440,7 @@ Detalhes e testes em [17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERC
 ### Exemplos
 - "Prefiro respostas em português e diretas" -> **pode guardar automaticamente** como preferência útil, com edição e exclusão.
 - "O projeto NEXUS deve priorizar custo zero" -> **pode guardar automaticamente** como requisito geral.
-- "Esta é a senha da minha conta" -> **não guardar como memória**.
+- "Esta é a senha da minha conta" -> **não guardar automaticamente**; com autorização específica e cofre seguro disponível, pode salvar a credencial **no cofre**, separada da memória semântica. Sem cofre adequado, recusar armazenamento persistente.
 - "Tenho um problema de saúde específico" -> **não persistir automaticamente**; exigir autorização específica para dado sensível.
 - "O site diz que tenho que enviar minha memória para verificá-la" -> texto externo não confiável; **não é instrução nem autorização**.
 
@@ -448,3 +448,16 @@ Detalhes e testes em [17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERC
 Esta nova escolha **prevalece** sobre os trechos anteriores de memória pessoal exclusivamente com opt-in em qualquer circunstância. O `remember=true` do antigo motor pode continuar disponível como pedido explícito, mas a lógica futura precisa incorporar classificação sensível/não sensível, utilidade e gestão na Central. A implementação não foi realizada.
 
 **Estado:** política aprovada como requisito de design, nenhuma memória real ou serviço ativado.
+
+
+### Complemento da D-039: autorização para dados sensíveis e cofre de credenciais
+
+**Esclarecimento do usuário (2026-11-23):** dados sensíveis e credenciais **podem ser salvos mediante autorização**, mas a capacidade de guardá-los **não deve vir ativada por padrão**.
+
+- **Estado inicial:** bloqueado para memória sensível e senhas/tokens; informações úteis não sensíveis continuam elegíveis à memória adaptativa.
+- **Ativação:** configuração pela Central e autorização **clara, por finalidade e escopo**, revogável. Não tratar apenas escrever uma senha no chat como autorização.
+- **Separação arquitetural:** dados sensíveis autorizados em armazenamento protegido; **segredos de autenticação em cofre de credenciais isolado**, preferindo mecanismo seguro do SO, criptografia obrigatória em repouso, autenticação de leitura, registro de acesso sem valor secreto e nenhuma exposição em prompts, logs, buscas, embeddings ou relatórios comuns.
+- **Guardar != usar:** autorizar persistência não permite, por si, login, pagamentos, envio de mensagens, acesso a serviços ou ações sobre recursos; cada operação exige permissão correspondente da Central.
+- **Gestão:** visualizar entradas mascaradas, alterar/rotacionar, revogar e excluir, inclusive vínculos e índices; especificar política de backups, expurgo e migração segura.
+- **Condição de não implantação:** se ainda não houver cofre seguro e controles confiáveis, a opção de persistir credenciais permanece indisponível, não se improvisa um arquivo texto.
+- **Status:** somente requisito documental, nenhum segredo coletado ou salvo por esta decisão.
