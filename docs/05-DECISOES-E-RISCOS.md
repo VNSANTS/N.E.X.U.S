@@ -90,3 +90,13 @@ Atualizado em 2026-11-23.
 - Proposta para novo MARK: fontes verificáveis com proveniência, detecção de lacunas, pergunta humana relevante, estado pendente e memória pessoal só mediante permissão, com limites de pesquisa.
 - A capacidade desejada **não autoriza pesquisa contínua sem limites, coleta privada, notificações invasivas ou gastos**. Frequência, fontes/temas e notificações ainda serão calibradas.
 - Consulte [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Somente documentação, sem código.**
+
+
+## D-014 — Aprendizagem autônoma por iniciativa própria (2026-11-23)
+
+- **Escolha explícita:** o NEXUS deve **iniciar pesquisas na internet por iniciativa própria**, sem precisar que o usuário solicite cada estudo.
+- O mecanismo ideal investiga temas pertinentes, compara fontes, identifica lacunas e formula perguntas quando a interpretação depende da experiência ou perspectiva humana.
+- Respostas do usuário podem corrigir hipóteses ou personalizar preferências, mas não são transformadas em fatos gerais; memorização pessoal pede consentimento.
+- A aprovação da iniciativa **não é autorização operacional irrestrita**: ainda precisamos decidir escopo, frequência, limites de chamadas/custo, fontes, notificações e habilitação.
+- Worker local deve respeitar PC desligado, checkpoints, pausa e retomada. Não executar mudanças em dispositivos, código ou credenciais como resultado da pesquisa sem autorização apropriada.
+- Proposta registrada em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Somente documentação, sem alteração no MARK LVII.**
