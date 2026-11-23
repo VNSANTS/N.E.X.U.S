@@ -182,3 +182,14 @@ Atualizado em 2026-11-23.
 - Alertas realmente urgentes exigem regras próprias ainda não definidas; não presumir exceções amplas.
 - O usuário deve conseguir adiar, silenciar e desativar a iniciativa, quando implementada.
 - Especificação em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Nenhum código ou notificação foi ativado.**
+
+
+## D-024 — Interromper em riscos graves e problemas técnicos importantes (2026-11-23)
+
+- **Escolha explícita: alternativa C.** O NEXUS pode interromper a atividade do usuário diante de **riscos graves e problemas técnicos importantes**, não apenas em emergências extremas.
+- **Crítico:** perigo relevante e urgente com evidência confiável; comunicar rapidamente.
+- **Importante:** falha de serviço/recurso relevante, inclusive problemas técnicos com impacto concreto; interrupção proporcional ao impacto e urgência.
+- **Rotineiro:** curiosidade, descoberta ou erro pequeno não deve interromper jogos, trabalho, reuniões ou descanso; guardar para depois conforme D-023.
+- Alertas devem informar origem e confiança do sinal e evitar repetição; falar sobre uma falha não autoriza corrigir automaticamente ou mexer em dispositivos sem permissões.
+- **Ainda pendente:** canal e intensidade de cada interrupção (voz, notificação, escalonamento), deduplicação, horário e fontes integradas. Sem monitoramento real implementado.
+- Detalhes em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Somente documentação, código MARK intocado.**
