@@ -63,3 +63,25 @@ O proprietário quer poder **mandar uma senha/credencial no chat do NEXUS e pedi
 ## Estado e relação com decisões anteriores
 
 Complementa **D-039 (memória sensível sob opt-in)**, **D-031/D-032 (permissões na Central)**, **D-038 (roteamento de especialistas)** e **D-006 (custo adicional zero)**. O comportamento é desejado, não comprovado. O MARK original permanece não instalado/não homologado, e nenhuma alteração em seu código foi feita.
+
+
+## D-041 — Opção .env local e processamento isolado de senhas faladas/escritas (2026-11-23)
+
+**Pedido:** o NEXUS poderá receber uma senha escrita ou ditada, salvá-la automaticamente em arquivo `.env` previamente autorizado, limpar o histórico comum e usar um modelo local pequeno somente se precisar interpretar o segredo. O modelo externo potente continua trabalhando com texto **sem a senha**.
+
+### Fluxo aprovado para implementar após homologação
+1. **Permissão inicial:** salvar segredos em `.env` vem **desligado**. Na Central, o proprietário permite a categoria, projeto/pasta, nome da variável, finalidade e prazo. A permissão permite as ocorrências posteriores no escopo aprovado; fora dele é necessária nova autorização.
+2. **Entrada:** campo seguro do chat ou ditado com transcrição **local**. Entrada livre exige filtro antes de qualquer pedido remoto; detecção automática não é infalível, logo priorizar campo protegido.
+3. **Armazenamento:** um executor determinístico local valida nome de variável e destino, escreve o valor com proteção de acesso e evita sobrescrever variáveis não autorizadas. Um LLM local leve é opcional para interpretar a instrução, não necessário para gravar uma linha em arquivo.
+4. **Proteção:** `.env` normalmente **é texto puro**; restringir ACL, manter fora do Git e de sincronizações públicas, configurar `.gitignore` e verificar se já foi versionado. Preferir cofre criptografado quando possível; não apresentar `.env` como equivalente a cofre.
+5. **Separação do fluxo externo:** modelo remoto recebe apenas intenção redigida/identificador opaco. Nunca enviar o valor a IA, busca, logs, embeddings, relatório, TTS/STT externo ou telemetria.
+6. **Uso restrito:** ler a variável para login ou operação requer permissão própria. O valor pode ir diretamente ao endpoint de autenticação oficial, quando a tarefa permitir, sem aparecer em prompts.
+7. **Remoção:** limpar a entrada do histórico do NEXUS e buffers temporários quando viável; não prometer apagamento perfeito de RAM, clipboard, swap, backups anteriores ou sistemas que já receberam o segredo.
+8. **Falha:** sem STT local seguro, executor autorizado ou isolamento confiável, pausar a tarefa secreta. **Nenhum fallback para IA remota com credenciais**.
+
+### Critérios de teste
+- Credencial sintética por voz e texto com inspeção de rede/logs; verificar que nunca chega ao modelo remoto.
+- Testes de `.gitignore`, arquivos já rastreados, Windows ACL, rollback após erro de gravação e autorização negada.
+- Testar transparência de que `.env` não é criptografia e que não se pode recuperar uma exposição anterior apenas apagando o histórico.
+
+**Estado:** requisito registrado, sem arquivo .env real criado nem modelo local instalado.
