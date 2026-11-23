@@ -1,1 +1,0 @@
-Supplementary reference material for the performance-optimization skill, imported from Addy Osmani's MIT-licensed agent-skills repository.

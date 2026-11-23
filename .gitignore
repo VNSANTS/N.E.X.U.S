@@ -1,33 +1,38 @@
-# Local runtime data
-*.db
-*.sqlite
-*.sqlite3
-__pycache__/
-*.py[cod]
-.venv/
-venv/
+# Credenciais / configuração sensível
 .env
-
-# Environment files: keep only an explicitly safe template
 .env.*
 !.env.example
-
-# Test and tooling artifacts
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
-.coverage
-htmlcov/
-*.db-wal
-*.db-shm
-
-# Local logs, backups, and temporary artifacts
-*.log
-*.log.*
-*.bak
-*.backup
-*.tmp
-*.temp
+**/api_keys.json
+**/secrets.json
+**/credentials.json
+*.pem
+*.key
+*.p12
+*.pfx
+# Dados pessoais / logs
+**/long_term.json
+**/memory.db
+**/conversations.db
+*.sqlite
+*.sqlite3
+*.db
 logs/
-tmp/
-temp/
+uploads/
+recordings/
+captures/
+# Python / ambientes
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+# Android e build
+.gradle/
+build/
+dist/
+*.apk
+*.aab
+# Sistemas
+.DS_Store
+Thumbs.db

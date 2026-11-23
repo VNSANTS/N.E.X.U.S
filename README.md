@@ -1,157 +1,37 @@
-# N.E.X.U.S.
+# NEXUS MARK LVII
 
-**Neural Engine Expert Underground System**
+**Projeto pessoal, experimental e não comercial.** Repositório reaproveitado do antigo N.E.X.U.S., destinado a planejar, testar e depois desenvolver uma versão personalizada do [MARK LVII](https://github.com/FatihMakes/Mark-LVII).
 
-Projeto de um assistente pessoal de IA que vai além de um chatbot: deverá pesquisar, organizar conhecimento, utilizar ferramentas, coordenar agentes e executar tarefas autorizadas, mantendo o usuário no controle.
+> **Estado em 2026-11-23: PLANEJAMENTO DOCUMENTADO.** O MARK LVII ainda **não foi instalado, executado, copiado ou homologado** neste repositório. Nenhuma melhoria está implementada aqui. Primeiro será testado o projeto original em um PC Windows.
 
-> **Estado atual:** aplicação local em Python/SQLite com API WSGI autenticada, sessões e conversas persistidas, recuperação contextual lexical, UI web conectada, ferramentas READ em allowlist e worker local de tarefas seguras. MockProvider é o padrão offline; adapters opcionais estão disponíveis para Gemini, Groq e OpenRouter mediante configuração explícita. Ainda não é uma implantação cloud nem um assistente com colaboração autônoma geral entre modelos. Consulte [PROJECT_STATUS.md](PROJECT_STATUS.md) e [docs/LOCAL_API.md](docs/LOCAL_API.md).
+## Objetivo
 
-## Visão do projeto
+Um assistente de IA pessoal, com MARK LVII no PC e, em fase posterior, um **NEXUS Companion** no Galaxy J6+ como comunicador: microfone interno do J6+, áudio de resposta por fone Bluetooth, conexão autenticada com o PC. O Infinix e a câmera de segurança poderão ser controlados apenas por interfaces específicas e autorizadas. Não haverá IA independente rodando no J6+ na primeira versão.
 
-- **Cloud-first:** acessível pelo celular e navegador, sem depender de um computador potente ligado o tempo todo.
-- **Multimodelo:** possibilidade de selecionar provedores conforme tarefa, qualidade e custo.
-- **Ollama opcional:** execução local quando fizer sentido, sem ser requisito.
-- **Interação multimodal:** texto, botão e voz, evoluindo por etapas.
-- **Agentes e ferramentas:** módulos especializados trabalhando sob limites claros.
-- **Aprendizado rastreável:** pesquisa, comparação de fontes, validação e registro de incertezas — não treinamento automático e contínuo dos pesos do modelo.
-- **Autonomia controlada:** tarefas agendadas e acionadas por eventos, com orçamento, limites e aprovações.
+## Plano
 
-## Princípios de segurança
+1. **Homologar o MARK LVII original:** instalar em ambiente isolado, registrar versões, testar voz, tela, arquivos fictícios, navegador, memória e recursos remotos.
+2. **Corrigir riscos e falhas:** controles de permissão, comunicação remota segura, plugins, segregação de tarefas, segredos e auditoria.
+3. **Ampliar capacidades sem duplicações:** estudar OpenJarvis, MCP Python SDK, Browser Use, Mem0, LiveKit/Pipecat e ferramentas de câmeras, adotando somente o que passar nos testes.
+4. **Construir Companion Android:** o J6+ como comunicador remoto dependente do PC; posteriormente integrar Infinix e vídeo RTSP/ONVIF.
+5. **Otimizar e validar:** consumo de RAM/CPU, reconexão, latência, áudio em português, testes automatizados e regressões.
 
-- Ações sensíveis exigem aprovação explícita e específica.
-- Mensagens enviadas em nome do usuário, compras, movimentações financeiras, exclusões e mudanças de produção não serão executadas sem autorização.
-- Melhorias propostas pelo próprio sistema devem ser testadas em ambiente isolado e revisadas antes de serem integradas.
-- Não armazenar nem publicar credenciais, tokens, dados pessoais ou conversas privadas.
+## Documentos
 
-## Documentação
+- [Auditoria técnica do MARK LVII](docs/01-AUDITORIA-MARK-LVII.md)
+- [Repositórios de referência e política de reutilização](docs/02-REFERENCIAS-E-LICENCAS.md)
+- [Roadmap priorizado e critérios de aceite](docs/03-ROADMAP-E-TESTES.md)
+- [Arquitetura do NEXUS Companion e ecossistema](docs/04-COMPANION-E-ECOSSISTEMA.md)
+- [Decisões e riscos](docs/05-DECISOES-E-RISCOS.md)
+- [Estudo sobre ChatGPT Plus e provedores](docs/06-PROVEDORES-IA.md)
+- [Roteiro de instalação e homologação](docs/07-PRIMEIRO-TESTE.md)
+- [Origens e aviso de licenciamento](NOTICE.md)
 
-| Documento | Conteúdo |
-|---|---|
-| [PROJECT_STATUS.md](PROJECT_STATUS.md) | Estado atual, próximo marco e riscos |
-| [ROADMAP.md](ROADMAP.md) | Fases e critérios para avançar |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Arquitetura conceitual |
-| [TECH_STACK.md](TECH_STACK.md) | Tecnologias em avaliação |
-| [LEARNING_ENGINE.md](LEARNING_ENGINE.md) | Pesquisa e aprendizado |
-| [KNOWLEDGE_SYSTEM.md](KNOWLEDGE_SYSTEM.md) | Conhecimento e fontes |
-| [MEMORY_SYSTEM.md](MEMORY_SYSTEM.md) | Memória pessoal e contexto |
-| [HUMAN_INTERACTION.md](HUMAN_INTERACTION.md) | Interação com o usuário |
-| [SELF_IMPROVEMENT.md](SELF_IMPROVEMENT.md) | Melhorias controladas |
-| [KNOWLEDGE_VALIDATION.md](KNOWLEDGE_VALIDATION.md) | Validação e confiança |
-| [SECURITY.md](SECURITY.md) | Segurança e permissões |
-| [DECISIONS.md](DECISIONS.md) | Decisões do projeto |
-| [CHECKPOINT.md](CHECKPOINT.md) | Ponto de continuidade |
-| [CHANGELOG.md](CHANGELOG.md) | Histórico de mudanças |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Regras de contribuição |
+## Historial e fontes
 
-## Próximo passo
+- Branch de arquivo do projeto antigo: [archive/nexus-before-mark-lvii-2026-11-23](https://github.com/VNSANTS/N.E.X.U.S/tree/archive/nexus-before-mark-lvii-2026-11-23).
+- A branch `main` deste repositório foi reiniciada em conteúdo, **não em histórico**: o código antigo permanece recuperável pelo Git e pela branch de arquivo. Outras branches e PRs anteriores não foram apagados.
+- A URL do repositório continua `VNSANTS/N.E.X.U.S`; renomeação não foi realizada.
+- O MARK LVII original é licenciado em **CC BY-NC 4.0** e o uso planejado aqui é pessoal e não comercial. A atribuição, a marcação de alterações e as condições de cada dependência permanecem exigíveis.
 
-Executar testes manuais da UI/API local; decidir provider/modelo e políticas de retenção antes de enviar dados reais. Planejar identidade, TLS e banco de produção antes de qualquer exposição remota. O checkout OpenJarvis continua separado e não é dependência do app.
-
-## Ambiente de desenvolvimento
-
-O desenvolvimento considera um computador modesto. Portanto, a arquitetura não deve depender de modelos locais grandes nem de processamento contínuo. Custos de APIs e hospedagem precisam ser avaliados antes de adicionar serviços pagos.
-
----
-
-**N.E.X.U.S. — um assistente pessoal útil, capaz e confiável, sempre sob controle do usuário.**
-
-
-## Primeiro módulo executável — motor de aprendizado
-
-Foi iniciado `nexus_learning/`, um núcleo Python baseado apenas na biblioteca padrão:
-- SQLite para memórias episódicas, semânticas e procedurais;
-- cadastro de fontes e afirmações candidatas ligadas às fontes;
-- estados de conhecimento e revisão explícita;
-- fila de tarefas com prioridade heurística transparente;
-- testes automatizados iniciais em `tests/test_learning_engine.py`.
-
-Este módulo é uma primeira base local. Ainda não inclui API, interface, pesquisa automática na web, integração com modelos de IA, sincronização cloud/PC ou execução contínua. Consulte [a arquitetura de aprendizado](docs/LEARNING_ARCHITECTURE_NEUROSCIENCE.md).
-
-
-### Uso local do protótipo
-
-Com Python 3 instalado, na raiz do repositório:
-
-```bash
-python -m nexus_learning init
-python -m nexus_learning stats
-python -m nexus_learning memory-add episodic "Primeiro teste" "Descrição do evento"
-python -m nexus_learning memory-list
-python -m nexus_learning task-add "Estudar memória" --relevance 0.9 --uncertainty 0.8
-python -m nexus_learning task-list
-python -m unittest discover -s tests -v
-```
-
-## Executar a aplicação local
-
-```powershell
-python -m unittest discover -s tests -v
-python -m nexus_learning --db nexus_learning.db serve --host 127.0.0.1 --port 8765
-```
-
-Na primeira execução, crie um usuário e uma senha forte no prompt local. Acesse `http://127.0.0.1:8765/`. O servidor é loopback-only. Para provider externo, revise `docs/LOCAL_API.md` e `.env.example`; não use credenciais no repositório. O worker seguro roda separadamente com `python -m nexus_learning --db nexus_learning.db worker --poll 1`.
-
-O banco padrão é `nexus_learning.db` no diretório atual. Não coloque dados sensíveis no banco de teste nem envie o arquivo do banco ao GitHub.
-
-
-### Comandos adicionais do núcleo
-
-```bash
-# Registrar uma fonte e uma afirmação associada
-python -m nexus_learning source-add "https://example.org" --title "Fonte de exemplo"
-python -m nexus_learning claim-add "Afirmação a investigar" --source ID_DA_FONTE
-
-# Revisar uma afirmação (validação exige justificativa e confiança explícitas)
-python -m nexus_learning claim-review ID_DA_AFIRMACAO under_review "Precisa de mais evidências"
-python -m nexus_learning claim-list --state proposed
-
-# Gerar relatório de consolidação sem alterar automaticamente os registros
-python -m nexus_learning consolidate
-
-# Arquivar uma memória
-python -m nexus_learning memory-archive ID_DA_MEMORIA
-```
-
-O relatório de consolidação aponta afirmações sem fontes, possíveis duplicatas, itens em disputa e itens ainda não revisados. Ele não decide se uma afirmação é verdadeira e não modifica o banco.
-
-
-### Ingestão local de documentos (protótipo)
-
-O módulo `nexus_learning.ingestion` agora aceita arquivos de texto e Markdown, registra a origem, calcula SHA-256, divide o conteúdo em trechos com posições e permite busca lexical simples. Arquivos repetidos pelo mesmo conteúdo são reconhecidos pelo hash. Limite padrão: 1 MB por documento.
-
-Formatos aceitos: `.txt`, `.md` e `.markdown`. PDF, DOCX, páginas web e extração por IA ainda não estão incluídos.
-
-```bash
-python -m nexus_learning ingest-file ./anotacoes.md
-python -m nexus_learning document-search "memória e aprendizado"
-```
-
-A busca atual é lexical (termos coincidentes), não semântica. O conteúdo fica no banco SQLite local; não envie o banco ao repositório.
-
-
-## Runtime controlado (protótipo offline)
-
-O repositório agora inclui:
-- `PolicyEngine`: política fail-closed com allowlist; ações READ, WRITE_REVERSIBLE e SENSITIVE;
-- contrato `ModelProvider` e `MockProvider` offline, sem credenciais e sem rede;
-- `TaskRuntime`: registra entrada, execução, conclusão/falha e eventos no SQLite;
-- comando de demonstração offline.
-
-```bash
-python -m nexus_learning runtime-once "Olá, N.E.X.U.S."
-```
-
-O comando usa o provedor simulado, não uma IA real. O runtime ainda não possui API HTTP, autenticação, ferramentas reais, agendador distribuído ou worker remoto. Nenhuma saída de modelo executa comandos ou ferramentas.
-
-
-### Pesquisa científica pela Crossref API
-
-O módulo `nexus_learning.crossref` consulta metadados bibliográficos públicos da Crossref, sem dependências externas e sem chave de API. A busca retorna título, autores, ano, DOI, periódico/editora e URL. Não baixa o texto integral dos artigos, não cria afirmações automaticamente e não valida os resultados.
-
-```bash
-python -m nexus_learning research-search "memory consolidation learning" --limit 5
-# Opcional: informar um e-mail válido para usar o polite pool
-python -m nexus_learning research-search "neuroscience of memory" --limit 5 --mailto "seu-email@example.com"
-```
-
-O limite local é de 20 resultados por consulta, com timeout de 12 segundos. A integração usa a biblioteca padrão do Python, identifica o cliente por User-Agent e permite o parâmetro `mailto` recomendado pela Crossref. Respeite os limites do serviço e evite consultas paralelas desnecessárias. Os metadados retornados são pistas para pesquisa, não evidência suficiente para validar uma afirmação.
+**Princípio:** testar antes de integrar, limitar privilégios, evitar custos adicionais e manter provas de que algo realmente funciona.
