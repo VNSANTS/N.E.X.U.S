@@ -122,6 +122,14 @@ Atualizado em 2026-11-23.
 ## D-017 — Voz universal: Sukuna (2026-11-23)
 - **Escolha explícita:** a voz do NEXUS deve ser **especificamente a voz de Sukuna (Jujutsu Kaisen)** como referência de timbre e interpretação, preservada consistentemente em todas as falas do PC, J6+ e demais saídas futuras.
 - A personalidade NEXUS v1.0 continua independente da voz: não adotar automaticamente a personalidade do personagem.
-- **Pendente:** qual interpretação é desejada (japonês original ou dublagem em português brasileiro). Ainda não se sabe se a voz exata é viável/licenciável nas ferramentas do MARK. Validar direitos/autorizações, qualidade PT-BR e tecnologia TTS antes de prometer reprodução.
+- **Interpretação definida em D-018:** Francisco Júnior como Sukuna na dublagem brasileira. Ainda não se sabe se a voz exata é viável/licenciável nas ferramentas do MARK. Validar direitos/autorizações, qualidade PT-BR e tecnologia TTS antes de prometer reprodução.
 - Não substituir silenciosamente a voz por outra; caso uma solução exata seja inviável ou não autorizada, oferecer opções e pedir decisão ao usuário.
 - Requisito detalhado em [docs/16-VOZ-UNIVERSAL-SUKUNA.md](16-VOZ-UNIVERSAL-SUKUNA.md). **Sem geração/clone de voz, sem áudio ou código importado.**
+
+
+## D-018 — Referência vocal específica: Francisco Júnior como Sukuna (2026-11-23)
+- **Decisão do usuário:** versão de **Ryomen Sukuna (Jujutsu Kaisen)** interpretada por **Francisco Júnior na dublagem brasileira**. Não a voz original japonesa e não uma voz masculina genérica.
+- Confirmação externa: [Dublapédia](https://dublapedia.com/wiki/Jujutsu_Kaisen) e [JBox](https://www.jbox.com.br/j-pedia/perfis/francisco-junior/).
+- Aplica-se à identidade vocal desejada do NEXUS em todas as interfaces faladas, sem alterar a personalidade definida nas decisões anteriores.
+- Pesquisa técnica e autorização de uso da voz ainda pendentes. Não clonar, treinar sobre gravações comerciais nem prometer reprodução fiel sem autorização/viabilidade comprovadas.
+- Documento atualizado: [docs/16-VOZ-UNIVERSAL-SUKUNA.md](16-VOZ-UNIVERSAL-SUKUNA.md). Apenas especificação documental, nenhum áudio ou código criado.
