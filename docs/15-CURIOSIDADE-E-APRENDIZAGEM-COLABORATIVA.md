@@ -293,3 +293,33 @@ NEXUS: "Hm... Descobri algo curioso enquanto estudava. Sua solução atual talve
 - Se iniciativa deve ser autorizada por canal e horário; não presumir escuta/voz contínua ligada.
 
 **Nota técnica:** a comunicação espontânea exige processo ativo, autorização de notificações e interface capaz de enviá-las; PC desligado não fará isso no desenho local. **Nenhum serviço, evento ou notificação real foi ativado**.
+
+
+## 16. Decisão: comunicação espontânea sensível ao contexto (2026-11-23)
+
+**Escolha explícita: alternativa B.** O NEXUS pode iniciar conversas e compartilhar pesquisas por iniciativa própria, mas **deve evitar interromper o usuário durante jogos, trabalho, reuniões e descanso**, guardando descobertas para uma oportunidade mais apropriada.
+
+### Comportamento observável
+1. Distinguir **descoberta interessante** de **alerta que exige atenção**. Descobertas comuns e perguntas humanas aguardam; não se anunciam em voz alta durante atividades prioritárias.
+2. Detectar a ocupação somente por **sinais autorizados e confiáveis**: estado de sessão/jogo quando disponível, horário de silêncio configurado, preferência manual "não perturbe" e outras integrações consentidas. Não inferir com certeza que o usuário está dormindo só porque a tela está desligada.
+3. Se estiver ocupado, enfileirar o item com fonte, motivo, grau de importância e data; evitar notificações repetidas e não perder o contexto.
+4. Ao identificar um momento apropriado, convidar a conversar de forma natural, sem assumir que o usuário estará disponível.
+5. Oferecer "não perturbe", "falar depois", "silenciar esse tema" e "parar a pesquisa"; respeitar preferências sem tentar driblá-las.
+6. Alertas de risco real e imediato exigem política separada de urgência e canais autorizados, a definir. **Aprovar sensibilidade ao contexto não autoriza interrupção irrestrita por suposta emergência**.
+7. Sem câmera/microfone ligados silenciosamente para vigiar ocupação; necessidade de ferramentas e consentimento expresso.
+8. PC/worker desligado: não afirmar envio ou percepção. A fila deve poder ser recuperada quando o sistema estiver ativo.
+
+### Exemplos
+- **Jogando:** o NEXUS encontra uma pesquisa curiosa e cria item pendente; não interrompe a partida.
+- **Programando:** guarda uma pergunta filosófica para depois; se o próprio usuário pedir ajuda com o código, responde ao que foi solicitado.
+- **Reunião:** silencia fala espontânea e mantém descobertas na fila.
+- **Descanso:** respeita horários de silêncio e não começa diálogo.
+- **Disponível:** "Hm... encontrei algo interessante. Quer ouvir agora ou depois?"
+
+### Pendências
+- Quais sinais de ocupação estarão tecnicamente disponíveis no PC/Android.
+- Horários de silêncio e notificações discretas.
+- Classificação de gravidade e exceções para alertas realmente críticos.
+- Cadência mínima e agrupamento de descobertas.
+
+**Status:** regra documental aprovada, sem implementação no MARK.
