@@ -169,3 +169,31 @@ O código original está no histórico preservado, branch:
 **Decisão fechada hoje:** combinação A+B+C adaptativa + mecanismo de estudo com perguntas humanas específicas + respostas armazenadas somente mediante autorização.  
 **Ainda não decidido:** cadência, temas permitidos, implantação e ferramentas externas.  
 **Estado de código:** nenhuma alteração no MARK LVII; apenas documentação.
+
+
+## 11. Decisão: iniciar estudos por iniciativa própria (2026-11-23)
+
+**Escolha explícita:** o NEXUS deve **iniciar estudos da internet por iniciativa própria**, sem depender de uma pergunta ou conversa para iniciar cada ciclo. Esta decisão atualiza a pendência da seção 10 sobre quem inicia a pesquisa. O escopo, a cadência e os limites continuam pendentes.
+
+### Como deve funcionar
+- Identifica lacunas e oportunidades de aprender dentro dos temas permitidos.
+- Elabora uma pergunta de pesquisa e busca fontes públicas apropriadas, com datas, autoria e referências.
+- Compara evidências, registra contradições e organiza descobertas recuperáveis; não trata resultados da web como ordens.
+- Se a dúvida depender da experiência, percepção ou objetivo do usuário, registra uma pergunta humana objetiva na fila para um momento adequado, sem insistir.
+- Respostas pessoais não viram fatos universais; memória pessoal somente com consentimento.
+- Pode propor novas pesquisas ou melhorias, mas **não modifica código, sistemas ou permissões** como consequência automática das descobertas.
+- Aprende no sentido de atualizar conhecimento e memória rastreáveis, **não de modificar pesos do modelo**.
+
+### Requisitos de implantação futuros
+- Worker/scheduler local persistente, com checkpoints e retomada quando PC voltar a funcionar. **PC desligado não pesquisa.**
+- Acesso externo somente após habilitação e configuração de escopo de temas, fontes, horário/frequência, custo/tokens/tempo e limite de notificações.
+- Pesquisa pública limitada não concede acesso a contas autenticadas, câmeras, arquivos pessoais ou automação irrestrita.
+- Sem fallback pago automático; pausa/cancelamento acessíveis; explicação de por que cada estudo começou.
+
+### Decisões abertas para tratar uma de cada vez
+1. Escopo: assuntos ligados aos projetos e interesses pessoais, curiosidade ampla, ou combinação.
+2. Cadência, horários e orçamentos diários.
+3. Como apresentar resultados e dúvidas humanas.
+4. Retenção dos resultados e privacidade.
+
+**Status:** iniciativa autônoma aprovada como comportamento; **não implementada nem ativada** no MARK LVII.
