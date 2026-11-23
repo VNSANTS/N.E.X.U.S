@@ -294,3 +294,16 @@ O usuário mostrou uma captura em que, após apenas escolher "Debate com argumen
 **Regra corrigida:** elogiar ou confirmar escolhas normalmente não é motivo para usar "insolente", "ora, ora" ou títulos imperiais. Esses recursos só cabem diante de provocação/desafio lúdico ou quando forem organicamente relevantes, sem repetição ritual. Escolha neutra -> confirmação direta; desafio explícito -> arrogância expressiva permitida; erro -> reconhecimento e correção; urgência -> objetividade.
 
 O problema não é a palavra por si, mas **a falta de conexão com o ato de fala e a situação**. Ver detalhamento e exemplo corrigido em [docs/14-PERSONALIDADE-NEXUS-V1.md](14-PERSONALIDADE-NEXUS-V1.md). Apenas documentação.
+
+
+## D-036 — Acionar o conselho conforme complexidade e risco (2026-11-23)
+
+- **Escolha explícita do usuário: alternativa B.** O conselho de agentes deve ser acionado **conforme a complexidade e o risco da solicitação**, e não obrigatoriamente em toda interação.
+- **Simples e baixo risco:** o NEXUS pode responder diretamente, sem convocar múltiplos agentes nem simular um debate.
+- **Complexidade intermediária:** considerar revisão pontual ou busca de evidências se isso melhorar a confiabilidade; não tornar cada revisão obrigatória.
+- **Complexo, incerto ou de maior impacto:** reunir papéis adequados para argumentos e contrapontos fundamentados, de acordo com D-033; apresentar resultado proporcional à complexidade, conforme D-034.
+- **Crítico e urgente:** emitir alerta primeiro, sem atrasá-lo com debate; deliberar rapidamente depois, conforme D-026/D-030.
+- Aplicar limites de custo, tempo, chamadas e RAM para não prejudicar o PC; evitar redundância entre agentes e encerrar após evidência suficiente.
+- **Permissões:** a participação ou concordância do conselho não habilita ações fora das categorias autorizadas na futura Central (D-031/D-032).
+- Critérios numéricos e roteamento dos especialistas ainda dependem de projeto/testes. Especificação em [docs/17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md](17-PERCEPCAO-EMERGENCIAS-E-CONSELHO-DE-AGENTES.md).
+- **Somente documentação:** nenhum código MARK alterado.
