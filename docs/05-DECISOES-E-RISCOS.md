@@ -172,3 +172,13 @@ Atualizado em 2026-11-23.
 - **Ainda não decidido:** horários, exceções para trabalho/jogos, canais de notificação/voz, intensidade e pausa/silêncio.
 - Não autoriza envio a terceiros, microfone always-on, notificações invasivas ou acesso a dispositivos sem permissão; execução requer o futuro serviço conectado e ativo.
 - Detalhes em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Só documentação; nenhum código MARK foi alterado.**
+
+
+## D-023 — Comunicação espontânea com sensibilidade ao contexto (2026-11-23)
+
+- **Escolha explícita: alternativa B.** O NEXUS deve compartilhar descobertas espontaneamente, **mas evitar interromper jogos, trabalho, reuniões e descanso**.
+- Descobertas comuns e perguntas humanas devem ficar pendentes até um momento adequado, com informações e fontes preservadas.
+- Usar apenas sinais legítimos/consentidos de disponibilidade, como "não perturbe", horário de silêncio e estado de aplicativos autorizado; não vigiar por câmera/microfone sem autorização nem fingir saber que o usuário está livre.
+- Alertas realmente urgentes exigem regras próprias ainda não definidas; não presumir exceções amplas.
+- O usuário deve conseguir adiar, silenciar e desativar a iniciativa, quando implementada.
+- Especificação em [docs/15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md](15-CURIOSIDADE-E-APRENDIZAGEM-COLABORATIVA.md). **Nenhum código ou notificação foi ativado.**
